@@ -25,8 +25,11 @@ const navigation = [
     { name: "Laporan", href: "/admin/checklists", icon: ClipboardList },
 ];
 
+import ChangePasswordModal from "@/components/ChangePasswordModal";
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const pathname = usePathname();
     const { user, logout } = useAuth();
     const router = useRouter();
@@ -39,6 +42,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <ProtectedRoute allowedRoles={["ADMIN"]}>
             <div className="min-h-screen bg-gray-50 flex">
+                <ChangePasswordModal
+                    isOpen={isPasswordModalOpen}
+                    onClose={() => setIsPasswordModalOpen(false)}
+                />
+
                 {/* Mobile sidebar backdrop */}
                 {sidebarOpen && (
                     <div
@@ -96,10 +104,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </li>
 
                                 <li className="mt-auto -mx-2">
-                                    <div className="bg-white/5 rounded-2xl p-4 mb-4 backdrop-blur-md border border-white/10">
-                                        <p className="text-sm font-medium text-white truncate">{user?.name || "Admin"}</p>
-                                        <p className="text-xs text-indigo-300 truncate">{user?.email}</p>
-                                    </div>
+                                    <button
+                                        onClick={() => setIsPasswordModalOpen(true)}
+                                        className="w-full text-left bg-white/5 rounded-2xl p-4 mb-4 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-all group"
+                                    >
+                                        <p className="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition-colors">{user?.name || "Admin"}</p>
+                                        <p className="text-[10px] text-indigo-300 truncate tracking-wide flex items-center gap-1 mt-0.5">
+                                            Ubah Password <span className="text-[8px] opacity-50">→</span>
+                                        </p>
+                                    </button>
                                     <button
                                         onClick={handleLogout}
                                         className="w-full flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold text-rose-300 hover:text-white hover:bg-rose-500/20 transition-all"
