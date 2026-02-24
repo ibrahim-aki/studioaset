@@ -13,7 +13,8 @@ import {
     LogOut,
     Menu,
     X,
-    MapPin
+    MapPin,
+    Shield
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -74,6 +75,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <nav className="flex flex-1 flex-col">
                             <ul role="list" className="flex flex-1 flex-col gap-y-7">
                                 <li>
+                                    {user?.role === "SUPER_ADMIN" && (
+                                        <Link
+                                            href="/super-admin"
+                                            className="group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-bold text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all border border-amber-500/30 mb-4"
+                                        >
+                                            <Shield className="h-6 w-6 shrink-0 text-amber-400" />
+                                            Manajemen Sistem
+                                        </Link>
+                                    )}
+
                                     <ul role="list" className="-mx-2 space-y-2">
                                         {navigation.map((item) => {
                                             const isActive = pathname === item.href;

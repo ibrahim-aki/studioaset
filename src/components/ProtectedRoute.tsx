@@ -49,7 +49,10 @@ export default function ProtectedRoute({
     }
 
     // Double check condition before rendering
-    if (!user || (allowedRoles && !allowedRoles.includes(user.role))) {
+    const isSuperAdminAccessingAdmin = user?.role === "SUPER_ADMIN" && allowedRoles?.includes("ADMIN");
+    const hasAccess = !allowedRoles || (user?.role && allowedRoles.includes(user.role)) || isSuperAdminAccessingAdmin;
+
+    if (!user || !hasAccess) {
         return null; // Will be redirected by useEffect
     }
 
