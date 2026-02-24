@@ -21,16 +21,18 @@ export default function AdminPage() {
     const roomStats = useMemo(() => {
         const latestChecklists: Record<string, string> = {};
 
-        // Sort checklists by timestamp (newest first) to find the latest for each room
-        [...checklists]
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-            .forEach(c => {
-                if (!latestChecklists[c.roomId]) {
-                    latestChecklists[c.roomId] = c.roomStatus;
-                }
-            });
+        // Sort checklists by timestamp (newest first)
+        const sortedChecklists = [...checklists].sort((a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
 
-        const liveCount = rooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE").length;
+        sortedChecklists.forEach(c => {
+            if (!latestChecklists[c.roomId]) {
+                latestChecklists[c.roomId] = c.roomStatus;
+            }
+        });
+
+        const liveCount = rooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE" || latestChecklists[r.id] === "LIVE_NOW").length;
         const totalRooms = rooms.length;
 
         return { liveCount, totalRooms };
@@ -39,7 +41,7 @@ export default function AdminPage() {
     // Calculate asset condition breakdown
     const assetStats = useMemo(() => {
         const total = assets.length;
-        const good = assets.filter(a => a.status === "BAIK" || !a.status).length;
+        const good = assets.filter(a => a.status === "BAIK" || !a.status || a.status === "").length;
         const broken = assets.filter(a => a.status === "RUSAK").length;
         const dead = assets.filter(a => a.status === "MATI").length;
         const lost = assets.filter(a => a.status === "HILANG").length;
@@ -52,6 +54,7 @@ export default function AdminPage() {
         return locations.map(loc => {
             const locRooms = rooms.filter(r => r.locationId === loc.id);
             const latestChecklists: Record<string, string> = {};
+
             [...checklists]
                 .filter(c => c.locationId === loc.id)
                 .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -61,7 +64,7 @@ export default function AdminPage() {
                     }
                 });
 
-            const liveRooms = locRooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE").length;
+            const liveRooms = locRooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE" || latestChecklists[r.id] === "LIVE_NOW").length;
 
             return {
                 id: loc.id,
@@ -84,7 +87,6 @@ export default function AdminPage() {
             });
 
         const getLocName = (id?: string) => locations.find(l => l.id === id)?.name || "";
-
         const sortByLoc = (a: any, b: any) => getLocName(a.locationId).localeCompare(getLocName(b.locationId));
 
         return {
