@@ -213,10 +213,10 @@ function AssetsContent() {
             };
 
             if (!formData.id) {
-                addAsset(assetData);
+                await addAsset(assetData);
                 setLastUsed({ locationId: formData.locationId, category: formData.category });
             } else {
-                updateAsset(formData.id, assetData);
+                await updateAsset(formData.id, assetData);
             }
 
             closeModal();

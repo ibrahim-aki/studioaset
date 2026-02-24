@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, getDocs, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin } from "lucide-react";
+import { useLocalDb } from "@/context/LocalDbContext";
+import { onSnapshot, collection, query, orderBy, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
@@ -194,44 +195,24 @@ export default function UserManagementPage() {
     const [loading, setLoading] = useState(true);
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
 
+    const { assetLogs, checklists: contextChecklists, locations, rooms } = useLocalDb();
+
     useEffect(() => {
-        if (activeTab === "users") fetchUsers();
-        if (activeTab === "reports") fetchChecklists();
-    }, [activeTab]);
-
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            const q = query(collection(db, "users"));
-            const querySnapshot = await getDocs(q);
-            const usersList: UserData[] = [];
-            querySnapshot.forEach((doc) => {
-                usersList.push({ id: doc.id, ...doc.data() } as UserData);
-            });
-            setUsers(usersList);
-        } catch (error) {
-            console.error("Error fetching users:", error);
-        } finally {
+        const unsub = onSnapshot(collection(db, "users"), (snap) => {
+            const list: UserData[] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserData));
+            setUsers(list);
             setLoading(false);
-        }
-    };
-
-    const fetchChecklists = async () => {
-        setLoading(true);
-        try {
-            const q = query(collection(db, "checklists"));
-            const querySnapshot = await getDocs(q);
-            const list: any[] = [];
-            querySnapshot.forEach((doc) => {
-                list.push({ id: doc.id, ...doc.data() });
-            });
-            setChecklists(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-        } catch (error) {
-            console.error("Error fetching checklists:", error);
-        } finally {
+        }, (err) => {
+            console.error("Error fetching users:", err);
             setLoading(false);
-        }
-    };
+        });
+        return () => unsub();
+    }, []);
+
+    useEffect(() => {
+        setChecklists(contextChecklists);
+    }, [contextChecklists]);
+
 
     const handleRoleChange = async (userId: string, newRole: string) => {
         try {
@@ -258,7 +239,7 @@ export default function UserManagementPage() {
             <AddUserModal
                 isOpen={isAddUserOpen}
                 onClose={() => setIsAddUserOpen(false)}
-                onRefresh={fetchUsers}
+                onRefresh={() => { }}
             />
 
             <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -406,7 +387,6 @@ export default function UserManagementPage() {
                                                                 try {
                                                                     await deleteDoc(doc(db, "users", userData.id));
                                                                     alert("Data user berhasil dihapus dari database.");
-                                                                    fetchUsers();
                                                                 } catch (err) {
                                                                     alert("Gagal menghapus data.");
                                                                 }
@@ -487,18 +467,68 @@ export default function UserManagementPage() {
                     )}
 
                     {activeTab === "logs" && (
-                        <div className="bg-indigo-950 rounded-3xl p-8 text-indigo-200 border border-indigo-900 shadow-xl">
-                            <div className="flex flex-col items-center justify-center text-center py-10">
-                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                                    <ShieldAlert className="w-8 h-8 text-indigo-400" />
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Monitor Log Aktivitas</h3>
-                                <p className="text-sm opacity-60 max-w-sm">Fitur log sedang disiapkan untuk melacak setiap perubahan data dan riwayat keamanan sistem secara transparan.</p>
-                                <div className="mt-8 flex gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-75"></div>
-                                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-150"></div>
-                                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-300"></div>
-                                </div>
+                        <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                            <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Log Aktivitas Sistem</h3>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Real-time Monitoring</p>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-gray-50/30">
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Timestamp</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Aktivitas</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Target</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Operator</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {assetLogs.map((log) => (
+                                            <tr key={log.id} className="hover:bg-gray-50 transition-colors group text-[11px]">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center gap-2 text-gray-500 font-bold">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        {new Date(log.timestamp).toLocaleString('id-ID')}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={clsx(
+                                                        "text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter",
+                                                        log.type === "MOVEMENT" ? "bg-amber-100 text-amber-700" :
+                                                            log.type === "STATUS" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+                                                    )}>
+                                                        {log.type}
+                                                    </span>
+                                                    <p className="mt-1 font-bold text-gray-900 leading-tight">{log.toValue}</p>
+                                                    {log.notes && <p className="text-[9px] text-gray-400 mt-0.5 italic">{log.notes}</p>}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center">
+                                                            <Tag className="w-3 h-3 text-gray-400" />
+                                                        </div>
+                                                        <span className="font-bold text-gray-700 line-clamp-1 truncate block max-w-[120px]">
+                                                            ID: {log.assetId.substring(0, 8).toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2 text-indigo-600 font-extrabold">
+                                                        <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center border border-indigo-100 uppercase text-[9px]">
+                                                            {log.operatorName.charAt(0)}
+                                                        </div>
+                                                        {log.operatorName}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {assetLogs.length === 0 && (
+                                            <tr>
+                                                <td colSpan={4} className="py-20 text-center text-gray-400 font-medium text-sm">Belum ada aktivitas yang tercatat.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}

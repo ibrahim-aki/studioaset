@@ -68,7 +68,7 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
                 }
             }
 
-            addRoomAsset({
+            await addRoomAsset({
                 roomId,
                 assetId: selectedAssetId,
                 assetName: masterAsset.name
@@ -89,7 +89,7 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
     const handleRemoveAsset = async (id: string, name: string) => {
         if (confirm(`Hapus ${name} dari ruangan ini?`)) {
             try {
-                deleteRoomAsset(id);
+                await deleteRoomAsset(id);
             } catch (error) {
                 console.error("Error removing:", error);
             }

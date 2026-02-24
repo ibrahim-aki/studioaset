@@ -265,9 +265,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const id = uuidv4();
             await setDoc(doc(db, "roomAssets", id), { ...ra, id });
 
-            const destRoom = rooms.find(r => r.id === ra.roomId);
+            // Using direct Firestore fetch to ensure we have the room detail even during initialization
+            const roomSnap = await getDocs(query(collection(db, "rooms")));
+            const destRoom = roomSnap.docs.find(d => d.id === ra.roomId)?.data();
+
             if (destRoom) {
-                await updateDoc(doc(db, "assets", ra.assetId), { locationId: destRoom.locationId });
+                await updateDoc(doc(db, "assets", ra.assetId), {
+                    locationId: destRoom.locationId,
+                    updatedAt: new Date().toISOString()
+                });
 
                 const logId = uuidv4();
                 await setDoc(doc(db, "assetLogs", logId), {

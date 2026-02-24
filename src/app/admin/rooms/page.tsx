@@ -65,14 +65,14 @@ export default function RoomsPage() {
         setIsSubmitting(true);
         try {
             if (formData.id) {
-                updateRoom(formData.id, {
+                await updateRoom(formData.id, {
                     locationId: formData.locationId,
                     name: formData.name,
                     description: formData.description
                 });
             } else {
                 // Add new
-                addRoom({
+                await addRoom({
                     locationId: formData.locationId,
                     name: formData.name,
                     description: formData.description

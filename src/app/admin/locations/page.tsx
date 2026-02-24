@@ -40,13 +40,13 @@ export default function LocationsPage() {
         setIsSubmitting(true);
         try {
             if (formData.id) {
-                updateLocation(formData.id, {
+                await updateLocation(formData.id, {
                     name: formData.name,
                     address: formData.address
                 });
             } else {
                 // Add new
-                addLocation({
+                await addLocation({
                     name: formData.name,
                     address: formData.address
                 });
