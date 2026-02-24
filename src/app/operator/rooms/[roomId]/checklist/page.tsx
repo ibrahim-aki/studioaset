@@ -150,8 +150,8 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
         setIsSubmitting(true);
         try {
-            // Add checklist to history
-            addChecklist({
+            // Add checklist to history (this also syncs Master status in Context)
+            await addChecklist({
                 locationId,
                 locationName,
                 roomId,
@@ -164,35 +164,24 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                 items: checklist
             });
 
-            // Auto-update global Master Asset status & apply moves
-            checklist.forEach(item => {
-                // 1. Handle Location/Room Update (Mandatory for warehouse pulls or inter-room moves)
+            // Process Movements
+            for (const item of checklist) {
                 const isAlreadyInRoom = rawRoomAssets.some(ra => ra.assetId === item.assetId && ra.roomId === roomId);
 
-                // Case A: Asset is new to this room (pulled from warehouse or other room)
+                // Case A: Asset is new (pulled from warehouse/other)
                 if (!isAlreadyInRoom) {
-                    addRoomAsset({
+                    await addRoomAsset({
                         roomId: roomId,
                         assetId: item.assetId,
                         assetName: item.assetName
                     }, user?.name || "Operator");
                 }
 
-                // Case B: Asset is explicitly moved to ANOTHER room or warehouse
+                // Case B: Asset is explicitly moved out
                 if (item.movedToRoomId && item.movedToRoomId !== "") {
-                    moveRoomAsset(item.assetId, item.movedToRoomId, user?.name || "Operator");
+                    await moveRoomAsset(item.assetId, item.movedToRoomId, user?.name || "Operator");
                 }
-
-                // 2. Handle Condition/Status Update
-                if (item.status) {
-                    // Critical Fix: Only update status related fields. 
-                    // Never pass locationId/category here as it might be stale.
-                    updateAsset(item.assetId, {
-                        status: item.status,
-                        conditionNotes: item.notes
-                    });
-                }
-            });
+            }
 
             setSubmitted(true);
         } catch (error) {

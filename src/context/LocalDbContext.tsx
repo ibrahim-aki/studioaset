@@ -330,8 +330,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const id = uuidv4();
             await setDoc(doc(db, "checklists", id), { ...c, id, isRead: false });
 
-            // Create logs for each item
+            // Create logs for each item and sync Master Status
             for (const item of c.items) {
+                // 1. Log the status change
                 const logId = uuidv4();
                 await setDoc(doc(db, "assetLogs", logId), {
                     id: logId,
@@ -342,6 +343,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     timestamp: c.timestamp,
                     notes: item.notes
                 });
+
+                // 2. FORCE Sync Master Asset Status & Condition Notes
+                if (item.status) {
+                    await updateDoc(doc(db, "assets", item.assetId), {
+                        status: item.status,
+                        conditionNotes: item.notes,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
             }
         },
 
