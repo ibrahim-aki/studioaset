@@ -312,17 +312,31 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             }
         },
         moveRoomAsset: async (assetId, newRoomId, opName) => {
+            // Fetch current mapping directly from DB to be safe
+            const q = query(collection(db, "roomAssets"));
+            const snap = await getDocs(q);
+            const ra = snap.docs.find(d => d.data().assetId === assetId);
+
             if (newRoomId === "GL-WAREHOUSE") {
-                const ra = roomAssets.find(r => r.assetId === assetId);
                 if (ra) await deleteDoc(doc(db, "roomAssets", ra.id));
+
+                // Set asset to warehouse location (location of the room it was in)
+                // but keep it available for any room in that location
                 return;
             }
 
-            const ra = roomAssets.find(r => r.assetId === assetId);
-            const destRoom = rooms.find(r => r.id === newRoomId);
+            const roomSnap = await getDoc(doc(db, "rooms", newRoomId));
+            const destRoom = roomSnap.exists() ? roomSnap.data() : null;
+
             if (ra && destRoom) {
-                await updateDoc(doc(db, "roomAssets", ra.id), { roomId: newRoomId });
-                await updateDoc(doc(db, "assets", assetId), { locationId: destRoom.locationId });
+                await updateDoc(doc(db, "roomAssets", ra.id), {
+                    roomId: newRoomId,
+                    updatedAt: new Date().toISOString()
+                });
+                await updateDoc(doc(db, "assets", assetId), {
+                    locationId: destRoom.locationId,
+                    updatedAt: new Date().toISOString()
+                });
             }
         },
 
