@@ -13,8 +13,8 @@ const firebaseConfig = {
 
 // Check if config is valid (not undefined and not placeholder)
 const isValidConfig = firebaseConfig.apiKey &&
-    firebaseConfig.apiKey !== "your_api_key_here" &&
-    !firebaseConfig.apiKey.includes("your_");
+    firebaseConfig.projectId &&
+    firebaseConfig.apiKey !== "your_api_key_here";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | any;

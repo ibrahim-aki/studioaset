@@ -78,8 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = async () => {
-        setUser(null);
-        // await auth.signOut(); // uncomment this when using real firebase
+        try {
+            setUser(null);
+            await auth.signOut();
+        } catch (error) {
+            console.error("Logout Error:", error);
+        }
     };
 
     return (
