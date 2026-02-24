@@ -24,7 +24,14 @@ if (isValidConfig) {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
+    console.log("✅ Firebase Client Initialized Successfully");
 } else {
+    console.error("❌ Firebase Client Failed to Initialize: Missing or invalid API Key");
+    console.log("Debug Config:", {
+        hasApiKey: !!firebaseConfig.apiKey,
+        projectId: firebaseConfig.projectId,
+        apiKeyPrefix: firebaseConfig.apiKey?.substring(0, 5) + "..."
+    });
     // Provide fallback for build time / demo mode
     auth = { onAuthStateChanged: () => (() => { }) } as any;
     db = {} as any;
