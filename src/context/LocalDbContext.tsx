@@ -1,6 +1,20 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+    collection,
+    onSnapshot,
+    doc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    orderBy,
+    addDoc,
+    serverTimestamp,
+    getDocs
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
 
 // Types
@@ -120,95 +134,70 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     ]);
     const [isInitialized, setIsInitialized] = useState(false);
 
-    // Load from local storage
+    // Real-time synchronization from Firestore
     useEffect(() => {
-        const loadInitialData = () => {
-            try {
-                const storedLocations = localStorage.getItem("ls_locations");
-                const storedRooms = localStorage.getItem("ls_rooms");
-                const storedAssets = localStorage.getItem("ls_assets");
-                const storedRoomAssets = localStorage.getItem("ls_room_assets");
-                const storedChecklists = localStorage.getItem("ls_checklists");
-                const storedAssetLogs = localStorage.getItem("ls_asset_logs");
-                const storedCategories = localStorage.getItem("ls_categories");
+        if (!db) return;
 
-                if (storedLocations) {
-                    const parsed = JSON.parse(storedLocations);
-                    if (Array.isArray(parsed)) setLocations(parsed);
-                }
-                if (storedRooms) {
-                    const parsed = JSON.parse(storedRooms);
-                    if (Array.isArray(parsed)) {
-                        setRooms(parsed.map((r: any) => ({ ...r, locationId: r.locationId || "" })));
-                    }
-                }
-                if (storedAssets) {
-                    const parsed = JSON.parse(storedAssets);
-                    if (Array.isArray(parsed)) {
-                        setAssets(parsed.map((a: any, index: number) => {
-                            let fixedCode = a.assetCode;
-                            if (!fixedCode || fixedCode.trim() === "") {
-                                const prefix = (a.category?.substring(0, 3).toUpperCase() || "BRG");
-                                fixedCode = `${prefix}-${String(index + 1).padStart(4, '0')}`;
-                            }
+        const unsubs: (() => void)[] = [];
 
-                            return {
-                                ...a,
-                                locationId: a.locationId || "",
-                                assetCode: fixedCode,
-                                entryDate: a.entryDate || new Date().toISOString().split('T')[0],
-                                lastModifiedBy: a.lastModifiedBy || "Sistem",
-                                updatedAt: a.updatedAt || new Date().toISOString()
-                            };
-                        }));
-                    }
-                }
-                if (storedRoomAssets) {
-                    const parsed = JSON.parse(storedRoomAssets);
-                    if (Array.isArray(parsed)) setRoomAssets(parsed);
-                }
-                if (storedChecklists) {
-                    const parsed = JSON.parse(storedChecklists);
-                    if (Array.isArray(parsed)) setChecklists(parsed);
-                }
-                if (storedAssetLogs) {
-                    const parsed = JSON.parse(storedAssetLogs);
-                    if (Array.isArray(parsed)) setAssetLogs(parsed);
-                }
-                if (storedCategories) {
-                    const parsed = JSON.parse(storedCategories);
-                    if (Array.isArray(parsed)) setCategories(parsed);
-                }
-            } catch (e) {
-                console.error("Local storage initialization error:", e);
-            } finally {
-                setIsInitialized(true);
+        // 1. Locations
+        const unsubLocs = onSnapshot(collection(db, "locations"), (snap) => {
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Location));
+            setLocations(data);
+        });
+        unsubs.push(unsubLocs);
+
+        // 2. Rooms
+        const unsubRooms = onSnapshot(collection(db, "rooms"), (snap) => {
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room));
+            setRooms(data);
+        });
+        unsubs.push(unsubRooms);
+
+        // 3. Assets
+        const unsubAssets = onSnapshot(collection(db, "assets"), (snap) => {
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterAsset));
+            setAssets(data);
+        });
+        unsubs.push(unsubAssets);
+
+        // 4. Room Assets Mapping
+        const unsubRoomAssets = onSnapshot(collection(db, "roomAssets"), (snap) => {
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoomAsset));
+            setRoomAssets(data);
+        });
+        unsubs.push(unsubRoomAssets);
+
+        // 5. Checklists
+        const unsubChecklists = onSnapshot(query(collection(db, "checklists"), orderBy("timestamp", "desc")), (snap) => {
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Checklist));
+            setChecklists(data);
+        });
+        unsubs.push(unsubChecklists);
+
+        // 6. Asset Logs
+        const unsubLogs = onSnapshot(query(collection(db, "assetLogs"), orderBy("timestamp", "desc")), (snap) => {
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog));
+            setAssetLogs(data);
+        });
+        unsubs.push(unsubLogs);
+
+        // 7. Categories
+        const unsubCats = onSnapshot(doc(db, "settings", "categories"), (docSnap) => {
+            if (docSnap.exists()) {
+                setCategories(docSnap.data().list || []);
+            } else {
+                // Initial categories if not exist in DB
+                const initial = ["Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"];
+                setDoc(doc(db, "settings", "categories"), { list: initial });
+                setCategories(initial);
             }
-        };
+        });
+        unsubs.push(unsubCats);
 
-        loadInitialData();
+        setIsInitialized(true);
+        return () => unsubs.forEach(unsub => unsub());
     }, []);
-
-    // Save to local storage automatically
-    useEffect(() => {
-        if (!isInitialized) return;
-
-        const timeout = setTimeout(() => {
-            try {
-                localStorage.setItem("ls_locations", JSON.stringify(locations));
-                localStorage.setItem("ls_rooms", JSON.stringify(rooms));
-                localStorage.setItem("ls_assets", JSON.stringify(assets));
-                localStorage.setItem("ls_room_assets", JSON.stringify(roomAssets));
-                localStorage.setItem("ls_checklists", JSON.stringify(checklists));
-                localStorage.setItem("ls_asset_logs", JSON.stringify(assetLogs));
-                localStorage.setItem("ls_categories", JSON.stringify(categories));
-            } catch (e) {
-                console.error("Error saving to local storage:", e);
-            }
-        }, 300);
-
-        return () => clearTimeout(timeout);
-    }, [locations, rooms, assets, roomAssets, checklists, assetLogs, categories, isInitialized]);
 
     const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -221,148 +210,137 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         assetLogs,
         categories,
 
-        addLocation: (loc) => setLocations(prev => [...prev, { ...loc, id: generateId() }]),
-        updateLocation: (id, data) => setLocations(prev => prev.map(l => l.id === id ? { ...l, ...data } : l)),
-        deleteLocation: (id) => setLocations(prev => prev.filter(l => l.id !== id)),
-
-        addRoom: (r) => setRooms(prev => [...prev, { ...r, id: generateId() }]),
-        updateRoom: (id, data) => setRooms(prev => prev.map(r => r.id === id ? { ...r, ...data } : r)),
-        deleteRoom: (id) => {
-            setRooms(prev => prev.filter(r => r.id !== id));
-            setRoomAssets(prev => prev.filter(ra => ra.roomId !== id));
+        addLocation: async (loc) => {
+            const id = uuidv4();
+            await setDoc(doc(db, "locations", id), { ...loc, id });
+        },
+        updateLocation: async (id, data) => {
+            await updateDoc(doc(db, "locations", id), data);
+        },
+        deleteLocation: async (id) => {
+            await deleteDoc(doc(db, "locations", id));
         },
 
-        addAsset: (a) => {
-            const id = generateId();
-            setAssets(prev => [...prev, { ...a, id }]);
-            setAssetLogs(prev => [...prev, {
-                id: generateId(),
+        addRoom: async (r) => {
+            const id = uuidv4();
+            await setDoc(doc(db, "rooms", id), { ...r, id });
+        },
+        updateRoom: async (id, data) => {
+            await updateDoc(doc(db, "rooms", id), data);
+        },
+        deleteRoom: async (id) => {
+            await deleteDoc(doc(db, "rooms", id));
+        },
+
+        addAsset: async (a) => {
+            const id = uuidv4();
+            await setDoc(doc(db, "assets", id), { ...a, id });
+
+            // Log as well
+            const logId = uuidv4();
+            await setDoc(doc(db, "assetLogs", logId), {
+                id: logId,
                 assetId: id,
                 type: "SYSTEM",
                 toValue: "Aset didaftarkan",
                 operatorName: a.lastModifiedBy || "Sistem",
                 timestamp: new Date().toISOString(),
                 notes: `Kategori: ${a.category}`
-            }]);
-        },
-        updateAsset: (id, data) => {
-            setAssets(prev => prev.map(a => a.id === id ? { ...a, ...data } : a));
-            setRoomAssets(prev => prev.map(ra => ra.assetId === id ? {
-                ...ra,
-                assetName: (data as any).name || ra.assetName
-            } : ra));
-        },
-        deleteAsset: (id) => {
-            setAssets(prev => prev.filter(a => a.id !== id));
-            setRoomAssets(prev => prev.filter(ra => ra.assetId !== id));
-        },
-
-        addRoomAsset: (ra, opName) => {
-            const destRoom = rooms.find(r => r.id === ra.roomId);
-            if (!destRoom) return;
-
-            setRoomAssets(prev => {
-                const filtered = prev.filter(item => item.assetId !== ra.assetId);
-                return [...filtered, { ...ra, id: generateId() }];
             });
-
-            setAssets(prev => prev.map(a => a.id === ra.assetId ? { ...a, locationId: destRoom.locationId } : a));
-
-            setAssetLogs(prev => [...prev, {
-                id: generateId(),
-                assetId: ra.assetId,
-                type: "MOVEMENT",
-                toValue: `Masuk ke Ruangan: ${destRoom.name}`,
-                operatorName: opName || "Admin",
-                timestamp: new Date().toISOString(),
-                notes: opName ? "Tarik aset saat checklist" : "Distribusi Aset"
-            }]);
         },
-        deleteRoomAsset: (id) => {
+        updateAsset: async (id, data) => {
+            await updateDoc(doc(db, "assets", id), data as any);
+        },
+        deleteAsset: async (id) => {
+            await deleteDoc(doc(db, "assets", id));
+            // Cleanup room mapping
+            const q = query(collection(db, "roomAssets"));
+            const snap = await getDocs(q);
+            snap.docs.forEach(async (d) => {
+                if (d.data().assetId === id) await deleteDoc(doc(db, "roomAssets", d.id));
+            });
+        },
+
+        addRoomAsset: async (ra, opName) => {
+            const id = uuidv4();
+            await setDoc(doc(db, "roomAssets", id), { ...ra, id });
+
+            const destRoom = rooms.find(r => r.id === ra.roomId);
+            if (destRoom) {
+                await updateDoc(doc(db, "assets", ra.assetId), { locationId: destRoom.locationId });
+
+                const logId = uuidv4();
+                await setDoc(doc(db, "assetLogs", logId), {
+                    id: logId,
+                    assetId: ra.assetId,
+                    type: "MOVEMENT",
+                    toValue: `Masuk ke Ruangan: ${destRoom.name}`,
+                    operatorName: opName || "Admin",
+                    timestamp: new Date().toISOString()
+                });
+            }
+        },
+        deleteRoomAsset: async (id) => {
             const target = roomAssets.find(ra => ra.id === id);
-            setRoomAssets(prev => prev.filter(ra => ra.id !== id));
+            await deleteDoc(doc(db, "roomAssets", id));
             if (target) {
-                setAssetLogs(prev => [...prev, {
-                    id: generateId(),
+                const logId = uuidv4();
+                await setDoc(doc(db, "assetLogs", logId), {
+                    id: logId,
                     assetId: target.assetId,
                     type: "MOVEMENT",
                     toValue: "Ditarik ke Gudang",
                     operatorName: "Admin",
                     timestamp: new Date().toISOString()
-                }]);
+                });
             }
         },
-        moveRoomAsset: (assetId, newRoomId, opName) => {
+        moveRoomAsset: async (assetId, newRoomId, opName) => {
             if (newRoomId === "GL-WAREHOUSE") {
-                const sourceRoomAsset = roomAssets.find(ra => ra.assetId === assetId);
-                const sourceRoom = rooms.find(r => r.id === sourceRoomAsset?.roomId);
-
-                setRoomAssets(prev => prev.filter(ra => ra.assetId !== assetId));
-                setAssetLogs(prev => [...prev, {
-                    id: generateId(),
-                    assetId: assetId,
-                    type: "MOVEMENT",
-                    fromValue: sourceRoom?.name || "Ruangan",
-                    toValue: "Ditarik ke Gudang",
-                    operatorName: opName || "Sistem",
-                    timestamp: new Date().toISOString(),
-                    notes: "Dikembalikan saat checklist"
-                }]);
+                const ra = roomAssets.find(r => r.assetId === assetId);
+                if (ra) await deleteDoc(doc(db, "roomAssets", ra.id));
                 return;
             }
 
+            const ra = roomAssets.find(r => r.assetId === assetId);
             const destRoom = rooms.find(r => r.id === newRoomId);
-            const sourceRoomAsset = roomAssets.find(ra => ra.assetId === assetId);
-            const sourceRoom = rooms.find(r => r.id === sourceRoomAsset?.roomId);
-
-            if (destRoom) {
-                setRoomAssets(prev => prev.map(ra => ra.assetId === assetId ? { ...ra, roomId: newRoomId } : ra));
-                setAssets(prev => prev.map(a => a.id === assetId ? { ...a, locationId: destRoom.locationId } : a));
-
-                setAssetLogs(prev => [...prev, {
-                    id: generateId(),
-                    assetId: assetId,
-                    type: "MOVEMENT",
-                    fromValue: sourceRoom?.name || "Ruangan",
-                    toValue: `Pindah ke: ${destRoom.name}`,
-                    operatorName: opName || "Sistem",
-                    timestamp: new Date().toISOString(),
-                    notes: opName ? "Mutasi saat checklist" : "Mutasi Ruangan"
-                }]);
+            if (ra && destRoom) {
+                await updateDoc(doc(db, "roomAssets", ra.id), { roomId: newRoomId });
+                await updateDoc(doc(db, "assets", assetId), { locationId: destRoom.locationId });
             }
         },
 
-        addChecklist: (c) => {
-            const checklistId = generateId();
-            setChecklists(prev => [...prev, { ...c, id: checklistId, isRead: false }]);
+        addChecklist: async (c) => {
+            const id = uuidv4();
+            await setDoc(doc(db, "checklists", id), { ...c, id, isRead: false });
 
-            c.items.forEach(item => {
-                setAssetLogs(prev => {
-                    const logs = [...prev];
-                    logs.push({
-                        id: generateId(),
-                        assetId: item.assetId,
-                        type: "STATUS",
-                        toValue: item.status,
-                        operatorName: c.operatorName,
-                        timestamp: c.timestamp,
-                        notes: item.notes
-                    });
-                    return logs;
+            // Create logs for each item
+            for (const item of c.items) {
+                const logId = uuidv4();
+                await setDoc(doc(db, "assetLogs", logId), {
+                    id: logId,
+                    assetId: item.assetId,
+                    type: "STATUS",
+                    toValue: item.status,
+                    operatorName: c.operatorName,
+                    timestamp: c.timestamp,
+                    notes: item.notes
                 });
-            });
-        },
-
-        markChecklistAsRead: (id) => {
-            setChecklists(prev => prev.map(c => c.id === id ? { ...c, isRead: true } : c));
-        },
-
-        addCategory: (cat) => {
-            if (!categories.includes(cat)) {
-                setCategories(prev => [...prev, cat].sort((a, b) => a.localeCompare(b)));
             }
         },
-        deleteCategory: (cat) => setCategories(prev => prev.filter(c => c !== cat))
+
+        markChecklistAsRead: async (id) => {
+            await updateDoc(doc(db, "checklists", id), { isRead: true });
+        },
+
+        addCategory: async (cat) => {
+            const newList = [...categories, cat].sort((a, b) => a.localeCompare(b));
+            await setDoc(doc(db, "settings", "categories"), { list: newList });
+        },
+        deleteCategory: async (cat) => {
+            const newList = categories.filter(c => c !== cat);
+            await setDoc(doc(db, "settings", "categories"), { list: newList });
+        }
     };
 
     if (!isInitialized) return null;
