@@ -401,9 +401,15 @@ export default function UserManagementPage() {
                                                 {userData.role !== "SUPER_ADMIN" && (
                                                     <button
                                                         className="p-3 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all"
-                                                        onClick={() => {
-                                                            if (confirm(`Hapus akses untuk ${userData.name}? User tidak akan bisa login lagi.`)) {
-                                                                deleteDoc(doc(db, "users", userData.id)).then(() => fetchUsers());
+                                                        onClick={async () => {
+                                                            if (confirm(`Hapus data ${userData.name}? \n\nCatatan: Anda juga harus menghapus email ini secara MANUAL di Firebase Console (Menu Authentication) agar email bisa didaftarkan ulang.`)) {
+                                                                try {
+                                                                    await deleteDoc(doc(db, "users", userData.id));
+                                                                    alert("Data user berhasil dihapus dari database.");
+                                                                    fetchUsers();
+                                                                } catch (err) {
+                                                                    alert("Gagal menghapus data.");
+                                                                }
                                                             }
                                                         }}
                                                     >
