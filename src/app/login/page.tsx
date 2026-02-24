@@ -30,13 +30,14 @@ export default function LoginPage() {
 
             if (userDocSnap.exists()) {
                 const role = userDocSnap.data().role;
-                if (role === "ADMIN") {
+                if (role === "SUPER_ADMIN") {
+                    router.push("/super-admin");
+                } else if (role === "ADMIN") {
                     router.push("/admin");
                 } else if (role === "OPERATOR") {
                     router.push("/operator");
                 } else {
                     setError("Peran pengguna tidak valid.");
-                    // Sign out if role is invalid
                     auth.signOut();
                 }
             } else {

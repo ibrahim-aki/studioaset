@@ -5,7 +5,7 @@ import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
-export type UserRole = "ADMIN" | "OPERATOR" | null;
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | null;
 
 interface AppUser {
     uid: string;
@@ -29,13 +29,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-            // ---- DEMO MODE BYPASS ----
-            // Tampilkan UI Bypass saat awal (Firebase Auth dilewatkan jika dipicu manual)
-            setLoading(false);
-            return;
-            // ---- END DEMO MODE ----
-
-            /* // ASLI FIREBASE CODE - DI-COMMENT SEMENTARA UNTUK DEMO
             if (firebaseUser) {
                 try {
                     // Fetch role from Firestore
@@ -69,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(null);
             }
             setLoading(false);
-            */
         });
 
         return () => unsubscribe();
