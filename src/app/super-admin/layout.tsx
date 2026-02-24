@@ -45,37 +45,56 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
             />
 
             <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-8">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-xs">SA</span>
                         </div>
                         <div>
                             <h1 className="text-sm font-bold text-gray-900 leading-none">Super Admin</h1>
-                            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">User Management</p>
+                            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none mt-1">System Management</p>
                         </div>
                     </div>
 
+                    <div className="hidden md:flex items-center gap-1">
+                        <button
+                            onClick={() => router.push("/super-admin")}
+                            className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <span className="w-1 h-1 rounded-full bg-indigo-600"></span>
+                            MANAJEMEN SISTEM
+                        </button>
+                        <button
+                            onClick={() => router.push("/admin")}
+                            className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                            PANTAU DASHBOARD ADMIN
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4">
                     <button
                         onClick={() => setIsPasswordModalOpen(true)}
                         className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 rounded-lg transition-colors group"
                     >
-                        <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                            <KeyRound className="w-3.5 h-3.5" />
+                        <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            <KeyRound className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-bold text-gray-600 group-hover:text-indigo-600">{user?.name || "User"}</span>
+                        <span className="text-xs font-bold text-gray-600 group-hover:text-indigo-600 transition-colors">{user?.name || "User"}</span>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            logout();
+                            router.push("/login");
+                        }}
+                        className="text-[10px] font-black text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-lg transition-colors border border-rose-100 uppercase tracking-widest"
+                    >
+                        Keluar
                     </button>
                 </div>
-
-                <button
-                    onClick={() => {
-                        logout();
-                        router.push("/login");
-                    }}
-                    className="text-xs font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors border border-rose-100"
-                >
-                    LOGOUT
-                </button>
             </nav>
             <main className="">
                 {children}

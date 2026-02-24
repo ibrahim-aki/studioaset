@@ -21,8 +21,15 @@ export default function ProtectedRoute({
                 // Redirection if not logged in
                 router.replace("/login");
             } else if (allowedRoles && (!user.role || !allowedRoles.includes(user.role))) {
+                // If the user is a SUPER_ADMIN, they are allowed to see ADMIN pages
+                if (user.role === "SUPER_ADMIN" && allowedRoles.includes("ADMIN")) {
+                    return; // Allow access
+                }
+
                 // Redirection if doesn't have required role
-                if (user.role === "ADMIN") {
+                if (user.role === "SUPER_ADMIN") {
+                    router.replace("/super-admin");
+                } else if (user.role === "ADMIN") {
                     router.replace("/admin");
                 } else if (user.role === "OPERATOR") {
                     router.replace("/operator");
