@@ -12,7 +12,8 @@ import {
     orderBy,
     addDoc,
     serverTimestamp,
-    getDocs
+    getDocs,
+    getDoc
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
@@ -262,12 +263,21 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         },
 
         addRoomAsset: async (ra, opName) => {
+            // Cleanup: ensure the asset is removed from any other room first
+            const raQuery = query(collection(db, "roomAssets"));
+            const raSnap = await getDocs(raQuery);
+            const existingMaps = raSnap.docs.filter(d => d.data().assetId === ra.assetId);
+
+            for (const oldDoc of existingMaps) {
+                await deleteDoc(doc(db, "roomAssets", oldDoc.id));
+            }
+
             const id = uuidv4();
             await setDoc(doc(db, "roomAssets", id), { ...ra, id });
 
-            // Using direct Firestore fetch to ensure we have the room detail even during initialization
-            const roomSnap = await getDocs(query(collection(db, "rooms")));
-            const destRoom = roomSnap.docs.find(d => d.id === ra.roomId)?.data();
+            // Fetch destination room info
+            const roomSnap = await getDoc(doc(db, "rooms", ra.roomId));
+            const destRoom = roomSnap.exists() ? roomSnap.data() : null;
 
             if (destRoom) {
                 await updateDoc(doc(db, "assets", ra.assetId), {

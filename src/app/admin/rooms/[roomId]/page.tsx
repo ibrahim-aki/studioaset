@@ -78,9 +78,9 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
             setSelectedAssetId("");
             setAssetSearchTerm("");
             setIsDropdownOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error adding asset to room:", error);
-            alert("Gagal menambahkan aset ke ruangan.");
+            alert(`Gagal menambahkan aset ke ruangan: ${error.message || "Terjadi kesalahan sistem"}`);
         } finally {
             setIsSubmitting(false);
         }
