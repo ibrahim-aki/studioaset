@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, query, orderBy, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 
 // Komponen Modal Tambah User
 function AddUserModal({ isOpen, onClose, onRefresh }: { isOpen: boolean; onClose: () => void; onRefresh: () => void }) {
@@ -194,19 +194,43 @@ export default function UserManagementPage() {
     const [checklists, setChecklists] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+    const [trialMode, setTrialMode] = useState<boolean | null>(null);
 
     const { assetLogs, checklists: contextChecklists, locations, rooms } = useLocalDb();
 
     useEffect(() => {
         const unsub = onSnapshot(collection(db, "users"), (snap) => {
             const list: UserData[] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserData));
-            setUsers(list);
+
+            // Urutkan berdasarkan role: SUPER_ADMIN > ADMIN > OPERATOR
+            const roleOrder = { "SUPER_ADMIN": 1, "ADMIN": 2, "OPERATOR": 3 };
+            const sortedList = list.sort((a, b) => {
+                const orderA = roleOrder[a.role] || 4;
+                const orderB = roleOrder[b.role] || 4;
+                return orderA - orderB;
+            });
+
+            setUsers(sortedList);
             setLoading(false);
         }, (err) => {
             console.error("Error fetching users:", err);
             setLoading(false);
         });
-        return () => unsub();
+
+        // Listen to system settings (Trial Mode)
+        const unsubSettings = onSnapshot(doc(db, "settings", "system-config"), (snap) => {
+            if (snap.exists()) {
+                setTrialMode(snap.data().trialModeEnabled);
+            } else {
+                setTrialMode(false);
+                setDoc(doc(db, "settings", "system-config"), { trialModeEnabled: false });
+            }
+        });
+
+        return () => {
+            unsub();
+            unsubSettings();
+        };
     }, []);
 
     useEffect(() => {
@@ -221,6 +245,31 @@ export default function UserManagementPage() {
             setUsers(users.map(u => u.id === userId ? { ...u, role: newRole as any } : u));
         } catch (error) {
             alert("Gagal mengubah role");
+        }
+    };
+
+    const toggleTrialMode = async () => {
+        const newVal = !trialMode;
+        try {
+            await updateDoc(doc(db, "settings", "system-config"), {
+                trialModeEnabled: newVal
+            });
+            setTrialMode(newVal);
+        } catch (error) {
+            alert("Gagal mengubah mode uji coba");
+        }
+    };
+
+    const handleResetPassword = async (email: string) => {
+        if (!confirm(`Kirim instruksi reset password ke email: ${email}?`)) return;
+
+        try {
+            const auth = getAuth();
+            await sendPasswordResetEmail(auth, email);
+            alert(`Link reset password telah dikirim ke ${email}. Silakan minta user memeriksa folder Inbox atau Spam mereka.`);
+        } catch (error: any) {
+            console.error("Error sending reset email:", error);
+            alert("Gagal mengirim email reset: " + (error.message || "Terjadi kesalahan internal."));
         }
     };
 
@@ -315,99 +364,167 @@ export default function UserManagementPage() {
                                 </div>
                             </div>
 
-                            <div className="grid gap-4">
-                                {users.map((userData) => (
-                                    <div key={userData.id} className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <div className="flex items-center gap-6">
-                                                <div className={clsx(
-                                                    "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm",
-                                                    userData.role === "SUPER_ADMIN" ? "bg-purple-600 text-white overflow-hidden" :
-                                                        userData.role === "ADMIN" ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600"
-                                                )}>
-                                                    {userData.role === "SUPER_ADMIN" ? (
-                                                        <div className="relative w-full h-full flex items-center justify-center">
-                                                            <div className="absolute inset-0 bg-gradient-to-tr from-purple-800 to-indigo-500 opacity-50"></div>
-                                                            <Shield className="w-7 h-7 relative z-10" />
-                                                        </div>
-                                                    ) : <User className="w-7 h-7" />}
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-extrabold text-gray-900 group-hover:text-indigo-600 transition-colors flex items-center gap-2">
-                                                        {userData.name}
-                                                        {userData.role === "SUPER_ADMIN" && (
-                                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[8px] font-black uppercase rounded-lg tracking-widest border border-purple-200">Owner</span>
-                                                        )}
-                                                    </h3>
-                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
-                                                        <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
-                                                            <Mail className="w-3.5 h-3.5" />
-                                                            {userData.email}
-                                                        </div>
-                                                        <div className="text-[10px] text-gray-300 font-mono tracking-tighter">
-                                                            UID: {userData.id.substring(0, 16).toUpperCase()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-3">
-                                                {userData.role !== "SUPER_ADMIN" && (
-                                                    <div className="flex bg-gray-50/80 p-1.5 rounded-2xl border border-gray-100 self-center">
-                                                        <button
-                                                            onClick={() => handleRoleChange(userData.id, "ADMIN")}
-                                                            className={clsx(
-                                                                "px-4 py-2 text-[10px] font-black tracking-widest rounded-xl transition-all",
-                                                                userData.role === "ADMIN"
-                                                                    ? "bg-white text-indigo-600 shadow-md"
-                                                                    : "text-gray-400 hover:text-gray-600"
-                                                            )}
-                                                        >
-                                                            ADMIN
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleRoleChange(userData.id, "OPERATOR")}
-                                                            className={clsx(
-                                                                "px-4 py-2 text-[10px] font-black tracking-widest rounded-xl transition-all",
-                                                                userData.role === "OPERATOR"
-                                                                    ? "bg-white text-emerald-600 shadow-md"
-                                                                    : "text-gray-400 hover:text-gray-600"
-                                                            )}
-                                                        >
-                                                            OPS
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                {userData.role !== "SUPER_ADMIN" && (
-                                                    <button
-                                                        className="p-3 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all"
-                                                        onClick={async () => {
-                                                            if (confirm(`Hapus data ${userData.name}? \n\nCatatan: Anda juga harus menghapus email ini secara MANUAL di Firebase Console (Menu Authentication) agar email bisa didaftarkan ulang.`)) {
-                                                                try {
-                                                                    await deleteDoc(doc(db, "users", userData.id));
-                                                                    alert("Data user berhasil dihapus dari database.");
-                                                                } catch (err) {
-                                                                    alert("Gagal menghapus data.");
-                                                                }
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
-                                                )}
-
-                                                {userData.role === "SUPER_ADMIN" && (
-                                                    <div className="px-5 py-2.5 bg-gray-50 text-gray-400 text-[10px] font-black rounded-2xl border border-gray-100 flex items-center gap-2 tracking-widest uppercase">
-                                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                                        Protected
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                            {/* Control Card for Trial Mode */}
+                            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6 group hover:shadow-md transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className={clsx(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
+                                        trialMode ? "bg-amber-100 text-amber-600" : "bg-gray-100 text-gray-400"
+                                    )}>
+                                        <Lock className="w-6 h-6" />
                                     </div>
-                                ))}
+                                    <div>
+                                        <h4 className="font-extrabold text-gray-900 flex items-center gap-2">
+                                            Mode Uji Coba (Login)
+                                            <span className={clsx(
+                                                "px-2 py-0.5 text-[8px] font-black uppercase rounded-lg border",
+                                                trialMode ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-gray-50 text-gray-400 border-gray-200"
+                                            )}>
+                                                {trialMode ? "AKTIF" : "NONAKTIF"}
+                                            </span>
+                                        </h4>
+                                        <p className="text-[11px] text-gray-400 font-medium">Jika ON, tombol login demo akan muncul di halaman depan.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={toggleTrialMode}
+                                    className={clsx(
+                                        "px-6 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all border shrink-0",
+                                        trialMode
+                                            ? "bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100"
+                                            : "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700"
+                                    )}
+                                >
+                                    {trialMode ? "MATIKAN MODE UJI COBA" : "NYALAKAN MODE UJI COBA"}
+                                </button>
                             </div>
+
+                            <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                                <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Daftar Pengguna Sistem</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total: {users.length} Akun</p>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="bg-gray-50/30">
+                                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Informasi Pengguna</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Peran (Role)</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">UID Reference</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider text-right">Manajemen</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {users.map((userData) => (
+                                                <tr key={userData.id} className="hover:bg-gray-50 transition-colors group">
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={clsx(
+                                                                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                                                                userData.role === "SUPER_ADMIN" ? "bg-purple-600 text-white" :
+                                                                    userData.role === "ADMIN" ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600"
+                                                            )}>
+                                                                {userData.role === "SUPER_ADMIN" ? (
+                                                                    <Shield className="w-5 h-5" />
+                                                                ) : <User className="w-5 h-5" />}
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="font-extrabold text-gray-900 group-hover:text-indigo-600 transition-colors text-xs">{userData.name}</p>
+                                                                    {userData.role === "SUPER_ADMIN" && (
+                                                                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[8px] font-black uppercase rounded-md tracking-widest border border-purple-200">Owner</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    <Mail className="w-3 h-3 text-gray-300" />
+                                                                    <p className="text-[10px] text-gray-400 font-medium">{userData.email}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className={clsx(
+                                                            "px-3 py-1 rounded-lg text-[9px] font-black tracking-widest border w-fit uppercase",
+                                                            userData.role === "SUPER_ADMIN" ? "bg-purple-50 text-purple-600 border-purple-100" :
+                                                                userData.role === "ADMIN" ? "bg-indigo-50 text-indigo-600 border-indigo-100" :
+                                                                    "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                        )}>
+                                                            {userData.role === "SUPER_ADMIN" ? "Super Admin" : userData.role}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <code className="text-[9px] text-gray-300 bg-gray-50/50 px-2 py-1 rounded-md font-mono border border-gray-100">
+                                                            {userData.id.substring(0, 16).toUpperCase()}...
+                                                        </code>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex items-center justify-end gap-3">
+                                                            {userData.role !== "SUPER_ADMIN" ? (
+                                                                <>
+                                                                    <div className="flex bg-gray-100/50 p-1 rounded-xl border border-gray-200">
+                                                                        <button
+                                                                            onClick={() => handleRoleChange(userData.id, "ADMIN")}
+                                                                            className={clsx(
+                                                                                "px-3 py-1.5 text-[9px] font-black tracking-widest rounded-lg transition-all",
+                                                                                userData.role === "ADMIN"
+                                                                                    ? "bg-white text-indigo-600 shadow-sm"
+                                                                                    : "text-gray-400 hover:text-gray-600"
+                                                                            )}
+                                                                        >
+                                                                            ADMIN
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleRoleChange(userData.id, "OPERATOR")}
+                                                                            className={clsx(
+                                                                                "px-3 py-1.5 text-[9px] font-black tracking-widest rounded-lg transition-all",
+                                                                                userData.role === "OPERATOR"
+                                                                                    ? "bg-white text-emerald-600 shadow-sm"
+                                                                                    : "text-gray-400 hover:text-gray-600"
+                                                                            )}
+                                                                        >
+                                                                            OPS
+                                                                        </button>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handleResetPassword(userData.email)}
+                                                                        className="p-2.5 text-gray-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all border border-transparent hover:border-amber-100"
+                                                                        title="Reset Password"
+                                                                    >
+                                                                        <KeyRound className="w-4 h-4" />
+                                                                    </button>
+
+                                                                    <button
+                                                                        className="p-2.5 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100"
+                                                                        title="Hapus Akun"
+                                                                        onClick={async () => {
+                                                                            if (confirm(`Hapus data ${userData.name}? \n\nCatatan: Anda juga harus menghapus email ini secara MANUAL di Firebase Console.`)) {
+                                                                                try {
+                                                                                    await deleteDoc(doc(db, "users", userData.id));
+                                                                                    alert("Data user berhasil dihapus dari database.");
+                                                                                } catch (err) {
+                                                                                    alert("Gagal menghapus data.");
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <div className="px-4 py-2 bg-gray-50 text-gray-400 text-[9px] font-black rounded-xl border border-gray-100 flex items-center gap-2 tracking-widest uppercase">
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                                    Protected Account
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                         </div>
                     )}
 

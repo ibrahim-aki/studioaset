@@ -3,20 +3,31 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { Loader2, Lock, User } from "lucide-react";
+import { Loader2, Lock, User, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
+import { useEffect } from "react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [trialMode, setTrialMode] = useState<boolean>(false);
     const router = useRouter();
     const authContext = useAuth();
     const { addLog } = useLocalDb();
+
+    useEffect(() => {
+        const unsub = onSnapshot(doc(db, "settings", "system-config"), (snap) => {
+            if (snap.exists()) {
+                setTrialMode(snap.data().trialModeEnabled);
+            }
+        });
+        return () => unsub();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -134,43 +145,48 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <div className="mt-8 border-t border-white/20 pt-6">
-                    <p className="text-sm text-gray-400 text-center mb-4">Mode Uji Coba Lintas Akses Tanpa Firebase</p>
-                    <div className="flex gap-4">
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                authContext.triggerDemoLogin?.("ADMIN");
-                                addLog({
-                                    type: "AUTH",
-                                    toValue: "Login Demo (Admin)",
-                                    operatorName: "Demo Admin",
-                                    notes: "Menggunakan mode uji coba"
-                                });
-                                router.push("/admin");
-                            }}
-                            className="w-full flex justify-center py-3 px-4 border border-blue-500/50 rounded-xl text-sm font-bold text-blue-300 hover:bg-blue-900/40 transition-all"
-                        >
-                            Demo Admin
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                authContext.triggerDemoLogin?.("OPERATOR");
-                                addLog({
-                                    type: "AUTH",
-                                    toValue: "Login Demo (Operator)",
-                                    operatorName: "Demo Operator",
-                                    notes: "Menggunakan mode uji coba"
-                                });
-                                router.push("/operator");
-                            }}
-                            className="w-full flex justify-center py-3 px-4 border border-rose-500/50 rounded-xl text-sm font-bold text-rose-300 hover:bg-rose-900/40 transition-all"
-                        >
-                            Demo Operator
-                        </button>
+                {trialMode && (
+                    <div className="mt-8 border-t border-white/20 pt-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                            <ShieldAlert className="w-3 h-3 text-amber-400" />
+                            <p className="text-[10px] text-amber-200/60 font-black uppercase tracking-[0.2em]">Mode Uji Coba Aktif</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    authContext.triggerDemoLogin?.("ADMIN");
+                                    addLog({
+                                        type: "AUTH",
+                                        toValue: "Login Demo (Admin)",
+                                        operatorName: "Demo Admin",
+                                        notes: "Menggunakan mode uji coba"
+                                    });
+                                    router.push("/admin");
+                                }}
+                                className="w-full flex justify-center py-3 px-4 border border-blue-500/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-300 hover:bg-blue-900/40 transition-all active:scale-95"
+                            >
+                                Demo Admin
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    authContext.triggerDemoLogin?.("OPERATOR");
+                                    addLog({
+                                        type: "AUTH",
+                                        toValue: "Login Demo (Operator)",
+                                        operatorName: "Demo Operator",
+                                        notes: "Menggunakan mode uji coba"
+                                    });
+                                    router.push("/operator");
+                                }}
+                                className="w-full flex justify-center py-3 px-4 border border-rose-500/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-300 hover:bg-rose-900/40 transition-all active:scale-95"
+                            >
+                                Demo Operator
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
