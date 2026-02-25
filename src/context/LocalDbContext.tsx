@@ -298,7 +298,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const id = uuidv4();
             const newAsset = { ...a, id };
             const logId = uuidv4();
-            const newLog = {
+            const newLog: AssetLog = {
                 id: logId,
                 assetId: id,
                 type: "SYSTEM",
@@ -369,7 +369,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
 
                     const logId = uuidv4();
-                    const newLog = {
+                    const newLog: AssetLog = {
                         id: logId,
                         assetId: ra.assetId,
                         type: "MOVEMENT",
@@ -417,7 +417,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
                 if (target) {
                     const logId = uuidv4();
-                    const newLog = {
+                    const newLog: AssetLog = {
                         id: logId,
                         assetId: target.assetId,
                         type: "MOVEMENT",
@@ -500,7 +500,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
                 for (const item of c.items) {
                     const logId = uuidv4();
-                    updatedLogs = [{
+                    const newLog: AssetLog = {
                         id: logId,
                         assetId: item.assetId,
                         type: "STATUS",
@@ -508,7 +508,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         operatorName: c.operatorName,
                         timestamp: c.timestamp,
                         notes: item.notes
-                    }, ...updatedLogs];
+                    };
+                    updatedLogs = [newLog, ...updatedLogs];
 
                     if (item.status) {
                         updatedAssets = updatedAssets.map(a => a.id === item.assetId ? {
@@ -549,7 +550,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         markChecklistAsRead: async (id) => {
             if (isDemo) {
-                const updated = checklists.map(c => c.id === id ? { ...c, isRead: true } : l);
+                const updated = checklists.map(c => c.id === id ? { ...c, isRead: true } : c);
                 setChecklists(updated);
                 saveToLocal(STORAGE_KEYS.CHECKLISTS, updated);
             } else {
