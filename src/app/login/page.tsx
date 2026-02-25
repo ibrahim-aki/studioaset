@@ -187,7 +187,7 @@ export default function LoginPage() {
                         </div>
                         <div className="mt-4 text-center">
                             <a
-                                href="https://drive.google.com/file/d/1kE4THgHMI8vjITZpIfvMX89oMgmekM-x/view?usp=sharing"
+                                href="https://drive.google.com/file/d/1ycabUmyIv57c9FNevO2duppur_u1vp6M/view?usp=sharing"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] text-white/40 hover:text-white/80 transition-colors flex items-center justify-center gap-1.5 font-medium underline underline-offset-4"
