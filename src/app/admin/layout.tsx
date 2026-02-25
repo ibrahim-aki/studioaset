@@ -148,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <Menu className="h-6 w-6" aria-hidden="true" />
                         </button>
                         <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
-                            Admin Dashboard
+                            {pathname === "/super-admin" ? "Sistem Manajemen" : "Admin Dashboard"}
                         </div>
                     </div>
 

@@ -12,6 +12,7 @@ interface AppUser {
     email: string | null;
     role: UserRole;
     name?: string;
+    isDemo?: boolean;
 }
 
 interface AuthContextType {
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         email: firebaseUser.email,
                         role,
                         name,
+                        isDemo: false,
                     });
                 } catch (error) {
                     console.error("Error fetching user role:", error);
@@ -56,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,
                         role: null,
+                        isDemo: false,
                     });
                 }
             } else {
@@ -74,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: `demo-${role?.toLowerCase()}@studio.com`,
             role: role,
             name: `Demo ${role}`,
+            isDemo: true,
         });
     };
 
