@@ -249,14 +249,17 @@ export default function UserManagementPage() {
     };
 
     const toggleTrialMode = async () => {
+        if (trialMode === null) return;
         const newVal = !trialMode;
         try {
-            await updateDoc(doc(db, "settings", "system-config"), {
+            // Gunakan setDoc dengan merge:true agar lebih aman jika dokumen belum ada
+            await setDoc(doc(db, "settings", "system-config"), {
                 trialModeEnabled: newVal
-            });
-            setTrialMode(newVal);
-        } catch (error) {
-            alert("Gagal mengubah mode uji coba");
+            }, { merge: true });
+            console.log("Trial mode updated to:", newVal);
+        } catch (error: any) {
+            console.error("Error updating trial mode:", error);
+            alert("Gagal mengubah mode uji coba: " + (error.code === 'permission-denied' ? "Akses Ditolak (Cek Security Rules Firestore)" : error.message));
         }
     };
 
