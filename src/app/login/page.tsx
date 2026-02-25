@@ -5,7 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { Loader2, Lock, User, ShieldAlert } from "lucide-react";
+import { Loader2, Lock, User, ShieldAlert, ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { useEffect } from "react";
@@ -184,6 +184,17 @@ export default function LoginPage() {
                             >
                                 Demo Operator
                             </button>
+                        </div>
+                        <div className="mt-4 text-center">
+                            <a
+                                href="https://drive.google.com/file/d/1kE4THgHMI8vjITZpIfvMX89oMgmekM-x/view?usp=sharing"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-white/40 hover:text-white/80 transition-colors flex items-center justify-center gap-1.5 font-medium underline underline-offset-4"
+                            >
+                                <ClipboardCheck className="w-3 h-3" />
+                                DownLoad Panduan Pengguna
+                            </a>
                         </div>
                     </div>
                 )}
