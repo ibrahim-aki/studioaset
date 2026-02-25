@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLocalDb } from "@/context/LocalDbContext";
 import {
     LayoutDashboard,
     DoorOpen,
@@ -33,9 +34,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const pathname = usePathname();
     const { user, logout } = useAuth();
+    const { addLog } = useLocalDb();
     const router = useRouter();
 
     const handleLogout = () => {
+        addLog({
+            type: "AUTH",
+            toValue: "Logout Berhasil",
+            operatorName: user?.name || user?.email || "Unknown",
+            notes: "Role: ADMIN"
+        });
         logout();
         router.push("/login");
     };

@@ -436,18 +436,47 @@ export default function UserManagementPage() {
                                                     <p className="text-[10px] text-gray-500 mt-0.5 font-mono italic">{new Date(report.timestamp).toLocaleTimeString('id-ID')}</p>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="font-bold text-gray-700">{report.operatorName}</span>
+                                                    <p className="font-bold text-gray-700">{report.operatorName}</p>
+                                                    <p className="text-[9px] text-gray-400 mt-0.5">ID: {report.operatorId.substring(0, 8)}</p>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">{report.roomName}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded w-fit">{report.roomName}</span>
+                                                        <span className="text-[9px] text-gray-500 mt-1 flex items-center gap-1">
+                                                            <MapPin className="w-2.5 h-2.5" />
+                                                            {report.locationName}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className={clsx(
-                                                        "text-[9px] font-black px-2 py-1 rounded-sm uppercase",
-                                                        report.roomStatus === "READY_FOR_LIVE" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                                                    )}>
-                                                        {report.roomStatus.replace(/_/g, " ")}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <span className={clsx(
+                                                            "text-[9px] font-black px-2 py-1 rounded-sm uppercase w-fit",
+                                                            report.roomStatus === "READY_FOR_LIVE" ? "bg-emerald-100 text-emerald-700" :
+                                                                report.roomStatus === "NOT_READY" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                                                        )}>
+                                                            {report.roomStatus.replace(/_/g, " ")}
+                                                        </span>
+                                                        {report.items.filter((i: any) => i.status !== "BAIK").length > 0 && (
+                                                            <div className="space-y-0.5">
+                                                                <p className="text-[9px] text-rose-600 font-bold">
+                                                                    ⚠️ {report.items.filter((i: any) => i.status !== "BAIK").length} Aset Masalah
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {report.items.filter((i: any) => i.status !== "BAIK").map((item: any, idx: number) => (
+                                                                        <span key={idx} className="text-[7px] bg-rose-50 text-rose-500 px-1 rounded border border-rose-100">
+                                                                            {item.assetName}: {item.status}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {report.overallNotes && (
+                                                            <p className="text-[9px] text-gray-500 italic border-l-2 border-gray-200 pl-2 mt-1">
+                                                                "{report.overallNotes}"
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <button
@@ -495,7 +524,8 @@ export default function UserManagementPage() {
                                                     <span className={clsx(
                                                         "text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter",
                                                         log.type === "MOVEMENT" ? "bg-amber-100 text-amber-700" :
-                                                            log.type === "STATUS" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+                                                            log.type === "STATUS" ? "bg-blue-100 text-blue-700" :
+                                                                log.type === "AUTH" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
                                                     )}>
                                                         {log.type}
                                                     </span>
@@ -503,14 +533,26 @@ export default function UserManagementPage() {
                                                     {log.notes && <p className="text-[9px] text-gray-400 mt-0.5 italic">{log.notes}</p>}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center">
-                                                            <Tag className="w-3 h-3 text-gray-400" />
+                                                    {log.assetId ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center">
+                                                                <Tag className="w-3 h-3 text-gray-400" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-gray-700 line-clamp-1 truncate block max-w-[150px]">
+                                                                    {log.assetName || "Nama Aset"}
+                                                                </span>
+                                                                <span className="text-[8px] text-gray-400 font-mono">
+                                                                    ID: {log.assetId?.substring(0, 8).toUpperCase()}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <span className="font-bold text-gray-700 line-clamp-1 truncate block max-w-[120px]">
-                                                            ID: {log.assetId.substring(0, 8).toUpperCase()}
-                                                        </span>
-                                                    </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 text-gray-400 italic">
+                                                            <Shield className="w-3.5 h-3.5" />
+                                                            Sistem / Akun
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2 text-indigo-600 font-extrabold">

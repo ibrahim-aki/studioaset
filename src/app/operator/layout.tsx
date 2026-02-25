@@ -2,6 +2,7 @@
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
+import { useLocalDb } from "@/context/LocalDbContext";
 import { LogOut, UserCircle, Key } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -9,10 +10,17 @@ import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
     const { user, logout } = useAuth();
+    const { addLog } = useLocalDb();
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const router = useRouter();
 
     const handleLogout = () => {
+        addLog({
+            type: "AUTH",
+            toValue: "Logout Berhasil",
+            operatorName: user?.name || user?.email || "Unknown",
+            notes: "Role: OPERATOR"
+        });
         logout();
         router.push("/login");
     };

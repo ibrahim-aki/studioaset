@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, ReactNode } from "react";
 import { Loader2, KeyRound } from "lucide-react";
 import { useState } from "react";
+import { useLocalDb } from "@/context/LocalDbContext";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
     const { user, loading, logout } = useAuth();
+    const { addLog } = useLocalDb();
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const router = useRouter();
 
@@ -89,6 +91,12 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
 
                         <button
                             onClick={() => {
+                                addLog({
+                                    type: "AUTH",
+                                    toValue: "Logout Berhasil",
+                                    operatorName: user?.name || user?.email || "Unknown",
+                                    notes: `User Role: ${user?.role}`
+                                });
                                 logout();
                                 router.push("/login");
                             }}

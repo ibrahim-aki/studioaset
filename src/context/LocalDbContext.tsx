@@ -63,8 +63,9 @@ export interface ChecklistItem {
 
 export interface AssetLog {
     id: string;
-    assetId: string;
-    type: "STATUS" | "MOVEMENT" | "SYSTEM";
+    assetId?: string;
+    assetName?: string;
+    type: "STATUS" | "MOVEMENT" | "SYSTEM" | "AUTH";
     fromValue?: string;
     toValue: string;
     operatorName: string;
@@ -118,6 +119,7 @@ interface LocalDbContextType {
 
     addChecklist: (checklist: Omit<Checklist, "id" | "isRead">) => void;
     markChecklistAsRead: (id: string) => void;
+    addLog: (log: Omit<AssetLog, "id" | "timestamp">) => void;
 }
 
 const LocalDbContext = createContext<LocalDbContextType | null>(null);
@@ -301,6 +303,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const newLog: AssetLog = {
                 id: logId,
                 assetId: id,
+                assetName: a.name,
                 type: "SYSTEM",
                 toValue: "Aset didaftarkan",
                 operatorName: a.lastModifiedBy || "Sistem",
@@ -318,7 +321,10 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 saveToLocal(STORAGE_KEYS.ASSET_LOGS, updatedLogs);
             } else {
                 await setDoc(doc(db, "assets", id), newAsset);
-                await setDoc(doc(db, "assetLogs", logId), newLog);
+                await setDoc(doc(db, "assetLogs", logId), {
+                    ...newLog,
+                    assetName: a.name
+                });
             }
         },
         updateAsset: async (id, data) => {
@@ -372,6 +378,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     const newLog: AssetLog = {
                         id: logId,
                         assetId: ra.assetId,
+                        assetName: ra.assetName,
                         type: "MOVEMENT",
                         toValue: `Masuk ke Ruangan: ${destRoom.name}`,
                         operatorName: opName || "Admin",
@@ -400,6 +407,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     await setDoc(doc(db, "assetLogs", logId), {
                         id: logId,
                         assetId: ra.assetId,
+                        assetName: ra.assetName,
                         type: "MOVEMENT",
                         toValue: `Masuk ke Ruangan: ${destRoom.name}`,
                         operatorName: opName || "Admin",
@@ -420,6 +428,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     const newLog: AssetLog = {
                         id: logId,
                         assetId: target.assetId,
+                        assetName: target.assetName,
                         type: "MOVEMENT",
                         toValue: "Ditarik ke Gudang",
                         operatorName: "Admin",
@@ -437,6 +446,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     await setDoc(doc(db, "assetLogs", logId), {
                         id: logId,
                         assetId: target.assetId,
+                        assetName: target.assetName,
                         type: "MOVEMENT",
                         toValue: "Ditarik ke Gudang",
                         operatorName: "Admin",
@@ -503,6 +513,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     const newLog: AssetLog = {
                         id: logId,
                         assetId: item.assetId,
+                        assetName: item.assetName,
                         type: "STATUS",
                         toValue: item.status,
                         operatorName: c.operatorName,
@@ -531,6 +542,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     await setDoc(doc(db, "assetLogs", logId), {
                         id: logId,
                         assetId: item.assetId,
+                        assetName: item.assetName,
                         type: "STATUS",
                         toValue: item.status,
                         operatorName: c.operatorName,
@@ -574,6 +586,20 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 saveToLocal(STORAGE_KEYS.CATEGORIES, newList);
             } else {
                 await setDoc(doc(db, "settings", "categories"), { list: newList });
+            }
+        },
+
+        addLog: async (log) => {
+            const id = uuidv4();
+            const timestamp = new Date().toISOString();
+            const newLog = { ...log, id, timestamp };
+
+            if (isDemo) {
+                const updated = [newLog, ...assetLogs] as AssetLog[];
+                setAssetLogs(updated);
+                saveToLocal(STORAGE_KEYS.ASSET_LOGS, updated);
+            } else {
+                await setDoc(doc(db, "assetLogs", id), newLog);
             }
         }
     };

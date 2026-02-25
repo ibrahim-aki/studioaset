@@ -7,6 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useLocalDb } from "@/context/LocalDbContext";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -14,8 +15,8 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    // @ts-ignore
     const authContext = useAuth();
+    const { addLog } = useLocalDb();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,10 +32,28 @@ export default function LoginPage() {
             if (userDocSnap.exists()) {
                 const role = userDocSnap.data().role;
                 if (role === "SUPER_ADMIN") {
+                    addLog({
+                        type: "AUTH",
+                        toValue: "Login Berhasil (Super Admin)",
+                        operatorName: userDocSnap.data().name || email,
+                        notes: `Email: ${email}`
+                    });
                     router.push("/super-admin");
                 } else if (role === "ADMIN") {
+                    addLog({
+                        type: "AUTH",
+                        toValue: "Login Berhasil (Admin)",
+                        operatorName: userDocSnap.data().name || email,
+                        notes: `Email: ${email}`
+                    });
                     router.push("/admin");
                 } else if (role === "OPERATOR") {
+                    addLog({
+                        type: "AUTH",
+                        toValue: "Login Berhasil (Operator)",
+                        operatorName: userDocSnap.data().name || email,
+                        notes: `Email: ${email}`
+                    });
                     router.push("/operator");
                 } else {
                     setError("Peran pengguna tidak valid.");
@@ -119,22 +138,39 @@ export default function LoginPage() {
                     <p className="text-sm text-gray-400 text-center mb-4">Mode Uji Coba Lintas Akses Tanpa Firebase</p>
                     <div className="flex gap-4">
                         <button
-                            // @ts-ignore
-                            onClick={(e) => { e.preventDefault(); authContext.triggerDemoLogin?.("ADMIN"); router.push("/admin"); }}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                authContext.triggerDemoLogin?.("ADMIN");
+                                addLog({
+                                    type: "AUTH",
+                                    toValue: "Login Demo (Admin)",
+                                    operatorName: "Demo Admin",
+                                    notes: "Menggunakan mode uji coba"
+                                });
+                                router.push("/admin");
+                            }}
                             className="w-full flex justify-center py-3 px-4 border border-blue-500/50 rounded-xl text-sm font-bold text-blue-300 hover:bg-blue-900/40 transition-all"
                         >
                             Demo Admin
                         </button>
                         <button
-                            // @ts-ignore
-                            onClick={(e) => { e.preventDefault(); authContext.triggerDemoLogin?.("OPERATOR"); router.push("/operator"); }}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                authContext.triggerDemoLogin?.("OPERATOR");
+                                addLog({
+                                    type: "AUTH",
+                                    toValue: "Login Demo (Operator)",
+                                    operatorName: "Demo Operator",
+                                    notes: "Menggunakan mode uji coba"
+                                });
+                                router.push("/operator");
+                            }}
                             className="w-full flex justify-center py-3 px-4 border border-rose-500/50 rounded-xl text-sm font-bold text-rose-300 hover:bg-rose-900/40 transition-all"
                         >
                             Demo Operator
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
     );
