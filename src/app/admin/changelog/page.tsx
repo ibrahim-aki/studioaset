@@ -1,125 +1,161 @@
 "use client";
 
-import { useLocalDb, ChangelogEntry } from "@/context/LocalDbContext";
-import { History as HistoryIcon, Rocket, Bug, Zap, Clock, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { History as HistoryIcon, Clock, ChevronRight, GitBranch, Github, Loader2 } from "lucide-react";
 import clsx from "clsx";
-import { useEffect } from "react";
+
+interface GithubCommit {
+    sha: string;
+    commit: {
+        message: string;
+        author: {
+            name: string;
+            date: string;
+        };
+    };
+    html_url: string;
+}
 
 export default function ChangelogPage() {
-    const { changelogs, addChangelog } = useLocalDb();
+    const [commits, setCommits] = useState<GithubCommit[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    // Helper to add initial data if empty (Automating the developer's work)
     useEffect(() => {
-        if (changelogs.length === 0) {
-            const initialLogs: Omit<ChangelogEntry, "id">[] = [
-                {
-                    version: "1.2.0",
-                    date: new Date().toISOString(),
-                    title: "Pembaruan Panel Manajemen & Dashboard",
-                    description: "Peningkatan pada kolom informasi dan navigasi dashboard untuk admin.",
-                    type: "FEAT",
-                    changes: [
-                        "Penambahan kolom 'Aset' di Manajemen Ruangan (menampilkan jumlah perangkat).",
-                        "Penambahan kolom 'Status' di Manajemen Ruangan (Sedang Live, Standby, Tidak Bisa Live).",
-                        "Kartu metrik di Dashboard Admin kini dapat diklik untuk navigasi cepat.",
-                        "Label filter di Katalog Master diubah menjadi 'Status Aset' agar lebih konsisten."
-                    ],
-                    visibility: "PUBLIC"
-                },
-                {
-                    version: "1.1.0",
-                    date: "2026-02-25T10:00:00Z",
-                    title: "Sistem Audit & Log",
-                    description: "Implementasi pelacakan aktivitas untuk keamanan dan transparansi data.",
-                    type: "IMPROVE",
-                    visibility: "PUBLIC",
-                    changes: [
-                        "Penambahan 'Log Sistem' untuk memantau login/logout admin dan operasional.",
-                        "Audit log otomatis saat status aset berubah atau barang berpindah ruangan.",
-                        "Perbaikan tampilan tabel laporan agar lebih minimalis dan responsif."
-                    ]
-                },
-                {
-                    version: "1.0.0",
-                    date: "2026-02-20T08:00:00Z",
-                    title: "Peluncuran Perdana Studio Aset",
-                    description: "Sistem manajemen aset digital untuk studio live streaming.",
-                    type: "FEAT",
-                    visibility: "PUBLIC",
-                    changes: [
-                        "Manajemen Lokasi Cabang dan Ruangan.",
-                        "Katalog Master Aset dengan kategorisasi otomatis.",
-                        "Sistem Checklist untuk operator setiap sebelum dan sesudah sesi live."
-                    ]
-                }
-            ];
+        const fetchCommits = async () => {
+            try {
+                // Mengambil riwayat commit dari repository GitHub
+                const response = await fetch("https://api.github.com/repos/ibrahim-aki/studioaset/commits?per_page=50");
+                if (!response.ok) throw new Error("Gagal mengambil data dari GitHub");
 
-            initialLogs.forEach(log => addChangelog(log));
-        }
-    }, [changelogs, addChangelog]);
+                const data: GithubCommit[] = await response.json();
+
+                // Filtrasi: Abaikan update yang berkaitan dengan "super admin"
+                const filteredCommits = data.filter(item => {
+                    const message = item.commit.message.toLowerCase();
+                    const isSuperAdminUpdate = message.includes("super admin") ||
+                        message.includes("super-admin") ||
+                        message.includes("superadmin");
+                    return !isSuperAdminUpdate;
+                });
+
+                setCommits(filteredCommits);
+            } catch (err: any) {
+                console.error("Github API Error:", err);
+                setError("Gagal memuat riwayat update otomatis.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCommits();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-400">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <p className="text-sm font-bold animate-pulse">Menyamakan riwayat dengan database GitHub...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-            <div className="mb-10">
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <HistoryIcon className="w-6 h-6 text-indigo-600" />
-                    Changelog Aplikasi
-                </h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Catatan pembaruan, perbaikan, dan fitur baru yang ditambahkan oleh pengembang.
-                </p>
+            <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                        <Github className="w-6 h-6 text-gray-900" />
+                        Changelog System
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Riwayat pembaruan sistem yang ditarik otomatis dari repositori pusat.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                    Live Sync Active
+                </div>
             </div>
 
-            <div className="relative border-l-2 border-indigo-100 ml-3 pl-8 space-y-12">
-                {changelogs.filter(log => log.visibility === "PUBLIC").map((log) => (
-                    <div key={log.id} className="relative">
+            {error && (
+                <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-medium mb-8">
+                    {error}
+                </div>
+            )}
+
+            <div className="relative border-l-2 border-indigo-100 ml-3 pl-8 space-y-10">
+                {commits.map((item) => (
+                    <div key={item.sha} className="relative">
                         {/* Timeline dot */}
                         <div className="absolute -left-[41px] top-0 w-4 h-4 rounded-full bg-white border-4 border-indigo-600 shadow-sm"></div>
 
                         <div className="flex flex-col md:flex-row md:items-baseline gap-2 mb-2">
-                            <span className="text-lg font-bold text-gray-900">{log.version}</span>
-                            <span className="text-xs font-medium text-gray-400">
-                                {new Date(log.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            <span className="text-xs font-black text-indigo-600 font-mono tracking-tighter">
+                                {item.sha.substring(0, 7)}
                             </span>
-                            <span className={clsx(
-                                "text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider",
-                                log.type === "FEAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
-                                    log.type === "FIX" ? "bg-rose-50 text-rose-700 border border-rose-100" :
-                                        "bg-blue-50 text-blue-700 border border-blue-100"
-                            )}>
-                                {log.type === "FEAT" ? "Fitur Baru" : log.type === "FIX" ? "Perbaikan" : "Peningkatan"}
+                            <span className="text-xs font-medium text-gray-400">
+                                {new Date(item.commit.author.date).toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
                             </span>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                            <h3 className="text-base font-bold text-gray-800 mb-2">{log.title}</h3>
-                            <p className="text-sm text-gray-500 mb-4">{log.description}</p>
+                        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all group">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
+                                        {item.commit.message.split('\n')[0]}
+                                    </h3>
+                                    {item.commit.message.split('\n').length > 1 && (
+                                        <p className="text-xs text-gray-500 line-clamp-2">
+                                            {item.commit.message.split('\n').slice(1).join(' ')}
+                                        </p>
+                                    )}
+                                </div>
+                                <a
+                                    href={item.html_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shrink-0"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </a>
+                            </div>
 
-                            <ul className="space-y-2">
-                                {log.changes.map((change, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                                        <ChevronRight className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
-                                        <span>{change}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                            <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600">
+                                        {item.commit.author.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{item.commit.author.name}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                    <GitBranch className="w-3 h-3" />
+                                    <span>MAIN BRANCH</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}
 
-                {changelogs.length === 0 && (
+                {commits.length === 0 && !loading && (
                     <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
                         <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 font-medium">Memproses data changelog...</p>
+                        <p className="text-gray-500 font-medium tracking-tight">Tidak ada riwayat update untuk ditampilkan.</p>
                     </div>
                 )}
             </div>
 
-            <div className="mt-20 pt-10 border-t border-gray-100 text-center">
-                <p className="text-xs text-gray-400">
-                    &copy; 2026 Live Studio Aset Management • Versi Terbaru {changelogs[0]?.version || "1.0.0"}
+            <footer className="mt-20 pt-10 border-t border-gray-100 text-center">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest italic">
+                    GitHub Integration Active • Auto-Sync Frequency: On Demand
                 </p>
-            </div>
+            </footer>
         </div>
     );
 }

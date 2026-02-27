@@ -12,6 +12,8 @@ interface AppUser {
     email: string | null;
     role: UserRole;
     name?: string;
+    locationId?: string;
+    locationName?: string;
     isDemo?: boolean;
 }
 
@@ -43,15 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         const data = userDocSnap.data();
                         role = data.role as UserRole;
                         name = data.name || "";
-                    }
 
-                    setUser({
-                        uid: firebaseUser.uid,
-                        email: firebaseUser.email,
-                        role,
-                        name,
-                        isDemo: false,
-                    });
+                        setUser({
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email,
+                            role,
+                            name,
+                            locationId: data.locationId || "",
+                            locationName: data.locationName || "",
+                            isDemo: false,
+                        });
+                    } else {
+                        setUser({
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email,
+                            role: null,
+                            isDemo: false,
+                        });
+                    }
                 } catch (error) {
                     console.error("Error fetching user role:", error);
                     setUser({
@@ -77,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: `demo-${role?.toLowerCase()}@studio.com`,
             role: role,
             name: `Demo ${role}`,
+            locationName: "Demo Branch",
             isDemo: true,
         });
     };

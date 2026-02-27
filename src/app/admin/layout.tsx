@@ -129,7 +129,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         onClick={() => setIsPasswordModalOpen(true)}
                                         className="w-full text-left bg-white/5 rounded-2xl p-4 mb-4 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-all group"
                                     >
-                                        <p className="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition-colors">{user?.name || "Admin"}</p>
+                                        <p className="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition-colors">
+                                            {user?.name || "Admin"}
+                                            {user?.locationName && <span className="ml-1 opacity-60 text-[10px]">({user.locationName})</span>}
+                                        </p>
                                         <p className="text-[10px] text-indigo-300 truncate tracking-wide flex items-center gap-1 mt-0.5">
                                             Ubah Password <span className="text-[8px] opacity-50">→</span>
                                         </p>

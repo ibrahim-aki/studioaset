@@ -44,8 +44,10 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                         </div>
                         <div className="truncate">
                             <p className="text-sm font-bold text-gray-900 leading-tight">Studio Ops</p>
-                            <p className="text-[10px] text-indigo-500 font-bold leading-tight truncate max-w-[100px] flex items-center gap-1">
-                                {user?.name || "Operator"} <Key className="w-2.5 h-2.5" />
+                            <p className="text-[10px] text-indigo-500 font-bold leading-tight truncate max-w-[120px] flex items-center gap-1">
+                                {user?.name || "Operator"}
+                                {user?.locationName && <span className="opacity-70 font-normal">({user.locationName})</span>}
+                                <Key className="w-2.5 h-2.5" />
                             </p>
                         </div>
                     </button>
