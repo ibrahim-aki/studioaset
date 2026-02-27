@@ -648,6 +648,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         } : a);
                     }
                 }
+
+                // Log overall room status
+                await api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Audit: ${c.roomStatus || "SELESAI"}`,
+                    operatorName: c.operatorName,
+                    notes: `Laporan checklist ruangan ${c.roomName} (${c.locationName}). Catatan: ${c.overallNotes || "-"}`
+                });
+
                 setAssets(updatedAssets);
                 saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
             } else {
@@ -670,6 +679,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         });
                     }
                 }
+
+                // Log overall room status
+                await api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Audit Room: ${c.roomStatus || "SELESAI"}`,
+                    operatorName: c.operatorName,
+                    notes: `Laporan masuk untuk ${c.roomName} (${c.locationName}). Status akhir: ${c.roomStatus || "SELESAI"}`
+                });
             }
         },
 

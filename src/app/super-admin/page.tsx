@@ -225,7 +225,7 @@ interface UserData {
 }
 
 export default function UserManagementPage() {
-    const [activeTab, setActiveTab] = useState<"users" | "reports" | "logs">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "logs">("users");
     const [users, setUsers] = useState<UserData[]>([]);
     const [checklists, setChecklists] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -329,8 +329,7 @@ export default function UserManagementPage() {
                 <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200">
                     {[
                         { id: "users", name: "Pengguna", icon: Users },
-                        { id: "reports", name: "Audit", icon: ClipboardCheck },
-                        { id: "logs", name: "Log", icon: ShieldAlert }
+                        { id: "logs", name: "Log", icon: History }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -432,80 +431,6 @@ export default function UserManagementPage() {
                     </>
                 )}
 
-                {activeTab === "reports" && (
-                    <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-gray-50 bg-gray-100/50 flex items-center justify-between">
-                            <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Audit Seluruh Laporan Checklist</h3>
-                            <span className="text-[10px] font-bold text-indigo-600">Total: {checklists.length} Laporan</span>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Tanggal & Waktu</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Cabang / Ruangan</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Operator</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider">Status Ruangan</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-wider text-right">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {checklists.map((report) => (
-                                        <tr key={report.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <p className="text-xs font-bold text-gray-900">{new Date(report.timestamp).toLocaleDateString('id-ID')}</p>
-                                                <p className="text-[10px] text-gray-400 font-medium">{new Date(report.timestamp).toLocaleTimeString('id-ID')}</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <p className="text-xs font-bold text-gray-900">{report.locationName}</p>
-                                                <p className="text-[10px] text-indigo-500 font-black uppercase tracking-tight">{report.roomName}</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400">
-                                                        {report.operatorName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <span className="text-xs font-medium text-gray-700">{report.operatorName}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={clsx(
-                                                    "px-2 py-0.5 rounded text-[9px] font-black uppercase border",
-                                                    report.roomStatus === "LIVE_NOW" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                                        report.roomStatus === "READY_FOR_LIVE" ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                                            report.roomStatus === "NOT_READY" ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-gray-50 text-gray-600 border-gray-100"
-                                                )}>
-                                                    {report.roomStatus?.replace(/_/g, " ") || "SELESAI"}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button
-                                                    onClick={async () => {
-                                                        if (confirm("Hapus laporan audit ini secara permanen?")) {
-                                                            await deleteDoc(doc(db, "checklists", report.id));
-                                                        }
-                                                    }}
-                                                    className="p-2 text-gray-400 hover:text-rose-600 transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {checklists.length === 0 && (
-                                        <tr>
-                                            <td colSpan={5} className="px-6 py-20 text-center text-gray-400 font-medium text-sm">
-                                                <ClipboardCheck className="w-12 h-12 mx-auto mb-4 opacity-10" />
-                                                Belum ada laporan audit masuk.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
                 {activeTab === "logs" && (
                     <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden">
                         <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
@@ -514,8 +439,9 @@ export default function UserManagementPage() {
                                 onClick={async () => {
                                     if (confirm("PERINGATAN: Hapus seluruh log aktivitas sistem secara permanen?")) {
                                         try {
-                                            const promises = assetLogs.map(log => deleteDoc(doc(db, "assetLogs", log.id)));
-                                            await Promise.all(promises);
+                                            const promisesLog = assetLogs.map(log => deleteDoc(doc(db, "assetLogs", log.id)));
+                                            const promisesAudit = contextChecklists.map(c => deleteDoc(doc(db, "checklists", c.id)));
+                                            await Promise.all([...promisesLog, ...promisesAudit]);
                                             alert("Log berhasil dikosongkan.");
                                         } catch (error) {
                                             alert("Gagal mengosongkan log.");
@@ -539,47 +465,74 @@ export default function UserManagementPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {assetLogs.map(log => (
-                                        <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
-                                                <span className="text-[10px] text-gray-500 font-medium">
-                                                    {new Date(log.timestamp).toLocaleDateString('id-ID')} · {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
-                                                <div className="flex items-center gap-1.5 overflow-hidden max-w-[400px]">
-                                                    <span className={clsx(
-                                                        "text-[9px] font-medium uppercase tracking-tighter shrink-0",
-                                                        log.type === "MOVEMENT" ? "text-blue-600" :
-                                                            log.type === "STATUS" ? "text-amber-600" :
-                                                                log.type === "AUTH" ? "text-purple-600" : "text-gray-400"
-                                                    )}>
-                                                        [{log.type}]
+                                    {[
+                                        ...assetLogs.map(l => ({ ...l, unifiedType: 'LOG' })),
+                                        ...contextChecklists.map(c => ({
+                                            id: c.id,
+                                            timestamp: c.timestamp,
+                                            type: 'ROOM',
+                                            assetName: c.roomName,
+                                            toValue: c.roomStatus || 'SELESAI',
+                                            operatorName: c.operatorName,
+                                            operatorRole: 'OPERATOR',
+                                            notes: c.overallNotes,
+                                            unifiedType: 'LOG'
+                                        }))
+                                    ]
+                                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                                        .map((log: any) => (
+                                            <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                    <span className="text-[10px] text-gray-500 font-medium">
+                                                        {new Date(log.timestamp).toLocaleDateString('id-ID')} · {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
-                                                    <span className="text-[10px] font-medium text-gray-900 truncate">
-                                                        {log.assetName || "SYS"}: {log.toValue}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
-                                                <div className="flex items-center gap-1.5 italic">
-                                                    <span className="text-[10px] font-medium text-gray-700">{log.operatorName}</span>
-                                                    <span className={clsx(
-                                                        "text-[8px] font-medium uppercase tracking-widest opacity-60",
-                                                        log.operatorRole === "SUPER_ADMIN" ? "text-purple-500" :
-                                                            log.operatorRole === "ADMIN" ? "text-indigo-500" : "text-emerald-500"
-                                                    )}>
-                                                        ({log.operatorRole || "SYS"})
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
-                                                <p className="text-[10px] text-gray-400 font-normal italic truncate max-w-[200px]" title={log.notes}>
-                                                    {log.notes || "-"}
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                    <div className="flex items-center gap-1.5 overflow-hidden max-w-[400px]">
+                                                        <span className={clsx(
+                                                            "text-[9px] font-medium uppercase tracking-tighter shrink-0",
+                                                            log.type === "MOVEMENT" ? "text-blue-600" :
+                                                                log.type === "STATUS" ? "text-amber-600" :
+                                                                    log.type === "AUTH" ? "text-purple-600" :
+                                                                        log.type === "ROOM" ? "text-emerald-500" :
+                                                                            (log.type === "SYSTEM" || log.type === "ASET") ? "text-indigo-600" : "text-gray-400"
+                                                        )}>
+                                                            [{log.type === "SYSTEM" ? "ASET" : log.type}]
+                                                        </span>
+                                                        <div className="flex items-center gap-1 text-[10px] font-medium truncate">
+                                                            <span className="text-black shrink-0">{log.assetName || "SYS"}:</span>
+                                                            <span className={clsx(
+                                                                "truncate",
+                                                                log.type === "ROOM" ? (
+                                                                    log.toValue === "LIVE_NOW" ? "text-emerald-600" :
+                                                                        log.toValue === "READY_FOR_LIVE" ? "text-amber-600" :
+                                                                            log.toValue === "NOT_READY" ? "text-rose-600" : "text-gray-900"
+                                                                ) : "text-gray-900"
+                                                            )}>
+                                                                {log.toValue?.replace(/_/g, " ")}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                    <div className="flex items-center gap-1.5 italic">
+                                                        <span className="text-[10px] font-medium text-gray-700">{log.operatorName}</span>
+                                                        <span className={clsx(
+                                                            "text-[8px] font-medium uppercase tracking-widest opacity-60",
+                                                            log.operatorRole === "SUPER_ADMIN" ? "text-purple-500" :
+                                                                log.operatorRole === "ADMIN" ? "text-indigo-500" : "text-emerald-500"
+                                                        )}>
+                                                            ({log.operatorRole || "SYS"})
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                    <p className="text-[10px] text-gray-400 font-normal italic truncate max-w-[200px]" title={log.notes}>
+                                                        {log.notes || "-"}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        ))}
                                 </tbody>
                             </table>
                         </div>
