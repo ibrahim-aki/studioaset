@@ -15,7 +15,7 @@ export default function RoomsPage() {
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
 
-    const { rooms: rawRooms, locations: rawLocations, addRoom, updateRoom, deleteRoom } = useLocalDb();
+    const { rooms: rawRooms, locations: rawLocations, roomAssets, checklists, addRoom, updateRoom, deleteRoom } = useLocalDb();
 
     useEffect(() => {
         const roomsData = [...rawRooms];
@@ -189,6 +189,8 @@ export default function RoomsPage() {
                                     <tr className="text-gray-400">
                                         <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Informasi Ruangan</th>
                                         <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Lokasi Cabang</th>
+                                        <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Aset</th>
                                         <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Deskripsi</th>
                                         <th scope="col" className="py-3 px-4 text-right text-[10px] font-bold uppercase tracking-wider">Aksi</th>
                                     </tr>
@@ -209,6 +211,44 @@ export default function RoomsPage() {
                                                 </td>
                                                 <td className="py-4 px-4 text-sm text-gray-500 border-y border-gray-100">
                                                     {locName}
+                                                </td>
+                                                <td className="py-4 px-4 text-sm border-y border-gray-100">
+                                                    {(() => {
+                                                        const latestCheck = checklists.find(c => c.roomId === room.id);
+                                                        const status = latestCheck?.roomStatus || "";
+
+                                                        if (status === "LIVE_NOW") return (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 ring-1 ring-green-600/20">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-green-600 mr-1.5 animate-pulse"></span>
+                                                                Sedang Live
+                                                            </span>
+                                                        );
+                                                        if (status === "READY_FOR_LIVE" || status === "STANDBY" || status === "FINISHED_LIVE") return (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 ring-1 ring-blue-600/20">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5"></span>
+                                                                STANDBY
+                                                            </span>
+                                                        );
+                                                        if (status === "NOT_READY") return (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 ring-1 ring-rose-600/20">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 mr-1.5"></span>
+                                                                TIDAK BISA LIVE
+                                                            </span>
+                                                        );
+                                                        return (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 ring-1 ring-gray-400/20">
+                                                                Belum Dicek
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td className="py-4 px-4 text-sm border-y border-gray-100">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs ring-1 ring-indigo-200">
+                                                            {roomAssets.filter(ra => ra.roomId === room.id).length}
+                                                        </span>
+                                                        <span className="text-gray-400 text-[10px] font-medium uppercase tracking-tight">Perangkat</span>
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 px-4 text-sm text-gray-400 border-y border-gray-100 italic">
                                                     {room.description || "-"}

@@ -15,7 +15,8 @@ import {
     Menu,
     X,
     MapPin,
-    Shield
+    Shield,
+    History as HistoryIcon
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -25,6 +26,7 @@ const navigation = [
     { name: "Rooms", href: "/admin/rooms", icon: DoorOpen },
     { name: "Master Assets", href: "/admin/assets", icon: Video },
     { name: "Laporan", href: "/admin/checklists", icon: ClipboardList },
+    { name: "Changelog", href: "/admin/changelog", icon: HistoryIcon },
 ];
 
 import ChangePasswordModal from "@/components/ChangePasswordModal";

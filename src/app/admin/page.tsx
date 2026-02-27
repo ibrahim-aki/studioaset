@@ -124,15 +124,19 @@ export default function AdminPage() {
             {/* Top Metrics Row - System Style */}
             <div className="grid grid-cols-2 lg:grid-cols-4 border-t border-l border-gray-200 mb-8">
                 {[
-                    { label: "Laporan Belum Dibaca", value: checklists.filter(c => c.isRead === false).length, icon: Bell, color: "bg-rose-600" },
-                    { label: "Total Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "bg-blue-600" },
-                    { label: "Inventaris Aset", value: assetStats.total, icon: Box, color: "bg-purple-600" },
-                    { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "bg-amber-600" }
+                    { label: "Laporan Belum Dibaca", value: checklists.filter(c => c.isRead === false).length, icon: Bell, color: "bg-rose-600", href: "/admin/checklists" },
+                    { label: "Total Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "bg-blue-600", href: "/admin/rooms" },
+                    { label: "Inventaris Aset", value: assetStats.total, icon: Box, color: "bg-purple-600", href: "/admin/assets" },
+                    { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "bg-amber-600", href: "/admin/checklists" }
                 ].map((stat, i) => (
-                    <div key={i} className={clsx(
-                        "p-4 border-r border-b border-gray-200 group hover:bg-gray-50 transition-colors relative",
-                        stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "bg-rose-50/30" : "bg-white"
-                    )}>
+                    <Link
+                        key={i}
+                        href={stat.href}
+                        className={clsx(
+                            "p-4 border-r border-b border-gray-200 group hover:bg-gray-50 transition-colors relative block cursor-pointer",
+                            stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "bg-rose-50/30" : "bg-white"
+                        )}
+                    >
                         {stat.label === "Laporan Belum Dibaca" && stat.value > 0 && (
                             <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 animate-ping"></div>
                         )}
@@ -143,11 +147,11 @@ export default function AdminPage() {
                                 stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "text-rose-600" : "text-gray-900"
                             )}>{stat.value}</span>
                             <stat.icon className={clsx(
-                                "w-5 h-5",
+                                "w-5 h-5 transition-transform group-hover:scale-110",
                                 stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "text-rose-500 opacity-20" : "opacity-10"
                             )} />
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 

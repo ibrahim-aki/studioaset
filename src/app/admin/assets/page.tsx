@@ -458,7 +458,7 @@ function AssetsContent() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Kondisi Saat Ini</label>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Status Aset</label>
                                             <select
                                                 value={statusFilter}
                                                 onChange={(e) => setStatusFilter(e.target.value)}

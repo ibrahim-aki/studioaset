@@ -88,6 +88,17 @@ export interface Checklist {
     isRead?: boolean;
 }
 
+export interface ChangelogEntry {
+    id: string;
+    version: string;
+    date: string;
+    title: string;
+    description: string;
+    type: "FEAT" | "FIX" | "IMPROVE";
+    changes: string[];
+    visibility: "PUBLIC" | "SUPER_ADMIN";
+}
+
 interface LocalDbContextType {
     locations: Location[];
     rooms: Room[];
@@ -108,6 +119,9 @@ interface LocalDbContextType {
     addRoom: (room: Omit<Room, "id">) => void;
     updateRoom: (id: string, room: Omit<Room, "id">) => void;
     deleteRoom: (id: string) => void;
+
+    changelogs: ChangelogEntry[];
+    addChangelog: (entry: Omit<ChangelogEntry, "id">) => void;
 
     addAsset: (asset: Omit<MasterAsset, "id">) => void;
     updateAsset: (id: string, asset: Partial<Omit<MasterAsset, "id">>) => void;
@@ -131,7 +145,8 @@ const STORAGE_KEYS = {
     ROOM_ASSETS: "studioaset_room_assets",
     CHECKLISTS: "studioaset_checklists",
     ASSET_LOGS: "studioaset_asset_logs",
-    CATEGORIES: "studioaset_categories"
+    CATEGORIES: "studioaset_categories",
+    CHANGELOGS: "studioaset_changelogs"
 };
 
 export function LocalDbProvider({ children }: { children: ReactNode }) {
@@ -144,6 +159,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [roomAssets, setRoomAssets] = useState<RoomAsset[]>([]);
     const [checklists, setChecklists] = useState<Checklist[]>([]);
     const [assetLogs, setAssetLogs] = useState<AssetLog[]>([]);
+    const [changelogs, setChangelogs] = useState<ChangelogEntry[]>([]);
     const [categories, setCategories] = useState<string[]>([
         "Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"
     ]);
@@ -164,6 +180,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             loadLocal(STORAGE_KEYS.ROOM_ASSETS, setRoomAssets);
             loadLocal(STORAGE_KEYS.CHECKLISTS, setChecklists);
             loadLocal(STORAGE_KEYS.ASSET_LOGS, setAssetLogs);
+            loadLocal(STORAGE_KEYS.CHANGELOGS, setChangelogs);
             loadLocal(STORAGE_KEYS.CATEGORIES, setCategories, ["Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"]);
             setIsInitialized(true);
         }
@@ -212,6 +229,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         });
         unsubs.push(unsubLogs);
 
+        const unsubChangelogs = onSnapshot(query(collection(db, "changelogs"), orderBy("date", "desc")), (snap) => {
+            setChangelogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChangelogEntry)));
+        });
+        unsubs.push(unsubChangelogs);
+
         const unsubCats = onSnapshot(doc(db, "settings", "categories"), (docSnap) => {
             if (docSnap.exists()) {
                 setCategories(docSnap.data().list || []);
@@ -235,6 +257,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         checklists,
         assetLogs,
         categories,
+        changelogs,
 
         addLocation: async (loc) => {
             const id = uuidv4();
@@ -600,6 +623,18 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 saveToLocal(STORAGE_KEYS.ASSET_LOGS, updated);
             } else {
                 await setDoc(doc(db, "assetLogs", id), newLog);
+            }
+        },
+
+        addChangelog: async (entry) => {
+            const id = uuidv4();
+            const newEntry = { ...entry, id };
+            if (isDemo) {
+                const updated = [newEntry, ...changelogs];
+                setChangelogs(updated);
+                saveToLocal(STORAGE_KEYS.CHANGELOGS, updated);
+            } else {
+                await setDoc(doc(db, "changelogs", id), newEntry);
             }
         }
     };
