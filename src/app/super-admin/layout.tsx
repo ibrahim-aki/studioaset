@@ -93,7 +93,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                             onClick={() => {
                                 addLog({
                                     type: "AUTH",
-                                    toValue: "Logout Berhasil",
+                                    toValue: "Logout",
                                     operatorName: user?.name || user?.email || "Unknown",
                                     notes: `User Role: ${user?.role}`
                                 });

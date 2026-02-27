@@ -17,7 +17,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     const handleLogout = () => {
         addLog({
             type: "AUTH",
-            toValue: "Logout Berhasil",
+            toValue: "Logout",
             operatorName: user?.name || user?.email || "Unknown",
             notes: "Role: OPERATOR"
         });

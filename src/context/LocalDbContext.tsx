@@ -129,12 +129,12 @@ interface LocalDbContextType {
     deleteAsset: (id: string) => void;
 
     addRoomAsset: (roomAsset: Omit<RoomAsset, "id">, opName?: string) => void;
-    deleteRoomAsset: (id: string) => void;
+    deleteRoomAsset: (id: string, opName?: string) => void;
     moveRoomAsset: (assetId: string, newRoomId: string, opName?: string) => void;
 
     addChecklist: (checklist: Omit<Checklist, "id" | "isRead">) => void;
     markChecklistAsRead: (id: string) => void;
-    addLog: (log: Omit<AssetLog, "id" | "timestamp">) => void;
+    addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName"> & { operatorName?: string }) => void;
 }
 
 const LocalDbContext = createContext<LocalDbContextType | null>(null);
@@ -275,7 +275,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await api.addLog({
                 type: "SYSTEM",
                 toValue: `Lokasi Baru: ${loc.name}`,
-                operatorName: user?.name || user?.email || "Admin",
                 notes: `Berhasil menambahkan cabang baru di ${loc.address}`
             });
         },
@@ -292,7 +291,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await api.addLog({
                 type: "SYSTEM",
                 toValue: `Update Lokasi: ${data.name}`,
-                operatorName: user?.name || user?.email || "Admin",
                 notes: `Memperbarui data cabang: ${data.name}`
             });
         },
@@ -311,7 +309,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 await api.addLog({
                     type: "SYSTEM",
                     toValue: `Hapus Lokasi: ${target.name}`,
-                    operatorName: user?.name || user?.email || "Admin",
                     notes: `Menghapus data cabang dari sistem`
                 });
             }
@@ -333,7 +330,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await api.addLog({
                 type: "SYSTEM",
                 toValue: `Ruangan Baru: ${r.name}`,
-                operatorName: user?.name || user?.email || "Admin",
                 notes: `Berhasil menambahkan ruangan baru di cabang ${locName}`
             });
         },
@@ -350,7 +346,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await api.addLog({
                 type: "SYSTEM",
                 toValue: `Update Ruangan: ${data.name}`,
-                operatorName: user?.name || user?.email || "Admin",
                 notes: `Memperbarui detail ruangan di sistem`
             });
         },
@@ -369,7 +364,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 await api.addLog({
                     type: "SYSTEM",
                     toValue: `Hapus Ruangan: ${target.name}`,
-                    operatorName: user?.name || user?.email || "Admin",
                     notes: `Menghapus data ruangan dari sistem`
                 });
             }
@@ -393,7 +387,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 assetName: a.name,
                 type: "SYSTEM",
                 toValue: `Aset Baru: ${a.name}`,
-                operatorName: a.lastModifiedBy || user?.name || "Admin",
+                operatorName: a.lastModifiedBy,
                 notes: `Kategori: ${a.category}, Kode: ${a.assetCode || "-"}`
             });
         },
@@ -412,7 +406,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 await api.addLog({
                     type: "SYSTEM",
                     toValue: `Update Aset: ${data.name || target.name}`,
-                    operatorName: user?.name || user?.email || "Admin",
                     notes: `Memperbarui info aset. Kode: ${target.assetCode || "-"}`
                 });
             }
@@ -439,7 +432,6 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 await api.addLog({
                     type: "SYSTEM",
                     toValue: `Hapus Aset: ${target.name}`,
-                    operatorName: user?.name || user?.email || "Admin",
                     notes: `Menghapus data aset dangan kode ${target.assetCode || "-"}`
                 });
             }
@@ -471,19 +463,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     setAssets(updatedAssets);
                     saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
 
-                    const logId = uuidv4();
-                    const newLog: AssetLog = {
-                        id: logId,
+                    await api.addLog({
                         assetId: ra.assetId,
                         assetName: ra.assetName,
                         type: "MOVEMENT",
                         toValue: `Masuk ke Ruangan: ${destRoom.name}`,
-                        operatorName: opName || "Admin",
-                        timestamp: new Date().toISOString()
-                    };
-                    const updatedLogs = [newLog, ...assetLogs];
-                    setAssetLogs(updatedLogs);
-                    saveToLocal(STORAGE_KEYS.ASSET_LOGS, updatedLogs);
+                        operatorName: opName,
+                        notes: `Alokasi aset ke ruangan studio`
+                    });
                 }
             } else {
                 const assetSnap = await getDoc(doc(db, "assets", ra.assetId));
@@ -506,20 +493,19 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         locationId: destRoom.locationId,
                         updatedAt: new Date().toISOString()
                     });
-                    const logId = uuidv4();
-                    await setDoc(doc(db, "assetLogs", logId), {
-                        id: logId,
+
+                    await api.addLog({
                         assetId: ra.assetId,
                         assetName: ra.assetName,
                         type: "MOVEMENT",
                         toValue: `Masuk ke Ruangan: ${destRoom.name}`,
-                        operatorName: opName || "Admin",
-                        timestamp: new Date().toISOString()
+                        operatorName: opName,
+                        notes: `Berhasil alokasi aset ke unit studio`
                     });
                 }
             }
         },
-        deleteRoomAsset: async (id) => {
+        deleteRoomAsset: async (id, opName) => {
             if (isDemo) {
                 const target = roomAssets.find(ra => ra.id === id);
                 const updatedRA = roomAssets.filter(ra => ra.id !== id);
@@ -527,33 +513,26 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 saveToLocal(STORAGE_KEYS.ROOM_ASSETS, updatedRA);
 
                 if (target) {
-                    const logId = uuidv4();
-                    const newLog: AssetLog = {
-                        id: logId,
+                    await api.addLog({
                         assetId: target.assetId,
                         assetName: target.assetName,
                         type: "MOVEMENT",
                         toValue: "Ditarik ke Gudang",
-                        operatorName: "Admin",
-                        timestamp: new Date().toISOString()
-                    };
-                    const updatedLogs = [newLog, ...assetLogs];
-                    setAssetLogs(updatedLogs);
-                    saveToLocal(STORAGE_KEYS.ASSET_LOGS, updatedLogs);
+                        operatorName: opName,
+                        notes: "Pelepasan aset dari ruangan"
+                    });
                 }
             } else {
                 const target = roomAssets.find(ra => ra.id === id);
                 await deleteDoc(doc(db, "roomAssets", id));
                 if (target) {
-                    const logId = uuidv4();
-                    await setDoc(doc(db, "assetLogs", logId), {
-                        id: logId,
+                    await api.addLog({
                         assetId: target.assetId,
                         assetName: target.assetName,
                         type: "MOVEMENT",
                         toValue: "Ditarik ke Gudang",
-                        operatorName: "Admin",
-                        timestamp: new Date().toISOString()
+                        operatorName: opName,
+                        notes: "Berhasil menarik aset kembali ke gudang pusat"
                     });
                 }
             }
@@ -566,6 +545,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         const updatedRA = roomAssets.filter(item => item.id !== ra.id);
                         setRoomAssets(updatedRA);
                         saveToLocal(STORAGE_KEYS.ROOM_ASSETS, updatedRA);
+
+                        await api.addLog({
+                            assetId: ra.assetId,
+                            assetName: ra.assetName,
+                            type: "MOVEMENT",
+                            toValue: "Pindah ke Gudang",
+                            operatorName: opName,
+                            notes: "Perpindahan melalui menu manajemen ruangan"
+                        });
                     }
                     return;
                 }
@@ -578,6 +566,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     const updatedAssets = assets.map(a => a.id === assetId ? { ...a, locationId: destRoom.locationId, updatedAt: new Date().toISOString() } : a);
                     setAssets(updatedAssets);
                     saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
+
+                    await api.addLog({
+                        assetId: ra.assetId,
+                        assetName: ra.assetName,
+                        type: "MOVEMENT",
+                        toValue: `Pindah ke: ${destRoom.name}`,
+                        operatorName: opName,
+                        notes: `Berhasil memindahkan aset antar ruangan`
+                    });
                 }
             } else {
                 const q = query(collection(db, "roomAssets"));
@@ -585,7 +582,18 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 const ra = snap.docs.find(d => d.data().assetId === assetId);
 
                 if (newRoomId === "GL-WAREHOUSE") {
-                    if (ra) await deleteDoc(doc(db, "roomAssets", ra.id));
+                    if (ra) {
+                        const data = ra.data();
+                        await deleteDoc(doc(db, "roomAssets", ra.id));
+                        await api.addLog({
+                            assetId: data.assetId,
+                            assetName: data.assetName,
+                            type: "MOVEMENT",
+                            toValue: "Pindah ke Gudang",
+                            operatorName: opName,
+                            notes: "Berhasil ditarik kembali ke gudang pusat"
+                        });
+                    }
                     return;
                 }
 
@@ -593,8 +601,18 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 const destRoom = roomSnap.exists() ? roomSnap.data() : null;
 
                 if (ra && destRoom) {
+                    const data = ra.data();
                     await updateDoc(doc(db, "roomAssets", ra.id), { roomId: newRoomId, updatedAt: new Date().toISOString() });
                     await updateDoc(doc(db, "assets", assetId), { locationId: destRoom.locationId, updatedAt: new Date().toISOString() });
+
+                    await api.addLog({
+                        assetId: data.assetId,
+                        assetName: data.assetName,
+                        type: "MOVEMENT",
+                        toValue: `Pindah ke: ${destRoom.name}`,
+                        operatorName: opName,
+                        notes: `Berhasil update lokasi aset di database pusat`
+                    });
                 }
             }
         },
@@ -612,18 +630,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 let updatedLogs = [...assetLogs];
 
                 for (const item of c.items) {
-                    const logId = uuidv4();
-                    const newLog: AssetLog = {
-                        id: logId,
+                    await api.addLog({
                         assetId: item.assetId,
                         assetName: item.assetName,
                         type: "STATUS",
                         toValue: item.status,
                         operatorName: c.operatorName,
-                        timestamp: c.timestamp,
-                        notes: item.notes
-                    };
-                    updatedLogs = [newLog, ...updatedLogs];
+                        notes: item.notes || `Pengecekan rutin di ${c.roomName}`
+                    });
 
                     if (item.status) {
                         updatedAssets = updatedAssets.map(a => a.id === item.assetId ? {
@@ -636,22 +650,18 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 }
                 setAssets(updatedAssets);
                 saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
-                setAssetLogs(updatedLogs);
-                saveToLocal(STORAGE_KEYS.ASSET_LOGS, updatedLogs);
             } else {
                 await setDoc(doc(db, "checklists", id), newChecklist);
                 for (const item of c.items) {
-                    const logId = uuidv4();
-                    await setDoc(doc(db, "assetLogs", logId), {
-                        id: logId,
+                    await api.addLog({
                         assetId: item.assetId,
                         assetName: item.assetName,
                         type: "STATUS",
                         toValue: item.status,
                         operatorName: c.operatorName,
-                        timestamp: c.timestamp,
-                        notes: item.notes
+                        notes: item.notes || `Audit sistem di ${c.roomName}`
                     });
+
                     if (item.status) {
                         await updateDoc(doc(db, "assets", item.assetId), {
                             status: item.status,
@@ -696,16 +706,24 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const id = uuidv4();
             const timestamp = new Date().toISOString();
 
-            // Prioritas: 
+            // Prioritas Nama: 
+            // 1. Nama yang dikirim manual (log.operatorName)
+            // 2. Nama dari user login (user.name)
+            // 3. Email jika nama kosong
+            // 4. Default "Admin"
+            const finalName = log.operatorName || user?.name || user?.email || "Admin";
+
+            // Prioritas Role: 
             // 1. Role yang dikirim manual di parameter (log.operatorRole)
             // 2. Role dari user yang sedang login (user.role)
-            // 3. Default "SYSTEM" jika tidak ada user (mencegah masuk ke filter ADMIN secara tidak sengaja)
+            // 3. Default "SYSTEM" jika tidak ada user
             const finalRole = log.operatorRole || user?.role || "SYSTEM";
 
-            const newLog = {
+            const newLog: AssetLog = {
                 ...log,
                 id,
                 timestamp,
+                operatorName: finalName,
                 operatorRole: finalRole
             };
 

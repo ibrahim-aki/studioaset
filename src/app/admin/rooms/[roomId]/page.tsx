@@ -5,9 +5,11 @@ import { useLocalDb, Room, MasterAsset, RoomAsset } from "@/context/LocalDbConte
 import { Plus, Trash2, ArrowLeft, Video, Package, Loader2, MapPin, History, Clock, User } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RoomAssetsDistribution({ params }: { params: Promise<{ roomId: string }> }) {
     const { roomId } = use(params);
+    const { user } = useAuth();
 
     const [room, setRoom] = useState<Room | null>(null);
     const [masterAssets, setMasterAssets] = useState<MasterAsset[]>([]);
@@ -72,7 +74,7 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
                 roomId,
                 assetId: selectedAssetId,
                 assetName: masterAsset.name
-            });
+            }, user?.name || user?.email || undefined);
 
             // Reset form
             setSelectedAssetId("");
@@ -89,7 +91,7 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
     const handleRemoveAsset = async (id: string, name: string) => {
         if (confirm(`Hapus ${name} dari ruangan ini?`)) {
             try {
-                await deleteRoomAsset(id);
+                await deleteRoomAsset(id, user?.name || user?.email || undefined);
             } catch (error) {
                 console.error("Error removing:", error);
             }

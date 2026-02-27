@@ -507,45 +507,77 @@ export default function UserManagementPage() {
                 )}
 
                 {activeTab === "logs" && (
-                    <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-gray-50 bg-gray-100/50 flex items-center justify-between">
-                            <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Aktivitas Sistem Terbaru</h3>
+                    <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Record Log Aktivitas</h3>
                             <button
                                 onClick={async () => {
-                                    if (confirm("PERINGATAN: Hapus seluruh log aktivitas sistem secara permanen? Tindakan ini tidak dapat dibatalkan.")) {
+                                    if (confirm("PERINGATAN: Hapus seluruh log aktivitas sistem secara permanen?")) {
                                         try {
                                             const promises = assetLogs.map(log => deleteDoc(doc(db, "assetLogs", log.id)));
                                             await Promise.all(promises);
-                                            alert("Seluruh log berhasil dibersihkan!");
+                                            alert("Log berhasil dikosongkan.");
                                         } catch (error) {
-                                            alert("Gagal membersihkan log.");
+                                            alert("Gagal mengosongkan log.");
                                         }
                                     }
                                 }}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-100 transition-all"
+                                className="flex items-center gap-2 px-3 py-1.5 text-rose-500 hover:text-rose-700 text-[10px] font-black uppercase tracking-widest transition-all"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
-                                Bersihkan Log
+                                Kosongkan Data
                             </button>
                         </div>
-                        <div className="overflow-x-auto max-h-[500px]">
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50 sticky top-0">
+                        <div className="overflow-x-auto max-h-[750px] custom-scrollbar">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-white sticky top-0 z-10 border-b border-gray-100 italic">
                                     <tr>
-                                        <th className="px-6 py-3 text-[10px] uppercase font-black text-gray-400">Waktu</th>
-                                        <th className="px-6 py-3 text-[10px] uppercase font-black text-gray-400">Tipe / Info</th>
-                                        <th className="px-6 py-3 text-[10px] uppercase font-black text-gray-400">Operator</th>
+                                        <th className="px-4 py-2 text-[9px] uppercase font-medium text-gray-300 tracking-widest whitespace-nowrap">Waktu (WIB)</th>
+                                        <th className="px-4 py-2 text-[9px] uppercase font-medium text-gray-300 tracking-widest">Aktivitas & Detail Data</th>
+                                        <th className="px-4 py-2 text-[9px] uppercase font-medium text-gray-300 tracking-widest">Otoritas (Internal)</th>
+                                        <th className="px-4 py-2 text-[9px] uppercase font-medium text-gray-300 tracking-widest">Catatan Sistem</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50 text-[11px]">
+                                <tbody className="divide-y divide-gray-50">
                                     {assetLogs.map(log => (
-                                        <tr key={log.id}>
-                                            <td className="px-6 py-3 text-gray-400">{new Date(log.timestamp).toLocaleString("id-ID")}</td>
-                                            <td className="px-6 py-3">
-                                                <span className="font-bold text-indigo-600 mr-2">{log.type}</span>
-                                                {log.toValue}
+                                        <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                <span className="text-[10px] text-gray-500 font-medium">
+                                                    {new Date(log.timestamp).toLocaleDateString('id-ID')} · {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
                                             </td>
-                                            <td className="px-6 py-3">{log.operatorName}</td>
+                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                <div className="flex items-center gap-1.5 overflow-hidden max-w-[400px]">
+                                                    <span className={clsx(
+                                                        "text-[9px] font-medium uppercase tracking-tighter shrink-0",
+                                                        log.type === "MOVEMENT" ? "text-blue-600" :
+                                                            log.type === "STATUS" ? "text-amber-600" :
+                                                                log.type === "AUTH" ? "text-purple-600" : "text-gray-400"
+                                                    )}>
+                                                        [{log.type}]
+                                                    </span>
+                                                    <span className="text-[10px] font-medium text-gray-900 truncate">
+                                                        {log.assetName || "SYS"}: {log.toValue}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                <div className="flex items-center gap-1.5 italic">
+                                                    <span className="text-[10px] font-medium text-gray-700">{log.operatorName}</span>
+                                                    <span className={clsx(
+                                                        "text-[8px] font-medium uppercase tracking-widest opacity-60",
+                                                        log.operatorRole === "SUPER_ADMIN" ? "text-purple-500" :
+                                                            log.operatorRole === "ADMIN" ? "text-indigo-500" : "text-emerald-500"
+                                                    )}>
+                                                        ({log.operatorRole || "SYS"})
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-1 whitespace-nowrap align-middle">
+                                                <p className="text-[10px] text-gray-400 font-normal italic truncate max-w-[200px]" title={log.notes}>
+                                                    {log.notes || "-"}
+                                                </p>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -559,6 +591,6 @@ export default function UserManagementPage() {
             <footer className="mt-12 pt-8 border-t border-gray-100 text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest italic">
                 Studio Management System v2.2 • Stable Edition
             </footer>
-        </div>
+        </div >
     );
 }

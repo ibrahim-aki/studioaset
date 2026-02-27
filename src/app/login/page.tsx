@@ -47,7 +47,7 @@ export default function LoginPage() {
                 if (role === "SUPER_ADMIN") {
                     addLog({
                         type: "AUTH",
-                        toValue: "Login Berhasil (Super Admin)",
+                        toValue: "Login (Super Admin)",
                         operatorName: userDocSnap.data().name || email,
                         operatorRole: "SUPER_ADMIN",
                         notes: `Email: ${email}`
@@ -56,7 +56,7 @@ export default function LoginPage() {
                 } else if (role === "ADMIN") {
                     addLog({
                         type: "AUTH",
-                        toValue: "Login Berhasil (Admin)",
+                        toValue: "Login (Admin)",
                         operatorName: userDocSnap.data().name || email,
                         operatorRole: "ADMIN",
                         notes: `Email: ${email}`
@@ -65,7 +65,7 @@ export default function LoginPage() {
                 } else if (role === "OPERATOR") {
                     addLog({
                         type: "AUTH",
-                        toValue: "Login Berhasil (Operator)",
+                        toValue: "Login (Operator)",
                         operatorName: userDocSnap.data().name || email,
                         operatorRole: "OPERATOR",
                         notes: `Email: ${email}`
