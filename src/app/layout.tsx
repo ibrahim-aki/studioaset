@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Asset management and checklist system for live streaming studios",
 };
 
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,6 +32,7 @@ export default function RootLayout({
         <AuthProvider>
           <LocalDbProvider>
             {children}
+            <SpeedInsights />
           </LocalDbProvider>
         </AuthProvider>
       </body>
