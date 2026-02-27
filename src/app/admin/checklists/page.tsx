@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLocalDb, Checklist, ChecklistItem } from "@/context/LocalDbContext";
-import { ClipboardList, Calendar, MapPin, User, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertTriangle, AlertOctagon, Zap, Ban, ClipboardCheck } from "lucide-react";
+import { ClipboardList, Calendar, MapPin, User, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertTriangle, AlertOctagon, Zap, Ban, ClipboardCheck, Clock } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
 
@@ -39,52 +39,79 @@ export default function ChecklistHistoryPage() {
 
     const getStatusSummary = (items: ChecklistItem[]) => {
         const total = items.length;
-        let baik = 0, perluPerbaikan = 0, rusak = 0;
+        const problems: Record<string, number> = {};
+        let baikCount = 0;
 
         items.forEach(item => {
-            if (item.status === "BAIK") baik++;
-            else if (item.status === "PERLU_PERBAIKAN") perluPerbaikan++;
-            else if (item.status === "RUSAK_HILANG") rusak++;
+            if (item.status === "BAIK") {
+                baikCount++;
+            } else {
+                // Kelompokkan jumlah berdasarkan statusnya
+                problems[item.status] = (problems[item.status] || 0) + 1;
+            }
         });
 
-        if (total === baik) {
+        if (total === baikCount) {
             return <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-600/20"><CheckCircle2 className="w-3.5 h-3.5" /> Semua Baik</span>;
-        } else if (rusak > 0) {
-            return <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/10"><AlertOctagon className="w-3.5 h-3.5" /> {rusak} Rusak</span>;
         } else {
-            return <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 px-2 py-1 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20"><AlertTriangle className="w-3.5 h-3.5" /> {perluPerbaikan} Perlu Evaluasi</span>;
+            // Susun label secara dinamis (Hanya yang ada jumlahnya yang muncul)
+            const problemSummary = Object.entries(problems)
+                .map(([status, count]) => {
+                    let label = status;
+                    if (status === "RUSAK") label = "Rusak";
+                    else if (status === "MATI") label = "Mati";
+                    else if (status === "HILANG") label = "Hilang";
+                    else if (status === "SERVIS") label = "Servis";
+                    else if (status === "JUAL") label = "Jual";
+
+                    // Format: "1 Rusak" atau "2 Mati"
+                    return `${count} ${label}`;
+                })
+                .join(", ");
+
+            return <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/10"><AlertOctagon className="w-3.5 h-3.5" /> {problemSummary}</span>;
         }
     };
 
     const StatusIcon = ({ status }: { status: string }) => {
         if (status === "BAIK") return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-        if (status === "PERLU_PERBAIKAN") return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-        if (status === "RUSAK_HILANG") return <AlertOctagon className="w-5 h-5 text-rose-500" />;
-        return null;
+        if (status === "SERVIS") return <Clock className="w-5 h-5 text-blue-500" />;
+        return <AlertOctagon className="w-5 h-5 text-rose-500" />;
     };
 
     const RoomStatusBadge = ({ status }: { status: string }) => {
         switch (status) {
             case "READY_FOR_LIVE":
                 return (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-700 uppercase tracking-tighter">
+                        <Zap className="w-3 h-3 fill-current" /> Ready For Live
+                    </span>
+                );
+            case "LIVE_NOW":
+                return (
                     <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-[10px] font-black text-green-700 uppercase tracking-tighter">
-                        <Zap className="w-3 h-3 fill-current" /> Bisa Digunakan Live
+                        <Zap className="w-3 h-3 fill-current" /> Live Now
                     </span>
                 );
             case "NOT_READY":
                 return (
                     <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-1 text-[10px] font-black text-rose-700 uppercase tracking-tighter">
-                        <Ban className="w-3 h-3" /> Tidak Bisa Live
+                        <Ban className="w-3 h-3" /> Not Ready
                     </span>
                 );
+            case "STANDBY":
             case "ROUTINE_CHECK":
                 return (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-700 uppercase tracking-tighter">
-                        <ClipboardCheck className="w-3 h-3" /> Pemeriksaan Rutin
+                    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-[10px] font-black text-gray-500 uppercase tracking-tighter">
+                        <ClipboardCheck className="w-3 h-3" /> Standby / Pengecekan
                     </span>
                 );
             default:
-                return null;
+                return (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                        {status.replace(/_/g, " ") || "SELESAI"}
+                    </span>
+                );
         }
     };
 

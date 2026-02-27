@@ -468,6 +468,8 @@ function AssetsContent() {
                                                 <option value="BAIK">Baik</option>
                                                 <option value="RUSAK">Rusak</option>
                                                 <option value="MATI">Mati</option>
+                                                <option value="SERVIS">Servis</option>
+                                                <option value="JUAL">Jual</option>
                                                 <option value="HILANG">Hilang</option>
                                             </select>
                                         </div>
@@ -590,8 +592,10 @@ function AssetsContent() {
                                                         "inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight",
                                                         asset.status === "RUSAK" ? "bg-amber-50 text-amber-700 border border-amber-100" :
                                                             asset.status === "MATI" ? "bg-rose-50 text-rose-700 border border-rose-100" :
-                                                                asset.status === "HILANG" ? "bg-gray-100 text-gray-600 border border-gray-200" :
-                                                                    "bg-green-50 text-green-700 border border-green-100"
+                                                                asset.status === "SERVIS" ? "bg-blue-50 text-blue-700 border border-blue-100" :
+                                                                    asset.status === "JUAL" ? "bg-purple-50 text-purple-700 border border-purple-100" :
+                                                                        asset.status === "HILANG" ? "bg-gray-100 text-gray-600 border border-gray-200" :
+                                                                            "bg-green-50 text-green-700 border border-green-100"
                                                     )}>
                                                         {asset.status || 'BAIK'}
                                                     </span>
@@ -773,6 +777,8 @@ function AssetsContent() {
                                                 <option value="BAIK">Kondisi Prima (Baik)</option>
                                                 <option value="RUSAK">Perlu Perbaikan (Rusak)</option>
                                                 <option value="MATI">Rusak Total / Mati</option>
+                                                <option value="SERVIS">Sedang Diservis (Servis)</option>
+                                                <option value="JUAL">Aset Dijual (Jual)</option>
                                                 <option value="HILANG">Tidak Terlacak / Hilang</option>
                                             </select>
                                         </div>
@@ -831,8 +837,38 @@ function AssetsContent() {
                                             {historyAsset.description}
                                         </p>
                                     )}
+
+                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                        <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Umur Aset</p>
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {(() => {
+                                                    const start = new Date(historyAsset.entryDate || historyAsset.updatedAt || new Date());
+                                                    const now = new Date();
+                                                    const diffTime = Math.abs(now.getTime() - start.getTime());
+                                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                                    if (diffDays < 30) return `${diffDays} Hari`;
+                                                    const diffMonths = Math.floor(diffDays / 30);
+                                                    if (diffMonths < 12) return `${diffMonths} Bulan`;
+                                                    const years = Math.floor(diffMonths / 12);
+                                                    const months = diffMonths % 12;
+                                                    return `${years} Tahun ${months} Bulan`;
+                                                })()}
+                                            </p>
+                                        </div>
+                                        <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Riwayat Servis</p>
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {getAssetHistory(historyAsset.id).filter(log =>
+                                                    log.toValue === 'SERVIS' ||
+                                                    log.notes?.toLowerCase().includes('servis')
+                                                ).length} Kali
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <button onClick={closeHistory} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                                <button onClick={closeHistory} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 mb-6">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>

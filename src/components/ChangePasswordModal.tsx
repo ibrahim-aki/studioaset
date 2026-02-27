@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { X, Lock, KeyRound, Loader2, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface ChangePasswordModalProps {
 }
 
 export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+    const { showToast } = useToast();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -168,6 +170,29 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                                     className="flex-[2] py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Password"}
+                                </button>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-gray-50 text-center">
+                                <p className="text-[10px] text-gray-400 font-medium mb-2 uppercase tracking-tight">Atau gunakan metode email</p>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const user = auth.currentUser;
+                                        if (user && user.email) {
+                                            try {
+                                                const { sendPasswordResetEmail } = await import("firebase/auth");
+                                                await sendPasswordResetEmail(auth, user.email);
+                                                showToast("Cek email masuk, jika tidak ada pastikan cek email di folder Spam, Terimakasih .", "success");
+                                                onClose();
+                                            } catch (error) {
+                                                showToast("Gagal mengirim email reset.", "error");
+                                            }
+                                        }
+                                    }}
+                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-4"
+                                >
+                                    Kirim Link Reset ke Email Saya
                                 </button>
                             </div>
                         </form>

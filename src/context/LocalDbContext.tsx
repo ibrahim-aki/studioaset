@@ -69,6 +69,7 @@ export interface AssetLog {
     fromValue?: string;
     toValue: string;
     operatorName: string;
+    operatorRole?: string;
     timestamp: string;
     notes?: string;
 }
@@ -269,6 +270,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await setDoc(doc(db, "locations", id), newLoc);
             }
+
+            // Tambahkan log sistem
+            await api.addLog({
+                type: "SYSTEM",
+                toValue: `Lokasi Baru: ${loc.name}`,
+                operatorName: user?.name || user?.email || "Admin",
+                notes: `Berhasil menambahkan cabang baru di ${loc.address}`
+            });
         },
         updateLocation: async (id, data) => {
             if (isDemo) {
@@ -278,14 +287,33 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await updateDoc(doc(db, "locations", id), data);
             }
+
+            // Tambahkan log sistem
+            await api.addLog({
+                type: "SYSTEM",
+                toValue: `Update Lokasi: ${data.name}`,
+                operatorName: user?.name || user?.email || "Admin",
+                notes: `Memperbarui data cabang: ${data.name}`
+            });
         },
         deleteLocation: async (id) => {
+            const target = locations.find(l => l.id === id);
             if (isDemo) {
                 const updated = locations.filter(l => l.id !== id);
                 setLocations(updated);
                 saveToLocal(STORAGE_KEYS.LOCATIONS, updated);
             } else {
                 await deleteDoc(doc(db, "locations", id));
+            }
+
+            // Tambahkan log sistem
+            if (target) {
+                await api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Hapus Lokasi: ${target.name}`,
+                    operatorName: user?.name || user?.email || "Admin",
+                    notes: `Menghapus data cabang dari sistem`
+                });
             }
         },
 
@@ -299,6 +327,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await setDoc(doc(db, "rooms", id), newRoom);
             }
+
+            // Tambahkan log sistem
+            const locName = locations.find(l => l.id === r.locationId)?.name || "Lokasi";
+            await api.addLog({
+                type: "SYSTEM",
+                toValue: `Ruangan Baru: ${r.name}`,
+                operatorName: user?.name || user?.email || "Admin",
+                notes: `Berhasil menambahkan ruangan baru di cabang ${locName}`
+            });
         },
         updateRoom: async (id, data) => {
             if (isDemo) {
@@ -308,8 +345,17 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await updateDoc(doc(db, "rooms", id), data);
             }
+
+            // Tambahkan log sistem
+            await api.addLog({
+                type: "SYSTEM",
+                toValue: `Update Ruangan: ${data.name}`,
+                operatorName: user?.name || user?.email || "Admin",
+                notes: `Memperbarui detail ruangan di sistem`
+            });
         },
         deleteRoom: async (id) => {
+            const target = rooms.find(r => r.id === id);
             if (isDemo) {
                 const updated = rooms.filter(r => r.id !== id);
                 setRooms(updated);
@@ -317,40 +363,42 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await deleteDoc(doc(db, "rooms", id));
             }
+
+            // Tambahkan log sistem
+            if (target) {
+                await api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Hapus Ruangan: ${target.name}`,
+                    operatorName: user?.name || user?.email || "Admin",
+                    notes: `Menghapus data ruangan dari sistem`
+                });
+            }
         },
 
         addAsset: async (a) => {
             const id = uuidv4();
             const newAsset = { ...a, id };
-            const logId = uuidv4();
-            const newLog: AssetLog = {
-                id: logId,
-                assetId: id,
-                assetName: a.name,
-                type: "SYSTEM",
-                toValue: "Aset didaftarkan",
-                operatorName: a.lastModifiedBy || "Sistem",
-                timestamp: new Date().toISOString(),
-                notes: `Kategori: ${a.category}`
-            };
 
             if (isDemo) {
                 const updatedAssets = [...assets, newAsset];
                 setAssets(updatedAssets);
                 saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
-
-                const updatedLogs = [newLog, ...assetLogs];
-                setAssetLogs(updatedLogs);
-                saveToLocal(STORAGE_KEYS.ASSET_LOGS, updatedLogs);
             } else {
                 await setDoc(doc(db, "assets", id), newAsset);
-                await setDoc(doc(db, "assetLogs", logId), {
-                    ...newLog,
-                    assetName: a.name
-                });
             }
+
+            // Gunakan addLog agar otomatis mendapatkan Role dan masuk ke filter Admin
+            await api.addLog({
+                assetId: id,
+                assetName: a.name,
+                type: "SYSTEM",
+                toValue: `Aset Baru: ${a.name}`,
+                operatorName: a.lastModifiedBy || user?.name || "Admin",
+                notes: `Kategori: ${a.category}, Kode: ${a.assetCode || "-"}`
+            });
         },
         updateAsset: async (id, data) => {
+            const target = assets.find(a => a.id === id);
             if (isDemo) {
                 const updated = assets.map(a => a.id === id ? { ...a, ...data } : a);
                 setAssets(updated);
@@ -358,8 +406,19 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await updateDoc(doc(db, "assets", id), data as any);
             }
+
+            // Tambahkan log sistem
+            if (target) {
+                await api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Update Aset: ${data.name || target.name}`,
+                    operatorName: user?.name || user?.email || "Admin",
+                    notes: `Memperbarui info aset. Kode: ${target.assetCode || "-"}`
+                });
+            }
         },
         deleteAsset: async (id) => {
+            const target = assets.find(a => a.id === id);
             if (isDemo) {
                 setAssets(assets.filter(a => a.id !== id));
                 saveToLocal(STORAGE_KEYS.ASSETS, assets.filter(a => a.id !== id));
@@ -374,6 +433,16 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     if (d.data().assetId === id) await deleteDoc(doc(db, "roomAssets", d.id));
                 });
             }
+
+            // Tambahkan log sistem
+            if (target) {
+                await api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Hapus Aset: ${target.name}`,
+                    operatorName: user?.name || user?.email || "Admin",
+                    notes: `Menghapus data aset dangan kode ${target.assetCode || "-"}`
+                });
+            }
         },
 
         addRoomAsset: async (ra, opName) => {
@@ -381,6 +450,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const newRA = { ...ra, id };
 
             if (isDemo) {
+                const asset = assets.find(a => a.id === ra.assetId);
+                if (asset && (asset.status === "SERVIS" || asset.status === "JUAL")) {
+                    throw new Error(`Aset dengan status ${asset.status} tidak bisa dimasukkan ke ruangan.`);
+                }
+
                 // Remove existing mapping first
                 const filteredRA = roomAssets.filter(item => item.assetId !== ra.assetId);
                 const updatedRA = [...filteredRA, newRA];
@@ -412,6 +486,12 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     saveToLocal(STORAGE_KEYS.ASSET_LOGS, updatedLogs);
                 }
             } else {
+                const assetSnap = await getDoc(doc(db, "assets", ra.assetId));
+                const assetData = assetSnap.exists() ? assetSnap.data() : null;
+                if (assetData && (assetData.status === "SERVIS" || assetData.status === "JUAL")) {
+                    throw new Error(`Aset dengan status ${assetData.status} tidak bisa dimasukkan ke ruangan.`);
+                }
+
                 const raQuery = query(collection(db, "roomAssets"));
                 const raSnap = await getDocs(raQuery);
                 const existingMaps = raSnap.docs.filter(d => d.data().assetId === ra.assetId);
@@ -615,7 +695,19 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         addLog: async (log) => {
             const id = uuidv4();
             const timestamp = new Date().toISOString();
-            const newLog = { ...log, id, timestamp };
+
+            // Prioritas: 
+            // 1. Role yang dikirim manual di parameter (log.operatorRole)
+            // 2. Role dari user yang sedang login (user.role)
+            // 3. Default "SYSTEM" jika tidak ada user (mencegah masuk ke filter ADMIN secara tidak sengaja)
+            const finalRole = log.operatorRole || user?.role || "SYSTEM";
+
+            const newLog = {
+                ...log,
+                id,
+                timestamp,
+                operatorRole: finalRole
+            };
 
             if (isDemo) {
                 const updated = [newLog, ...assetLogs] as AssetLog[];

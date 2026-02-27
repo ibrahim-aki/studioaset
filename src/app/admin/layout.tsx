@@ -16,7 +16,8 @@ import {
     X,
     MapPin,
     Shield,
-    History as HistoryIcon
+    History as HistoryIcon,
+    ShieldCheck
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -26,6 +27,7 @@ const navigation = [
     { name: "Rooms", href: "/admin/rooms", icon: DoorOpen },
     { name: "Master Assets", href: "/admin/assets", icon: Video },
     { name: "Laporan", href: "/admin/checklists", icon: ClipboardList },
+    { name: "Log Admin", href: "/admin/logs", icon: ShieldCheck },
     { name: "Changelog", href: "/admin/changelog", icon: HistoryIcon },
 ];
 

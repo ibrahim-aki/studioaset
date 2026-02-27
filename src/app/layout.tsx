@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ToastProvider } from "@/context/ToastContext";
 
 export default function RootLayout({
   children,
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-screen`}>
         <AuthProvider>
           <LocalDbProvider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
             <SpeedInsights />
           </LocalDbProvider>
         </AuthProvider>
