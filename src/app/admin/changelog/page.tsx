@@ -89,7 +89,7 @@ export default function ChangelogPage() {
                             )} />
 
                             <div className="font-bold mb-1 text-gray-900">
-                                v1.0.{buildNum} - {dayStr}, {dateStr} {timeStr}
+                                {dayStr}, {dateStr} {timeStr}
                             </div>
 
                             <div className="space-y-1">
