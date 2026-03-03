@@ -195,7 +195,10 @@ function AssetsContent() {
             if (!formData.id) {
                 const smartInfo = getSmartAssetInfo(formData.name, formData.category, rawAssets);
                 finalName = smartInfo.finalName;
-                assetCode = smartInfo.assetCode;
+                // Jika assetCode kosong, baru gunakan generate otomatis
+                if (!assetCode.trim()) {
+                    assetCode = smartInfo.assetCode;
+                }
             }
 
             const assetData = {
@@ -725,6 +728,18 @@ function AssetsContent() {
                                     >
                                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-medium text-gray-700">Kode Aset / Barang (Opsional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.assetCode}
+                                        onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
+                                        placeholder="Kosongkan untuk generate otomatis"
+                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm font-mono"
+                                    />
+                                    <p className="text-[10px] text-gray-400 italic">Contoh: CAM-0001 atau SONY-A6400-01</p>
                                 </div>
 
                                 <div className="space-y-1.5">
