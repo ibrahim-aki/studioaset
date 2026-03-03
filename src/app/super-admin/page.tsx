@@ -225,7 +225,7 @@ interface UserData {
 }
 
 export default function UserManagementPage() {
-    const [activeTab, setActiveTab] = useState<"users" | "logs">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "logs" | "settings">("users");
     const [users, setUsers] = useState<UserData[]>([]);
     const [checklists, setChecklists] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -247,7 +247,11 @@ export default function UserManagementPage() {
         });
 
         const unsubSettings = onSnapshot(doc(db, "settings", "system-config"), (snap) => {
-            if (snap.exists()) setTrialMode(snap.data().trialModeEnabled);
+            if (snap.exists()) {
+                setTrialMode(snap.data().trialModeEnabled);
+            } else {
+                setTrialMode(false);
+            }
         });
 
         return () => {
@@ -301,6 +305,20 @@ export default function UserManagementPage() {
         }
     };
 
+    const resetTrialData = () => {
+        if (!confirm("Hapus semua data dalam Mode Uji Coba (Local Storage)?\nTindakan ini tidak bisa dibatalkan.")) return;
+
+        const keys = [
+            "studioaset_locations", "studioaset_rooms", "studioaset_assets",
+            "studioaset_room_assets", "studioaset_checklists", "studioaset_asset_logs",
+            "studioaset_categories", "studioaset_changelogs"
+        ];
+
+        keys.forEach(key => localStorage.removeItem(key));
+        alert("Data Mode Uji Coba telah dibersihkan.");
+        window.location.reload();
+    };
+
     if (loading) {
         return (
             <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -329,7 +347,8 @@ export default function UserManagementPage() {
                 <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200">
                     {[
                         { id: "users", name: "Pengguna", icon: Users },
-                        { id: "logs", name: "Log", icon: History }
+                        { id: "logs", name: "Log", icon: History },
+                        { id: "settings", name: "Sistem", icon: ShieldAlert }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -539,6 +558,68 @@ export default function UserManagementPage() {
                     </div>
                 )}
 
+                {activeTab === "settings" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 bg-gray-50">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Konfigurasi Sistem Global</h3>
+                            </div>
+                            <div className="p-8">
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0 border border-indigo-100">
+                                            <ShieldAlert className={clsx("w-6 h-6", trialMode ? "text-emerald-500" : "text-gray-400")} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900">Mode Uji Coba (Trial Mode)</h4>
+                                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                                                Jika diaktifkan, tombol login demo (Admin & Operator) akan muncul di halaman login.
+                                                Gunakan ini hanya untuk testing atau demonstrasi fitur kepada pengguna baru.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={toggleTrialMode}
+                                        className={clsx(
+                                            "whitespace-nowrap px-8 py-3 rounded-xl font-black text-xs transition-all uppercase tracking-widest border-2 flex items-center gap-3",
+                                            trialMode
+                                                ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200"
+                                                : "bg-white border-gray-200 text-gray-400 hover:border-gray-300"
+                                        )}
+                                    >
+                                        <div className={clsx("w-2 h-2 rounded-full", trialMode ? "bg-white animate-pulse" : "bg-gray-300")} />
+                                        {trialMode ? "MODE AKTIF" : "MODE MATI"}
+                                    </button>
+                                </div>
+
+                                <div className="mt-8 p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                                    <div className="flex gap-4">
+                                        <Shield className="w-5 h-5 text-amber-600 shrink-0" />
+                                        <div>
+                                            <h4 className="text-xs font-black text-amber-900 tracking-wider">KEAMANAN KRITIS</h4>
+                                            <p className="text-[11px] text-amber-700 mt-1">
+                                                Pastikan untuk mematikan Mode Uji Coba saat sistem sudah digunakan secara operasional penuh untuk mencegah akses tidak sah melalui akun demo.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-gray-900">Bersihkan Data Uji Coba</h4>
+                                        <p className="text-[10px] text-gray-500 mt-0.5">Hapus seluruh data yang tersimpan di Local Storage untuk Mode Uji Coba.</p>
+                                    </div>
+                                    <button
+                                        onClick={resetTrialData}
+                                        className="px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        Bersihkan Sekarang
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <footer className="mt-12 pt-8 border-t border-gray-100 text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest italic">
