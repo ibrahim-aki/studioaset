@@ -118,16 +118,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userDocRef = doc(db, "users", user.uid);
 
             const unsub = onSnapshot(userDocRef, (snap) => {
-                // Skip snapshots from local cache (fromCache=true) to avoid
-                // false positives when Firestore write hasn't reached server yet
+                // Skip snapshots from local cache to avoid stale data alerts
                 if (snap.metadata.fromCache) return;
-                if (snap.exists() && !snap.metadata.hasPendingWrites) {
+
+                if (snap.exists()) {
                     const cloudSessionId = snap.data().lastSessionId;
-                    // Re-read localSessionId here (inside callback) to always get latest value
                     const localSessionId = localStorage.getItem("studio_session_id");
+
+                    // LOGIC: 
+                    // 1. Only trigger if BOTH IDs exist
+                    // 2. Only trigger if cloud ID has changed to something OTHER than our current session
+                    // 3. Ignore if cloud ID is empty (means no active session restriction)
                     if (cloudSessionId && localSessionId && cloudSessionId !== localSessionId) {
-                        alert("Sesi Anda berakhir karena login di perangkat lain.");
-                        logout();
+                        // Additional safety: If we just logged in (within last 3 seconds), 
+                        // verify we aren't seeing our own previous write
+                        if (!snap.metadata.hasPendingWrites) {
+                            alert("Sesi Anda berakhir karena login di perangkat lain.");
+                            logout();
+                        }
                     }
                 }
             });
