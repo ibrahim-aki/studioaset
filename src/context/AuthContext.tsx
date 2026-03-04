@@ -47,13 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                     // Fetch role and company from Firestore
                     const userDocRef = doc(db, "users", firebaseUser.uid);
-
-                    // Update session ID in Firestore
-                    await setDoc(userDocRef, {
-                        lastSessionId: localSessionId,
-                        lastLogin: new Date().toISOString()
-                    }, { merge: true });
-
                     const userDocSnap = await getDoc(userDocRef);
 
                     let role: UserRole = null;
@@ -61,8 +54,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                     if (userDocSnap.exists()) {
                         const data = userDocSnap.data();
+
+                        // Safety check: ensure role exists to prevent "Invalid Role" error
+                        if (!data.role) {
+                            console.error("User document found but role is missing:", firebaseUser.uid);
+                            setUser({
+                                uid: firebaseUser.uid,
+                                email: firebaseUser.email,
+                                role: null,
+                                isDemo: false,
+                            });
+                            return;
+                        }
+
                         role = data.role as UserRole;
                         name = data.name || "";
+
+                        // Use updateDoc (SAFEST) to only update session ID without risk of overwriting the whole doc
+                        updateDoc(userDocRef, {
+                            lastSessionId: localSessionId,
+                            lastLogin: new Date().toISOString()
+                        }).catch(err => {
+                            console.warn("Session update failed (possibly due to incomplete initial setup):", err.message);
+                        });
 
                         setUser({
                             uid: firebaseUser.uid,
@@ -74,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             locationId: data.locationId || "",
                             locationName: data.locationName || "",
                             phone: data.phone || "",
-                            lastSessionId: localSessionId, // Use the one we just wrote
+                            lastSessionId: localSessionId,
                             isDemo: false,
                         });
                     } else {
@@ -105,14 +119,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check for session hijacking (Single Session Login)
     useEffect(() => {
-        if (user && !user.isDemo && db) {
+        if (user && !user.isDemo && db && user.lastSessionId) {
             const userDocRef = doc(db, "users", user.uid);
-            const unsubSession = onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const localSessionId = localStorage.getItem("studio_session_id");
+            const localSessionId = localStorage.getItem("studio_session_id");
 
-                    if (data.lastSessionId && data.lastSessionId !== localSessionId) {
+            const unsubSession = onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists() && !docSnap.metadata.hasPendingWrites) {
+                    const data = docSnap.data();
+
+                    // Only logout if:
+                    // 1. There is a session ID in Firestore
+                    // 2. We have a session ID locally
+                    // 3. They don't match
+                    if (data.lastSessionId && localSessionId && data.lastSessionId !== localSessionId) {
+                        console.warn("Session Mismatch:", { server: data.lastSessionId, local: localSessionId });
                         alert("Sesi Anda telah berakhir karena akun ini login di perangkat lain.");
                         logout();
                     }
