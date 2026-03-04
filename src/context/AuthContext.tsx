@@ -116,11 +116,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (user && !user.isDemo && user.role) {
             const userDocRef = doc(db, "users", user.uid);
-            const localSessionId = localStorage.getItem("studio_session_id");
 
             const unsub = onSnapshot(userDocRef, (snap) => {
+                // Skip snapshots from local cache (fromCache=true) to avoid
+                // false positives when Firestore write hasn't reached server yet
+                if (snap.metadata.fromCache) return;
                 if (snap.exists() && !snap.metadata.hasPendingWrites) {
                     const cloudSessionId = snap.data().lastSessionId;
+                    // Re-read localSessionId here (inside callback) to always get latest value
+                    const localSessionId = localStorage.getItem("studio_session_id");
                     if (cloudSessionId && localSessionId && cloudSessionId !== localSessionId) {
                         alert("Sesi Anda berakhir karena login di perangkat lain.");
                         logout();

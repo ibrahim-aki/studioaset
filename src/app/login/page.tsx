@@ -51,9 +51,10 @@ export default function LoginPage() {
                     const newSessionId = Math.random().toString(36).substring(2, 15);
                     localStorage.setItem("studio_session_id", newSessionId);
 
-                    // Update session in Firestore (non-blocking)
+                    // Update session in Firestore — MUST await before redirect
+                    // to prevent race condition with the session monitor in AuthContext
                     const { updateDoc } = await import("firebase/firestore");
-                    updateDoc(userDocRef, {
+                    await updateDoc(userDocRef, {
                         lastSessionId: newSessionId,
                         lastLogin: new Date().toISOString()
                     }).catch(err => console.error("Session update failed:", err));
