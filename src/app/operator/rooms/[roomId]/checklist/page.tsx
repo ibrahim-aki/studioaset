@@ -150,7 +150,7 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
         setIsSubmitting(true);
         try {
-            // Add checklist to history (this also syncs Master status in Context)
+            // STEP 1 (KRITIS): Simpan checklist ke database — jika ini gagal, batalkan semua
             await addChecklist({
                 locationId,
                 locationName,
@@ -164,25 +164,36 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                 items: checklist
             });
 
-            // Process Movements
+            // STEP 2 (SEKUNDER/BEST-EFFORT): Proses perpindahan aset
+            // Dibungkus try-catch individual agar kegagalan permission pada
+            // koleksi roomAssets tidak membatalkan laporan yang sudah tersimpan.
             for (const item of checklist) {
                 const isAlreadyInRoom = rawRoomAssets.some(ra => ra.assetId === item.assetId && ra.roomId === roomId);
 
-                // Case A: Asset is new (pulled from warehouse/other)
+                // Case A: Aset baru (diambil dari gudang)
                 if (!isAlreadyInRoom) {
-                    await addRoomAsset({
-                        roomId: roomId,
-                        assetId: item.assetId,
-                        assetName: item.assetName
-                    }, user?.name || "Operator");
+                    try {
+                        await addRoomAsset({
+                            roomId: roomId,
+                            assetId: item.assetId,
+                            assetName: item.assetName
+                        }, user?.name || "Operator");
+                    } catch (raErr) {
+                        console.warn(`[Checklist] Gagal daftarkan aset baru ke ruangan (non-kritis):`, raErr);
+                    }
                 }
 
-                // Case B: Asset is explicitly moved out
+                // Case B: Aset dipindahkan keluar
                 if (item.movedToRoomId && item.movedToRoomId !== "") {
-                    await moveRoomAsset(item.assetId, item.movedToRoomId, user?.name || "Operator");
+                    try {
+                        await moveRoomAsset(item.assetId, item.movedToRoomId, user?.name || "Operator");
+                    } catch (mvErr) {
+                        console.warn(`[Checklist] Gagal pindahkan aset (non-kritis):`, mvErr);
+                    }
                 }
             }
 
+            // Laporan utama sudah tersimpan — tampilkan halaman sukses
             setSubmitted(true);
         } catch (error) {
             console.error("Error submitting checklist:", error);
@@ -230,7 +241,7 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                 <h2 className="text-2xl font-black text-gray-900 mb-2">Laporan Terkirim!</h2>
                 <p className="text-gray-500 font-medium mb-8">Terima kasih, hasil pengecekan Anda telah tercatat di sistem pusat.</p>
                 <button
-                    onClick={() => router.push("/operator/rooms")}
+                    onClick={() => router.push(`/operator/rooms?locationId=${locationId}`)}
                     className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold py-4 rounded-2xl transition-colors"
                 >
                     Kembali ke Daftar Ruangan

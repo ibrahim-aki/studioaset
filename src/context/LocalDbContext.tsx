@@ -841,34 +841,53 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 setAssets(updatedAssets);
                 saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
             } else {
+                // STEP 1: Simpan checklist utama — operasi kritis, biarkan error propagate
                 await setDoc(doc(db, "checklists", id), newChecklist);
+
+                // STEP 2: Update status aset & log — operasi sekunder (best-effort)
+                // Dibungkus try-catch individual agar kegagalan permission rules
+                // pada koleksi 'assets' tidak membatalkan seluruh pengiriman laporan.
                 for (const item of c.items) {
-                    await api.addLog({
-                        assetId: item.assetId,
-                        assetName: item.assetName,
-                        type: "STATUS",
-                        toValue: item.status,
-                        operatorName: c.operatorName,
-                        companyId: companyId, // Pastikan ID perusahaan terkirim
-                        notes: item.notes || `Audit sistem di ${c.roomName}`
-                    });
+                    try {
+                        await api.addLog({
+                            assetId: item.assetId,
+                            assetName: item.assetName,
+                            type: "STATUS",
+                            toValue: item.status,
+                            operatorName: c.operatorName,
+                            companyId: companyId,
+                            notes: item.notes || `Audit sistem di ${c.roomName}`
+                        });
+                    } catch (logErr) {
+                        console.warn("[addChecklist] Gagal tulis log item (non-kritis):", logErr);
+                    }
 
                     if (item.status) {
-                        await updateDoc(doc(db, "assets", item.assetId), {
-                            status: item.status,
-                            conditionNotes: item.notes,
-                            updatedAt: new Date().toISOString()
-                        });
+                        try {
+                            await updateDoc(doc(db, "assets", item.assetId), {
+                                status: item.status,
+                                conditionNotes: item.notes,
+                                companyId: companyId, // Sertakan agar Security Rules tidak reject
+                                updatedAt: new Date().toISOString()
+                            });
+                        } catch (assetErr) {
+                            console.warn(`[addChecklist] Gagal update status aset ${item.assetName} (non-kritis):`, assetErr);
+                        }
                     }
                 }
 
-                // Log overall room status
-                await api.addLog({
-                    type: "SYSTEM",
-                    toValue: `Audit Room: ${c.roomStatus || "SELESAI"}`,
-                    operatorName: c.operatorName,
-                    notes: `Laporan masuk untuk ${c.roomName} (${c.locationName}). Status akhir: ${c.roomStatus || "SELESAI"}`
-                });
+                // STEP 3: Log ringkasan ruangan — best-effort
+                try {
+                    await api.addLog({
+                        type: "SYSTEM",
+                        toValue: `Audit Room: ${c.roomStatus || "SELESAI"}`,
+                        operatorName: c.operatorName,
+                        companyId: companyId,
+                        notes: `Laporan masuk untuk ${c.roomName} (${c.locationName}). Status akhir: ${c.roomStatus || "SELESAI"}`
+                    });
+                } catch (summaryLogErr) {
+                    console.warn("[addChecklist] Gagal tulis log ringkasan (non-kritis):", summaryLogErr);
+                }
             }
         },
 

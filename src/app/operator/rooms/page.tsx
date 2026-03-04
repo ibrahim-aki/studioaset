@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useLocalDb, Room } from "@/context/LocalDbContext";
-import { DoorOpen, ArrowRight, Video, Loader2, ArrowLeft, Clock, User } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { ArrowRight, Video, Loader2, ArrowLeft, Clock, User, MapPin, Lock } from "lucide-react";
 import Link from "next/link";
 
 export default function OperatorRoomSelection() {
@@ -11,9 +12,13 @@ export default function OperatorRoomSelection() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedLocationId, setSelectedLocationId] = useState("");
 
-    const { rooms: rawRooms, locations, checklists } = useLocalDb();
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const queryLocationId = searchParams?.get('locationId');
+    const { user } = useAuth();
+    const { rooms: rawRooms, locations, checklists, operatorShifts } = useLocalDb();
+
+    // Cari shift aktif milik operator yang sedang login
+    const activeShift = operatorShifts.find(
+        s => s.operatorId === user?.uid && s.status === "ACTIVE"
+    );
 
     useEffect(() => {
         const roomsData = [...rawRooms];
@@ -23,12 +28,22 @@ export default function OperatorRoomSelection() {
     }, [rawRooms]);
 
     useEffect(() => {
-        if (queryLocationId) {
-            setSelectedLocationId(queryLocationId);
-        } else if (locations.length > 0 && !selectedLocationId) {
-            setSelectedLocationId(locations[0].id);
+        // PRIORITAS: Jika ada shift aktif, SELALU kunci ke lokasi shift tersebut
+        // Ini mencegah operator berpindah ke ruangan cabang lain
+        if (activeShift) {
+            setSelectedLocationId(activeShift.locationId);
+        } else {
+            // Fallback jika tidak ada shift aktif (edge case)
+            const queryLocationId = typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('locationId')
+                : null;
+            if (queryLocationId) {
+                setSelectedLocationId(queryLocationId);
+            } else if (locations.length > 0 && !selectedLocationId) {
+                setSelectedLocationId(locations[0].id);
+            }
         }
-    }, [locations, selectedLocationId, queryLocationId]);
+    }, [activeShift, locations]);
 
     const filteredRooms = rooms.filter(room => {
         const matchLocation = room.locationId === selectedLocationId;
@@ -57,6 +72,8 @@ export default function OperatorRoomSelection() {
         return roomChecklists[0] || null;
     };
 
+    const activeLocationName = locations.find(l => l.id === selectedLocationId)?.name || "";
+
     return (
         <div className="space-y-6">
             <div>
@@ -66,18 +83,34 @@ export default function OperatorRoomSelection() {
                 <h1 className="text-2xl font-black text-gray-900 tracking-tight">Pilih Ruangan</h1>
                 <p className="text-sm text-gray-500 font-medium mt-1 mb-6">Pilih ruangan yang ingin Anda evaluasi jadwal/kondisinya.</p>
 
-                <div className="relative mb-4">
-                    <select
-                        value={selectedLocationId}
-                        onChange={(e) => setSelectedLocationId(e.target.value)}
-                        className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-5 pr-12 text-sm text-gray-900 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none"
-                    >
-                        <option value="" disabled>-- Pilih Lokasi Cabang --</option>
-                        {locations.map(loc => (
-                            <option key={loc.id} value={loc.id}>{loc.name}</option>
-                        ))}
-                    </select>
-                </div>
+                {/* Selector Lokasi: Dikunci jika ada shift aktif */}
+                {activeShift ? (
+                    // Tampilkan badge lokasi yang dikunci (tidak bisa diubah)
+                    <div className="w-full bg-indigo-50 border border-indigo-200 rounded-2xl py-4 px-5 mb-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-indigo-500" />
+                            <span className="text-sm font-bold text-indigo-800">{activeLocationName}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                            <Lock className="w-3 h-3" />
+                            Lokasi Shift
+                        </div>
+                    </div>
+                ) : (
+                    // Tampilkan dropdown jika tidak ada shift aktif
+                    <div className="relative mb-4">
+                        <select
+                            value={selectedLocationId}
+                            onChange={(e) => setSelectedLocationId(e.target.value)}
+                            className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-5 pr-12 text-sm text-gray-900 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none"
+                        >
+                            <option value="" disabled>-- Pilih Lokasi Cabang --</option>
+                            {locations.map(loc => (
+                                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div className="relative">
                     <input
