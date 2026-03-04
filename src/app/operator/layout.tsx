@@ -29,6 +29,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
             type: "AUTH",
             toValue: "Logout",
             operatorName: user?.name || user?.email || "Unknown",
+            companyId: user?.companyId || "", // Pastikan ID perusahaan terkirim
             notes: "Role: OPERATOR (Shift Berakhir Otomatis)"
         });
         logout();

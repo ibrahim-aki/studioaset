@@ -59,35 +59,27 @@ export default function LoginPage() {
                     }).catch(err => console.error("Session update failed:", err));
 
                     // Add logs and redirect
+                    const logData = {
+                        type: "AUTH" as const,
+                        operatorName: userData.name || email,
+                        operatorRole: role as any,
+                        companyId: userData.companyId || "",
+                        notes: `Email: ${email}`
+                    };
+
+                    // Persist for context fallback
+                    if (userData.companyId) {
+                        localStorage.setItem("last_known_company_id", userData.companyId);
+                    }
+
                     if (role === "SUPER_ADMIN") {
-                        addLog({
-                            type: "AUTH",
-                            toValue: "Login (Super Admin)",
-                            operatorName: userData.name || email,
-                            operatorRole: "SUPER_ADMIN",
-                            companyId: userData.companyId || "",
-                            notes: `Email: ${email}`
-                        });
+                        addLog({ ...logData, toValue: "Login (Super Admin)" });
                         router.push("/super-admin");
                     } else if (role === "ADMIN") {
-                        addLog({
-                            type: "AUTH",
-                            toValue: "Login (Admin)",
-                            operatorName: userData.name || email,
-                            operatorRole: "ADMIN",
-                            companyId: userData.companyId || "",
-                            notes: `Email: ${email}`
-                        });
+                        addLog({ ...logData, toValue: "Login (Admin)" });
                         router.push("/admin");
                     } else if (role === "OPERATOR") {
-                        addLog({
-                            type: "AUTH",
-                            toValue: "Login (Operator)",
-                            operatorName: userData.name || email,
-                            operatorRole: "OPERATOR",
-                            companyId: userData.companyId || "",
-                            notes: `Email: ${email}`
-                        });
+                        addLog({ ...logData, toValue: "Login (Operator)" });
                         router.push("/operator");
                     }
                 } else {

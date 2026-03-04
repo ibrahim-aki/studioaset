@@ -624,6 +624,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "MOVEMENT",
                         toValue: `Masuk ke Ruangan: ${destRoom.name}`,
                         operatorName: opName,
+                        companyId: companyId, // Pastikan ID perusahaan terkirim
                         notes: `Berhasil alokasi aset ke unit studio`
                     });
                 }
@@ -774,11 +775,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     }
                 }
 
-                // Log overall room status
                 await api.addLog({
                     type: "SYSTEM",
                     toValue: `Audit: ${c.roomStatus || "SELESAI"}`,
                     operatorName: c.operatorName,
+                    companyId: companyId, // Pastikan ID perusahaan terkirim
                     notes: `Laporan checklist ruangan ${c.roomName} (${c.locationName}). Catatan: ${c.overallNotes || "-"}`
                 });
 
@@ -793,6 +794,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "STATUS",
                         toValue: item.status,
                         operatorName: c.operatorName,
+                        companyId: companyId, // Pastikan ID perusahaan terkirim
                         notes: item.notes || `Audit sistem di ${c.roomName}`
                     });
 
@@ -861,15 +863,15 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             // 3. Default "SYSTEM" jika tidak ada user
             const finalRole = log.operatorRole || user?.role || "SYSTEM";
 
-            const companyId = log.companyId || user?.companyId || "";
+            let companyId = log.companyId || user?.companyId || "";
             if (!companyId && finalRole !== "SUPER_ADMIN" && finalRole !== "SYSTEM") {
-                console.error("DEBUG: Log without companyId", { finalRole, finalName, log });
+                companyId = localStorage.getItem("last_known_company_id") || "";
             }
 
             const newLog: AssetLog = {
                 ...log,
                 id,
-                companyId,
+                companyId: companyId,
                 timestamp,
                 operatorName: finalName,
                 operatorRole: finalRole
@@ -935,18 +937,30 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 type: "AUTH",
                 toValue: "Mulai Tugas",
                 operatorName,
+                companyId: companyId, // Pastikan ID perusahaan terkirim
                 notes: `Mulai shift di ${shiftData.locationName} (${shiftData.startTime} - ${shiftData.endTime})`
             });
 
             return id;
         },
         endShift: async (id) => {
+            const target = operatorShifts.find(s => s.id === id);
             if (isDemo) {
                 const updated = operatorShifts.map(s => s.id === id ? { ...s, status: "COMPLETED" } : s) as OperatorShift[];
                 setOperatorShifts(updated);
                 saveToLocal(STORAGE_KEYS.OPERATOR_SHIFTS, updated);
             } else {
                 await updateDoc(doc(db, "operatorShifts", id), { status: "COMPLETED" });
+            }
+
+            if (target) {
+                await api.addLog({
+                    type: "AUTH",
+                    toValue: "Selesai Tugas",
+                    operatorName: target.operatorName,
+                    companyId: target.companyId,
+                    notes: `Menyelesaikan tugas (Shift: ${target.startTime} - ${target.endTime})`
+                });
             }
         }
     };
