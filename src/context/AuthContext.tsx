@@ -35,14 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-            if (firebaseUser) {
-                try {
-                    const userDocRef = doc(db, "users", firebaseUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
+        let unsubDoc: (() => void) | null = null;
 
-                    if (userDocSnap.exists()) {
-                        const data = userDocSnap.data();
+        const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+            if (unsubDoc) {
+                unsubDoc();
+                unsubDoc = null;
+            }
+
+            if (firebaseUser) {
+                const userDocRef = doc(db, "users", firebaseUser.uid);
+
+                // Use onSnapshot for real-time profile updates (Role, Company, etc)
+                unsubDoc = onSnapshot(userDocRef, (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
 
                         // Safety check: Don't login if role is missing (corrupted doc)
                         if (!data.role) {
@@ -56,15 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             return;
                         }
 
-                        // AUTO-SYNC COMPANY ID: 
-                        // Jika Admin/Operator tidak punya companyId di DB, coba ambil dari localStorage (hasil login sebelumnya)
+                        // AUTO-SYNC COMPANY ID Logic
                         let finalCompanyId = data.companyId || "";
                         if (!finalCompanyId && (data.role === "ADMIN" || data.role === "OPERATOR")) {
                             const cachedId = localStorage.getItem("last_known_company_id");
                             if (cachedId) {
                                 finalCompanyId = cachedId;
-                                // Auto-repair user document in Firestore (tanpa menunggu)
-                                updateDoc(userDocRef, { companyId: cachedId }).catch(e => console.error("Auto-sync companyId failed:", e));
+                                // Auto-repair in Firestore if missing
+                                updateDoc(userDocRef, { companyId: cachedId }).catch(e => console.error("Auto-sync failed:", e));
                             }
                         }
 
@@ -89,16 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             isDemo: false,
                         });
                     }
-                } catch (error) {
-                    console.error("Auth initialization error:", error);
-                }
+                    setLoading(false);
+                }, (error) => {
+                    console.error("User doc listener error:", error);
+                    setLoading(false);
+                });
             } else {
                 setUser(null);
+                setLoading(false);
             }
-            setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeAuth();
+            if (unsubDoc) unsubDoc();
+        };
     }, []);
 
     // Monitor session mismatch

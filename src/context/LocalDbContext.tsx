@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
 import {
     collection,
     onSnapshot,
@@ -197,6 +197,13 @@ const STORAGE_KEYS = {
 export function LocalDbProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const isDemo = user?.isDemo;
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+    // Memoized Company ID with robust fallback to ensure logs/data never go missing
+    const finalCompanyId = useMemo(() => {
+        if (!user || isSuperAdmin) return "";
+        return user.companyId || (typeof window !== 'undefined' ? localStorage.getItem("last_known_company_id") : "") || "";
+    }, [user, isSuperAdmin]);
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
@@ -247,17 +254,12 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         if (!db || isDemo || !user) return;
 
         const unsubs: (() => void)[] = [];
-        const isSuperAdmin = user.role === "SUPER_ADMIN";
-        const companyId = user.companyId;
 
-        // Jika bukan Super Admin tapi companyId belum ada, tunggu atau gunakan fallback
-        let finalCompanyId = companyId;
+        // Jika bukan Super Admin tapi companyId belum ada, tunggu sampai siap
+        // Ini mencegah query "where companyId == undefined" yang mengakibatkan data kosong
         if (!isSuperAdmin && !finalCompanyId) {
-            finalCompanyId = localStorage.getItem("last_known_company_id") || "";
-            if (!finalCompanyId) {
-                console.warn("LocalDb: Waiting for companyId for role:", user.role);
-                return;
-            }
+            console.warn("LocalDb: Waiting for companyId for role:", user.role);
+            return;
         }
 
         // Helper to get base collection or filtered query
@@ -295,7 +297,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         const unsubChecklists = onSnapshot(
             isSuperAdmin
                 ? collection(db, "checklists")
-                : query(collection(db, "checklists"), where("companyId", "==", companyId)),
+                : query(collection(db, "checklists"), where("companyId", "==", finalCompanyId)),
             (snap) => {
                 const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Checklist));
                 setChecklists(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
@@ -337,7 +339,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         setIsInitialized(true);
         return () => unsubs.forEach(unsub => unsub());
-    }, [isDemo, user?.uid, user?.companyId]);
+    }, [isDemo, user?.uid, finalCompanyId]);
 
     const api: LocalDbContextType = {
         companies,
@@ -498,7 +500,12 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addAsset: async (a) => {
             const id = uuidv4();
-            const companyId = user?.companyId || "";
+            const companyId = finalCompanyId; // Gunakan finalCompanyId yang stabil
+
+            if (!isSuperAdmin && !companyId) {
+                throw new Error("Gagal menambah aset: ID Perusahaan tidak ditemukan.");
+            }
+
             const newAsset = { ...a, id, companyId };
 
             if (isDemo) {
@@ -548,11 +555,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 saveToLocal(STORAGE_KEYS.ROOM_ASSETS, updatedRA);
             } else {
                 await deleteDoc(doc(db, "assets", id));
-                const q = query(collection(db, "roomAssets"));
-                const snap = await getDocs(q);
-                snap.docs.forEach(async (d) => {
-                    if (d.data().assetId === id) await deleteDoc(doc(db, "roomAssets", d.id));
-                });
+                // FIX: Gunakan state lokal daripada getDocs untuk efisiensi & keamanan
+                const existingInRooms = roomAssets.filter(ra => ra.assetId === id);
+                for (const ra of existingInRooms) {
+                    await deleteDoc(doc(db, "roomAssets", ra.id));
+                }
             }
 
             // Tambahkan log sistem
@@ -567,7 +574,13 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addRoomAsset: async (ra, opName) => {
             const id = uuidv4();
-            const companyId = user?.companyId || "";
+            const companyId = finalCompanyId;
+
+            // VALIDASI KRITIS
+            if (!isSuperAdmin && !companyId) {
+                throw new Error("Sesi perusahaan tidak valid. Silakan logout dan login kembali.");
+            }
+
             const newRA = { ...ra, id, companyId };
 
             if (isDemo) {
@@ -598,28 +611,40 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "MOVEMENT",
                         toValue: `Masuk ke Ruangan: ${destRoom.name}`,
                         operatorName: opName,
-                        notes: `Alokasi aset ke ruangan studio`
+                        companyId: companyId,
+                        notes: `Alokasi aset ke ruangan studio (Demo)`
                     });
                 }
             } else {
-                const assetSnap = await getDoc(doc(db, "assets", ra.assetId));
-                const assetData = assetSnap.exists() ? assetSnap.data() : null;
-                if (assetData && (assetData.status === "SERVIS" || assetData.status === "JUAL")) {
-                    throw new Error(`Aset dengan status ${assetData.status} tidak bisa dimasukkan ke ruangan.`);
+                // 1. Dapatkan data aset & room (Gunakan state lokal dahulu, fallback ke DB)
+                let assetData = assets.find(a => a.id === ra.assetId);
+                let roomData = rooms.find(r => r.id === ra.roomId);
+
+                if (!roomData) {
+                    const snap = await getDoc(doc(db, "rooms", ra.roomId));
+                    if (snap.exists()) roomData = { id: snap.id, ...snap.data() } as Room;
                 }
 
-                const raQuery = query(collection(db, "roomAssets"));
-                const raSnap = await getDocs(raQuery);
-                const existingMaps = raSnap.docs.filter(d => d.data().assetId === ra.assetId);
-                for (const oldDoc of existingMaps) await deleteDoc(doc(db, "roomAssets", oldDoc.id));
+                if (assetData) {
+                    if (assetData.status === "SERVIS" || assetData.status === "JUAL") {
+                        throw new Error(`Aset dengan status ${assetData.status} tidak bisa dimasukkan ke ruangan.`);
+                    }
+                }
 
+                // 2. Bersihkan pemetaan lama (Gunakan state lokal sebagai filter)
+                const existingMaps = roomAssets.filter(item => item.assetId === ra.assetId);
+                for (const oldDoc of existingMaps) {
+                    await deleteDoc(doc(db, "roomAssets", oldDoc.id));
+                }
+
+                // 3. Simpan pemetaan baru
                 await setDoc(doc(db, "roomAssets", id), newRA);
 
-                const roomSnap = await getDoc(doc(db, "rooms", ra.roomId));
-                const destRoom = roomSnap.exists() ? roomSnap.data() : null;
-                if (destRoom) {
+                // 4. Update lokasi di Master Asset jika data ruangan tersedia
+                if (roomData) {
                     await updateDoc(doc(db, "assets", ra.assetId), {
-                        locationId: destRoom.locationId,
+                        locationId: roomData.locationId,
+                        companyId: companyId, // Sertakan kembali untuk validasi Security Rules
                         updatedAt: new Date().toISOString()
                     });
 
@@ -627,15 +652,27 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         assetId: ra.assetId,
                         assetName: ra.assetName,
                         type: "MOVEMENT",
-                        toValue: `Masuk ke Ruangan: ${destRoom.name}`,
+                        toValue: `Masuk ke Ruangan: ${roomData.name}`,
                         operatorName: opName,
-                        companyId: companyId, // Pastikan ID perusahaan terkirim
-                        notes: `Berhasil alokasi aset ke unit studio`
+                        companyId: companyId,
+                        notes: `Berhasil alokasikan aset ke ruangan`
+                    });
+                } else {
+                    // Log minimal jika data ruangan gagal dimuat
+                    await api.addLog({
+                        assetId: ra.assetId,
+                        assetName: ra.assetName,
+                        type: "MOVEMENT",
+                        toValue: "Masuk ke Ruangan",
+                        operatorName: opName,
+                        companyId: companyId,
+                        notes: "Alokasi tercatat (Room detail pending sync)"
                     });
                 }
             }
         },
         deleteRoomAsset: async (id, opName) => {
+            const companyId = finalCompanyId;
             if (isDemo) {
                 const target = roomAssets.find(ra => ra.id === id);
                 const updatedRA = roomAssets.filter(ra => ra.id !== id);
@@ -649,7 +686,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "MOVEMENT",
                         toValue: "Ditarik ke Gudang",
                         operatorName: opName,
-                        notes: "Pelepasan aset dari ruangan"
+                        companyId: companyId,
+                        notes: "Pelepasan aset dari ruangan (Demo)"
                     });
                 }
             } else {
@@ -662,12 +700,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "MOVEMENT",
                         toValue: "Ditarik ke Gudang",
                         operatorName: opName,
+                        companyId: companyId,
                         notes: "Berhasil menarik aset kembali ke gudang pusat"
                     });
                 }
             }
         },
         moveRoomAsset: async (assetId, newRoomId, opName) => {
+            const companyId = finalCompanyId;
             if (isDemo) {
                 const ra = roomAssets.find(item => item.assetId === assetId);
                 if (newRoomId === "GL-WAREHOUSE") {
@@ -682,7 +722,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                             type: "MOVEMENT",
                             toValue: "Pindah ke Gudang",
                             operatorName: opName,
-                            notes: "Perpindahan melalui menu manajemen ruangan"
+                            companyId: companyId,
+                            notes: "Perpindahan melalui menu manajemen ruangan (Demo)"
                         });
                     }
                     return;
@@ -703,17 +744,17 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "MOVEMENT",
                         toValue: `Pindah ke: ${destRoom.name}`,
                         operatorName: opName,
-                        notes: `Berhasil memindahkan aset antar ruangan`
+                        companyId: companyId,
+                        notes: `Berhasil memindahkan aset antar ruangan (Demo)`
                     });
                 }
             } else {
-                const q = query(collection(db, "roomAssets"));
-                const snap = await getDocs(q);
-                const ra = snap.docs.find(d => d.data().assetId === assetId);
+                // FIX: Gunakan state lokal agar lebih aman dan efisien
+                const ra = roomAssets.find(item => item.assetId === assetId);
 
                 if (newRoomId === "GL-WAREHOUSE") {
                     if (ra) {
-                        const data = ra.data();
+                        const data = ra; // State item
                         await deleteDoc(doc(db, "roomAssets", ra.id));
                         await api.addLog({
                             assetId: data.assetId,
@@ -721,19 +762,27 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                             type: "MOVEMENT",
                             toValue: "Pindah ke Gudang",
                             operatorName: opName,
+                            companyId: companyId,
                             notes: "Berhasil ditarik kembali ke gudang pusat"
                         });
                     }
                     return;
                 }
 
-                const roomSnap = await getDoc(doc(db, "rooms", newRoomId));
-                const destRoom = roomSnap.exists() ? roomSnap.data() : null;
+                let destRoom = rooms.find(r => r.id === newRoomId);
+                if (!destRoom) {
+                    const snap = await getDoc(doc(db, "rooms", newRoomId));
+                    if (snap.exists()) destRoom = { id: snap.id, ...snap.data() } as Room;
+                }
 
                 if (ra && destRoom) {
-                    const data = ra.data();
+                    const data = ra; // State item
                     await updateDoc(doc(db, "roomAssets", ra.id), { roomId: newRoomId, updatedAt: new Date().toISOString() });
-                    await updateDoc(doc(db, "assets", assetId), { locationId: destRoom.locationId, updatedAt: new Date().toISOString() });
+                    await updateDoc(doc(db, "assets", assetId), {
+                        locationId: destRoom.locationId,
+                        companyId: companyId, // Sertakan kembali untuk validasi Security Rules
+                        updatedAt: new Date().toISOString()
+                    });
 
                     await api.addLog({
                         assetId: data.assetId,
@@ -741,6 +790,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                         type: "MOVEMENT",
                         toValue: `Pindah ke: ${destRoom.name}`,
                         operatorName: opName,
+                        companyId: companyId,
                         notes: `Berhasil update lokasi aset di database pusat`
                     });
                 }
@@ -749,7 +799,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addChecklist: async (c) => {
             const id = uuidv4();
-            const companyId = user?.companyId || "";
+            const companyId = finalCompanyId; // Gunakan finalCompanyId yang stabil
             const newChecklist = { ...c, id, companyId, isRead: false };
 
             if (isDemo) {
