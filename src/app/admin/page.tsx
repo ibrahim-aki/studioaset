@@ -9,7 +9,7 @@ import clsx from "clsx";
 
 export default function AdminPage() {
     const { user } = useAuth();
-    const { rooms, assets, locations, checklists } = useLocalDb();
+    const { rooms, assets, locations, checklists, operatorShifts } = useLocalDb();
     const [expandedBoards, setExpandedBoards] = useState<Record<string, boolean>>({
         liveNow: false,
         ready: false,
@@ -329,7 +329,7 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                {/* COLUMN 4: TROUBLE */}
+                {/* COLUMN 4: TROUBLE + OPERATOR AKTIF */}
                 <div className="flex flex-col gap-1">
                     {/* 4. TROUBLE BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
@@ -363,6 +363,52 @@ export default function AdminPage() {
                                 <div className="p-8 text-center bg-gray-50/50">
                                     <p className="text-[9px] font-black text-gray-300 uppercase italic tracking-widest">Aman Terkendali</p>
                                 </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 7. OPERATOR AKTIF BOARD */}
+                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
+                        <div className="h-1 bg-amber-500 w-full"></div>
+                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
+                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <Users className="w-3.5 h-3.5 text-amber-500" />
+                                Operator Aktif
+                            </h3>
+                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">
+                                {operatorShifts.filter(s => s.status === "ACTIVE").length}
+                            </span>
+                        </div>
+                        <div className="p-1 space-y-0.5">
+                            {operatorShifts.filter(s => s.status === "ACTIVE").length === 0 ? (
+                                <div className="p-6 text-center">
+                                    <p className="text-[9px] font-black text-gray-300 uppercase italic tracking-widest">Tidak ada bertugas</p>
+                                </div>
+                            ) : (
+                                operatorShifts.filter(s => s.status === "ACTIVE").map(shift => (
+                                    <div key={shift.id} className="bg-white p-3 border border-gray-50 hover:border-amber-200 transition-all flex flex-col gap-1.5 shadow-sm">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">{shift.operatorName}</p>
+                                            <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded uppercase tracking-tighter">On Duty</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-500">
+                                                <MapPin className="w-3 h-3 text-indigo-400" />
+                                                <span className="uppercase">{shift.locationName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-500 lowercase">
+                                                <History className="w-3 h-3 text-indigo-400" />
+                                                <span>{shift.startTime} - {shift.endTime}</span>
+                                            </div>
+                                            {shift.operatorPhone && (
+                                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-indigo-600">
+                                                    <Bell className="w-3 h-3" />
+                                                    <span>{shift.operatorPhone}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
                             )}
                         </div>
                     </div>

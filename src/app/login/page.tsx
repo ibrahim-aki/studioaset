@@ -50,6 +50,7 @@ export default function LoginPage() {
                         toValue: "Login (Super Admin)",
                         operatorName: userDocSnap.data().name || email,
                         operatorRole: "SUPER_ADMIN",
+                        companyId: userDocSnap.data().companyId || "",
                         notes: `Email: ${email}`
                     });
                     router.push("/super-admin");
@@ -59,6 +60,7 @@ export default function LoginPage() {
                         toValue: "Login (Admin)",
                         operatorName: userDocSnap.data().name || email,
                         operatorRole: "ADMIN",
+                        companyId: userDocSnap.data().companyId || "",
                         notes: `Email: ${email}`
                     });
                     router.push("/admin");
@@ -68,6 +70,7 @@ export default function LoginPage() {
                         toValue: "Login (Operator)",
                         operatorName: userDocSnap.data().name || email,
                         operatorRole: "OPERATOR",
+                        companyId: userDocSnap.data().companyId || "",
                         notes: `Email: ${email}`
                     });
                     router.push("/operator");
@@ -202,6 +205,7 @@ export default function LoginPage() {
                                                 toValue: "Login Demo (Admin)",
                                                 operatorName: "Demo Admin",
                                                 operatorRole: "ADMIN",
+                                                companyId: "DEMO_COMPANY",
                                                 notes: "Menggunakan mode uji coba"
                                             });
                                             router.push("/admin");
@@ -219,6 +223,7 @@ export default function LoginPage() {
                                                 toValue: "Login Demo (Operator)",
                                                 operatorName: "Demo Operator",
                                                 operatorRole: "OPERATOR",
+                                                companyId: "DEMO_COMPANY",
                                                 notes: "Menggunakan mode uji coba"
                                             });
                                             router.push("/operator");

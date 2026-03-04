@@ -10,6 +10,7 @@ import {
     deleteDoc,
     query,
     orderBy,
+    where,
     getDocs,
     getDoc
 } from "firebase/firestore";
@@ -18,14 +19,27 @@ import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "./AuthContext";
 
 // Types
+export interface Company {
+    id: string;
+    name: string;
+    description: string;
+    status: "ACTIVE" | "INACTIVE";
+    logoUrl?: string;
+    email?: string;
+    phone?: string;
+    createdAt: string;
+}
+
 export interface Location {
     id: string;
+    companyId: string;
     name: string;
     address: string;
 }
 
 export interface Room {
     id: string;
+    companyId: string;
     locationId: string;
     name: string;
     description: string;
@@ -33,6 +47,7 @@ export interface Room {
 
 export interface MasterAsset {
     id: string;
+    companyId: string;
     locationId: string;
     assetCode?: string;
     name: string;
@@ -48,6 +63,7 @@ export interface MasterAsset {
 
 export interface RoomAsset {
     id: string;
+    companyId: string;
     roomId: string;
     assetId: string;
     assetName: string;
@@ -63,6 +79,7 @@ export interface ChecklistItem {
 
 export interface AssetLog {
     id: string;
+    companyId: string;
     assetId?: string;
     assetName?: string;
     type: "STATUS" | "MOVEMENT" | "SYSTEM" | "AUTH";
@@ -76,6 +93,7 @@ export interface AssetLog {
 
 export interface Checklist {
     id: string;
+    companyId: string;
     locationId: string;
     locationName: string;
     roomId: string;
@@ -100,7 +118,23 @@ export interface ChangelogEntry {
     visibility: "PUBLIC" | "SUPER_ADMIN";
 }
 
+export interface OperatorShift {
+    id: string;
+    companyId: string;
+    operatorId: string;
+    operatorName: string;
+    operatorPhone?: string;
+    startTime: string;
+    endTime: string;
+    locationId: string;
+    locationName: string;
+    notes?: string;
+    status: "ACTIVE" | "COMPLETED";
+    createdAt: string;
+}
+
 interface LocalDbContextType {
+    companies: Company[];
     locations: Location[];
     rooms: Room[];
     assets: MasterAsset[];
@@ -110,31 +144,39 @@ interface LocalDbContextType {
     categories: string[];
 
     // Actions
-    addLocation: (loc: Omit<Location, "id">) => void;
-    updateLocation: (id: string, loc: Omit<Location, "id">) => void;
+    addCompany: (company: Omit<Company, "id" | "createdAt" | "status">) => void;
+    updateCompany: (id: string, company: Partial<Omit<Company, "id" | "createdAt">>) => void;
+    deleteCompany: (id: string) => void;
+
+    addLocation: (loc: Omit<Location, "id" | "companyId">) => void;
+    updateLocation: (id: string, loc: Partial<Omit<Location, "id" | "companyId">>) => void;
     deleteLocation: (id: string) => void;
 
     addCategory: (cat: string) => void;
     deleteCategory: (cat: string) => void;
 
-    addRoom: (room: Omit<Room, "id">) => void;
-    updateRoom: (id: string, room: Omit<Room, "id">) => void;
+    addRoom: (room: Omit<Room, "id" | "companyId">) => void;
+    updateRoom: (id: string, room: Partial<Omit<Room, "id" | "companyId">>) => void;
     deleteRoom: (id: string) => void;
 
     changelogs: ChangelogEntry[];
     addChangelog: (entry: Omit<ChangelogEntry, "id">) => void;
 
-    addAsset: (asset: Omit<MasterAsset, "id">) => void;
-    updateAsset: (id: string, asset: Partial<Omit<MasterAsset, "id">>) => void;
+    addAsset: (asset: Omit<MasterAsset, "id" | "companyId">) => void;
+    updateAsset: (id: string, asset: Partial<Omit<MasterAsset, "id" | "companyId">>) => void;
     deleteAsset: (id: string) => void;
 
-    addRoomAsset: (roomAsset: Omit<RoomAsset, "id">, opName?: string) => void;
+    addRoomAsset: (roomAsset: Omit<RoomAsset, "id" | "companyId">, opName?: string) => void;
     deleteRoomAsset: (id: string, opName?: string) => void;
     moveRoomAsset: (assetId: string, newRoomId: string, opName?: string) => void;
 
-    addChecklist: (checklist: Omit<Checklist, "id" | "isRead">) => void;
+    addChecklist: (checklist: Omit<Checklist, "id" | "isRead" | "companyId">) => void;
     markChecklistAsRead: (id: string) => void;
-    addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName"> & { operatorName?: string }) => void;
+    addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName" | "companyId"> & { operatorName?: string; companyId?: string }) => void;
+
+    operatorShifts: OperatorShift[];
+    addShift: (shift: Omit<OperatorShift, "id" | "companyId" | "operatorId" | "operatorName" | "operatorPhone" | "status" | "createdAt">) => Promise<string>;
+    endShift: (id: string) => Promise<void>;
 }
 
 const LocalDbContext = createContext<LocalDbContextType | null>(null);
@@ -147,13 +189,16 @@ const STORAGE_KEYS = {
     CHECKLISTS: "studioaset_checklists",
     ASSET_LOGS: "studioaset_asset_logs",
     CATEGORIES: "studioaset_categories",
-    CHANGELOGS: "studioaset_changelogs"
+    CHANGELOGS: "studioaset_changelogs",
+    COMPANIES: "studioaset_companies",
+    OPERATOR_SHIFTS: "studioaset_operator_shifts"
 };
 
 export function LocalDbProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const isDemo = user?.isDemo;
 
+    const [companies, setCompanies] = useState<Company[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [assets, setAssets] = useState<MasterAsset[]>([]);
@@ -161,6 +206,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [checklists, setChecklists] = useState<Checklist[]>([]);
     const [assetLogs, setAssetLogs] = useState<AssetLog[]>([]);
     const [changelogs, setChangelogs] = useState<ChangelogEntry[]>([]);
+    const [operatorShifts, setOperatorShifts] = useState<OperatorShift[]>([]);
     const [categories, setCategories] = useState<string[]>([
         "Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"
     ]);
@@ -183,6 +229,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             loadLocal(STORAGE_KEYS.ASSET_LOGS, setAssetLogs);
             loadLocal(STORAGE_KEYS.CHANGELOGS, setChangelogs);
             loadLocal(STORAGE_KEYS.CATEGORIES, setCategories, ["Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"]);
+            loadLocal(STORAGE_KEYS.COMPANIES, setCompanies);
+            loadLocal(STORAGE_KEYS.OPERATOR_SHIFTS, setOperatorShifts);
             setIsInitialized(true);
         }
     }, [isDemo]);
@@ -196,38 +244,62 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
     // Real-time synchronization from Firestore (if NOT Demo)
     useEffect(() => {
-        if (!db || isDemo) return;
+        if (!db || isDemo || !user) return;
 
         const unsubs: (() => void)[] = [];
+        const isSuperAdmin = user.role === "SUPER_ADMIN";
+        const companyId = user.companyId;
 
-        const unsubLocs = onSnapshot(collection(db, "locations"), (snap) => {
+        // Helper to get base collection or filtered query
+        const getBaseQuery = (collName: string) => {
+            if (isSuperAdmin) return collection(db, collName);
+            return query(collection(db, collName), where("companyId", "==", companyId));
+        };
+
+        // Listen to companies (Super Admin sees all, Admin/Operator sees only their own)
+        const unsubCompanies = onSnapshot(getBaseQuery("companies"), (snap) => {
+            setCompanies(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
+        });
+        unsubs.push(unsubCompanies);
+
+        const unsubLocs = onSnapshot(getBaseQuery("locations"), (snap) => {
             setLocations(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Location)));
         });
         unsubs.push(unsubLocs);
 
-        const unsubRooms = onSnapshot(collection(db, "rooms"), (snap) => {
+        const unsubRooms = onSnapshot(getBaseQuery("rooms"), (snap) => {
             setRooms(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room)));
         });
         unsubs.push(unsubRooms);
 
-        const unsubAssets = onSnapshot(collection(db, "assets"), (snap) => {
+        const unsubAssets = onSnapshot(getBaseQuery("assets"), (snap) => {
             setAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterAsset)));
         });
         unsubs.push(unsubAssets);
 
-        const unsubRoomAssets = onSnapshot(collection(db, "roomAssets"), (snap) => {
+        const unsubRoomAssets = onSnapshot(getBaseQuery("roomAssets"), (snap) => {
             setRoomAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoomAsset)));
         });
         unsubs.push(unsubRoomAssets);
 
-        const unsubChecklists = onSnapshot(query(collection(db, "checklists"), orderBy("timestamp", "desc")), (snap) => {
-            setChecklists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Checklist)));
-        });
+        const unsubChecklists = onSnapshot(
+            isSuperAdmin
+                ? query(collection(db, "checklists"), orderBy("timestamp", "desc"))
+                : query(collection(db, "checklists"), where("companyId", "==", companyId), orderBy("timestamp", "desc")),
+            (snap) => {
+                setChecklists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Checklist)));
+            }
+        );
         unsubs.push(unsubChecklists);
 
-        const unsubLogs = onSnapshot(query(collection(db, "assetLogs"), orderBy("timestamp", "desc")), (snap) => {
-            setAssetLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog)));
-        });
+        const unsubLogs = onSnapshot(
+            isSuperAdmin
+                ? query(collection(db, "assetLogs"), orderBy("timestamp", "desc"))
+                : query(collection(db, "assetLogs"), where("companyId", "==", companyId), orderBy("timestamp", "desc")),
+            (snap) => {
+                setAssetLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog)));
+            }
+        );
         unsubs.push(unsubLogs);
 
         const unsubChangelogs = onSnapshot(query(collection(db, "changelogs"), orderBy("date", "desc")), (snap) => {
@@ -248,9 +320,10 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         setIsInitialized(true);
         return () => unsubs.forEach(unsub => unsub());
-    }, [isDemo]);
+    }, [isDemo, user?.uid, user?.companyId]);
 
     const api: LocalDbContextType = {
+        companies,
         locations,
         rooms,
         assets,
@@ -260,9 +333,45 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         categories,
         changelogs,
 
+        addCompany: async (comp) => {
+            const id = uuidv4();
+            const newComp: Company = {
+                ...comp,
+                id,
+                status: "ACTIVE",
+                createdAt: new Date().toISOString()
+            };
+            if (isDemo) {
+                const updated = [...companies, newComp];
+                setCompanies(updated);
+                saveToLocal(STORAGE_KEYS.COMPANIES, updated);
+            } else {
+                await setDoc(doc(db, "companies", id), newComp);
+            }
+        },
+        updateCompany: async (id, data) => {
+            if (isDemo) {
+                const updated = companies.map(c => c.id === id ? { ...c, ...data } : c);
+                setCompanies(updated);
+                saveToLocal(STORAGE_KEYS.COMPANIES, updated);
+            } else {
+                await updateDoc(doc(db, "companies", id), data);
+            }
+        },
+        deleteCompany: async (id) => {
+            if (isDemo) {
+                const updated = companies.filter(c => c.id !== id);
+                setCompanies(updated);
+                saveToLocal(STORAGE_KEYS.COMPANIES, updated);
+            } else {
+                await deleteDoc(doc(db, "companies", id));
+            }
+        },
+
         addLocation: async (loc) => {
             const id = uuidv4();
-            const newLoc = { ...loc, id };
+            const companyId = user?.companyId || "";
+            const newLoc = { ...loc, id, companyId };
             if (isDemo) {
                 const updated = [...locations, newLoc];
                 setLocations(updated);
@@ -316,7 +425,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addRoom: async (r) => {
             const id = uuidv4();
-            const newRoom = { ...r, id };
+            const companyId = user?.companyId || "";
+            const newRoom = { ...r, id, companyId };
             if (isDemo) {
                 const updated = [...rooms, newRoom];
                 setRooms(updated);
@@ -371,7 +481,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addAsset: async (a) => {
             const id = uuidv4();
-            const newAsset = { ...a, id };
+            const companyId = user?.companyId || "";
+            const newAsset = { ...a, id, companyId };
 
             if (isDemo) {
                 const updatedAssets = [...assets, newAsset];
@@ -439,7 +550,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addRoomAsset: async (ra, opName) => {
             const id = uuidv4();
-            const newRA = { ...ra, id };
+            const companyId = user?.companyId || "";
+            const newRA = { ...ra, id, companyId };
 
             if (isDemo) {
                 const asset = assets.find(a => a.id === ra.assetId);
@@ -619,7 +731,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addChecklist: async (c) => {
             const id = uuidv4();
-            const newChecklist = { ...c, id, isRead: false };
+            const companyId = user?.companyId || "";
+            const newChecklist = { ...c, id, companyId, isRead: false };
 
             if (isDemo) {
                 const updatedChecklists = [newChecklist, ...checklists];
@@ -736,9 +849,12 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             // 3. Default "SYSTEM" jika tidak ada user
             const finalRole = log.operatorRole || user?.role || "SYSTEM";
 
+            const companyId = log.companyId || user?.companyId || "";
+
             const newLog: AssetLog = {
                 ...log,
                 id,
+                companyId,
                 timestamp,
                 operatorName: finalName,
                 operatorRole: finalRole
@@ -763,10 +879,58 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await setDoc(doc(db, "changelogs", id), newEntry);
             }
+        },
+
+        operatorShifts,
+        addShift: async (shiftData) => {
+            const id = uuidv4();
+            const companyId = user?.companyId || "";
+            const operatorId = user?.uid || "";
+            const operatorName = user?.name || user?.email || "Operator";
+            const operatorPhone = user?.phone || "";
+
+            const newShift: OperatorShift = {
+                ...shiftData,
+                id,
+                companyId,
+                operatorId,
+                operatorName,
+                operatorPhone,
+                status: "ACTIVE",
+                createdAt: new Date().toISOString()
+            };
+
+            if (isDemo) {
+                const updated = [newShift, ...operatorShifts];
+                setOperatorShifts(updated);
+                saveToLocal(STORAGE_KEYS.OPERATOR_SHIFTS, updated);
+            } else {
+                await setDoc(doc(db, "operatorShifts", id), newShift);
+            }
+
+            // Log activity
+            await api.addLog({
+                type: "AUTH",
+                toValue: "Mulai Tugas",
+                operatorName,
+                notes: `Mulai shift di ${shiftData.locationName} (${shiftData.startTime} - ${shiftData.endTime})`
+            });
+
+            return id;
+        },
+        endShift: async (id) => {
+            if (isDemo) {
+                const updated = operatorShifts.map(s => s.id === id ? { ...s, status: "COMPLETED" } : s) as OperatorShift[];
+                setOperatorShifts(updated);
+                saveToLocal(STORAGE_KEYS.OPERATOR_SHIFTS, updated);
+            } else {
+                await updateDoc(doc(db, "operatorShifts", id), { status: "COMPLETED" });
+            }
         }
     };
 
-    if (!isInitialized) return null;
+    // Remove the return null to prevent whole app white-out
+    // if (!isInitialized) return null;
 
     return (
         <LocalDbContext.Provider value={api}>

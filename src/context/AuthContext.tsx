@@ -12,9 +12,12 @@ interface AppUser {
     email: string | null;
     role: UserRole;
     name?: string;
+    companyId?: string;
+    companyName?: string;
     locationId?: string;
     locationName?: string;
     isDemo?: boolean;
+    phone?: string;
 }
 
 interface AuthContextType {
@@ -34,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
                 try {
-                    // Fetch role from Firestore
+                    // Fetch role and company from Firestore
                     const userDocRef = doc(db, "users", firebaseUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
 
@@ -51,8 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             email: firebaseUser.email,
                             role,
                             name,
+                            companyId: data.companyId || "",
+                            companyName: data.companyName || "",
                             locationId: data.locationId || "",
                             locationName: data.locationName || "",
+                            phone: data.phone || "",
                             isDemo: false,
                         });
                     } else {
@@ -89,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: role,
             name: `Demo ${role}`,
             locationName: "Demo Branch",
+            phone: "08123456789",
             isDemo: true,
         });
     };

@@ -12,6 +12,8 @@ export default function OperatorRoomSelection() {
     const [selectedLocationId, setSelectedLocationId] = useState("");
 
     const { rooms: rawRooms, locations, checklists } = useLocalDb();
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const queryLocationId = searchParams?.get('locationId');
 
     useEffect(() => {
         const roomsData = [...rawRooms];
@@ -21,10 +23,12 @@ export default function OperatorRoomSelection() {
     }, [rawRooms]);
 
     useEffect(() => {
-        if (locations.length > 0 && !selectedLocationId) {
+        if (queryLocationId) {
+            setSelectedLocationId(queryLocationId);
+        } else if (locations.length > 0 && !selectedLocationId) {
             setSelectedLocationId(locations[0].id);
         }
-    }, [locations, selectedLocationId]);
+    }, [locations, selectedLocationId, queryLocationId]);
 
     const filteredRooms = rooms.filter(room => {
         const matchLocation = room.locationId === selectedLocationId;

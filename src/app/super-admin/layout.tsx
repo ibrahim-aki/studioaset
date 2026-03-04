@@ -59,21 +59,13 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                             </div>
                         </div>
 
-                        {/* Desktop Menu */}
                         <div className="hidden md:flex items-center gap-1">
                             <button
                                 onClick={() => router.push("/super-admin")}
                                 className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <span className="w-1 h-1 rounded-full bg-indigo-600"></span>
-                                MANAJEMEN SISTEM
-                            </button>
-                            <button
-                                onClick={() => router.push("/admin")}
-                                className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                PANTAU DASHBOARD ADMIN
+                                DASHBOARD UTAMA
                             </button>
                         </div>
                     </div>
@@ -107,19 +99,12 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                     </div>
                 </div>
 
-                {/* Mobile Menu - Only visible on small screens */}
                 <div className="mt-3 flex md:hidden items-center gap-1 overflow-x-auto pb-1 no-scrollbar border-t border-gray-50 pt-3">
                     <button
                         onClick={() => router.push("/super-admin")}
                         className="whitespace-nowrap px-3 py-2 text-[10px] font-black text-indigo-600 bg-indigo-50 rounded-xl transition-all"
                     >
-                        MANAJEMEN SISTEM
-                    </button>
-                    <button
-                        onClick={() => router.push("/admin")}
-                        className="whitespace-nowrap px-3 py-2 text-[10px] font-black text-gray-500 bg-gray-50 rounded-xl transition-all"
-                    >
-                        DASHBOARD ADMIN
+                        DASHBOARD UTAMA
                     </button>
                 </div>
             </nav>
