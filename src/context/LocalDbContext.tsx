@@ -291,20 +291,22 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         const unsubChecklists = onSnapshot(
             isSuperAdmin
-                ? query(collection(db, "checklists"), orderBy("timestamp", "desc"))
-                : query(collection(db, "checklists"), where("companyId", "==", companyId), orderBy("timestamp", "desc")),
+                ? collection(db, "checklists")
+                : query(collection(db, "checklists"), where("companyId", "==", companyId)),
             (snap) => {
-                setChecklists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Checklist)));
+                const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Checklist));
+                setChecklists(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
             }
         );
         unsubs.push(unsubChecklists);
 
         const unsubLogs = onSnapshot(
             isSuperAdmin
-                ? query(collection(db, "assetLogs"), orderBy("timestamp", "desc"))
-                : query(collection(db, "assetLogs"), where("companyId", "==", companyId), orderBy("timestamp", "desc")),
+                ? collection(db, "assetLogs")
+                : query(collection(db, "assetLogs"), where("companyId", "==", companyId)),
             (snap) => {
-                setAssetLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog)));
+                const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog));
+                setAssetLogs(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
             }
         );
         unsubs.push(unsubLogs);
