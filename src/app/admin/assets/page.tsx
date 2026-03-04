@@ -261,7 +261,10 @@ function AssetsContent() {
                     "Nama Barang": asset.name || "-",
                     "Kategori": asset.category || "-",
                     "Cabang": assetLocation?.name || "-",
-                    "Ruangan": currentRoom?.name || "-",
+                    "Ruangan": (() => {
+                        if (!roomAsset) return "Di Gudang";
+                        return currentRoom?.name || "-";
+                    })(),
                     "Tanggal Masuk": asset.entryDate || "-",
                     "Kondisi": asset.status || "BAIK",
                     "Catatan": asset.conditionNotes || "-",
@@ -568,7 +571,9 @@ function AssetsContent() {
                                         const currentRoom = rawRooms.find(r => r.id === roomAsset?.roomId);
                                         const assetLocation = rawLocations.find(l => l.id === asset.locationId);
                                         const cabangName = assetLocation?.name || "-";
-                                        const ruanganName = roomAsset ? (currentRoom?.name || "-") : "-";
+                                        // Jika tidak ada roomAsset → aset ada di gudang (bukan di ruangan manapun)
+                                        const isInWarehouse = !roomAsset;
+                                        const ruanganName = isInWarehouse ? null : (currentRoom?.name || "-");
 
                                         return (
                                             <tr key={asset.id} className="group bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm border border-gray-100 rounded-lg">
@@ -588,7 +593,13 @@ function AssetsContent() {
                                                     {cabangName}
                                                 </td>
                                                 <td className="py-4 px-4 text-xs text-gray-500 border-y border-gray-100">
-                                                    {ruanganName}
+                                                    {isInWarehouse ? (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight bg-orange-50 text-orange-600 border border-orange-100">
+                                                            Di Gudang
+                                                        </span>
+                                                    ) : (
+                                                        ruanganName
+                                                    )}
                                                 </td>
                                                 <td className="py-4 px-4 border-y border-gray-100">
                                                     <span className={clsx(
@@ -664,7 +675,7 @@ function AssetsContent() {
                                                 </span>
                                             ) : (
                                                 <span className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md text-xs font-medium border border-orange-100">
-                                                    GUDANG
+                                                    Di Gudang
                                                 </span>
                                             )}
                                             <span className={clsx(
