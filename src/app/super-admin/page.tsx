@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
@@ -251,6 +251,99 @@ interface UserData {
     phone?: string;
 }
 
+// Komponen Modal Edit User
+function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; user: UserData | null }) {
+    const [name, setName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (user) {
+            setName(user.name || "");
+            setPhone(user.phone || "");
+        }
+    }, [user]);
+
+    if (!isOpen || !user) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+
+        try {
+            await updateDoc(doc(db, "users", user.id), {
+                name,
+                phone,
+                updatedAt: new Date().toISOString()
+            });
+
+            alert("Data user diperbarui!");
+            onClose();
+            onRefresh();
+        } catch (err: any) {
+            setError(`Gagal memperbarui: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
+                            <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-gray-900 leading-none">Edit Profil User</h3>
+                            <p className="text-[10px] text-amber-600 font-bold uppercase tracking-widest mt-1">ID: {user.id.slice(0, 8)}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-colors">
+                        <X className="w-5 h-5 text-gray-400" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    {error && <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold">{error}</div>}
+
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nama Lengkap</label>
+                        <input
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nomor Telepon</label>
+                        <input
+                            type="tel"
+                            required
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full mt-4 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-amber-100"
+                    >
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PERUBAHAN"}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (data: any) => void }) {
     const [name, setName] = useState("");
     const [desc, setDesc] = useState("");
@@ -362,6 +455,8 @@ export default function UserManagementPage() {
     const [checklists, setChecklists] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+    const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
     const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
     const [trialMode, setTrialMode] = useState<boolean | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -793,6 +888,16 @@ export default function UserManagementPage() {
                             </button>
                         </div>
 
+                        <EditUserModal
+                            isOpen={isEditUserOpen}
+                            onClose={() => {
+                                setIsEditUserOpen(false);
+                                setSelectedUser(null);
+                            }}
+                            onRefresh={() => { }}
+                            user={selectedUser}
+                        />
+
                         <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
@@ -859,10 +964,20 @@ export default function UserManagementPage() {
                                                     <td className="px-6 py-4 text-right">
                                                         {u.role !== "SUPER_ADMIN" && (
                                                             <div className="flex items-center justify-end gap-2">
-                                                                <button onClick={() => handleResetPassword(u.email)} className="p-2.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><KeyRound className="w-4 h-4" /></button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedUser(u);
+                                                                        setIsEditUserOpen(true);
+                                                                    }}
+                                                                    className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                                    title="Edit Profil"
+                                                                >
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={() => handleResetPassword(u.email)} className="p-2.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all" title="Reset Password"><KeyRound className="w-4 h-4" /></button>
                                                                 <button onClick={async () => {
                                                                     if (confirm("Hapus user?")) await deleteDoc(doc(db, "users", u.id));
-                                                                }} className="p-2.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                                                                }} className="p-2.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Hapus Akun"><Trash2 className="w-4 h-4" /></button>
                                                             </div>
                                                         )}
                                                     </td>
