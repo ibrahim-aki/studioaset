@@ -56,12 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             return;
                         }
 
+                        // AUTO-SYNC COMPANY ID: 
+                        // Jika Admin/Operator tidak punya companyId di DB, coba ambil dari localStorage (hasil login sebelumnya)
+                        let finalCompanyId = data.companyId || "";
+                        if (!finalCompanyId && (data.role === "ADMIN" || data.role === "OPERATOR")) {
+                            const cachedId = localStorage.getItem("last_known_company_id");
+                            if (cachedId) {
+                                finalCompanyId = cachedId;
+                                // Auto-repair user document in Firestore (tanpa menunggu)
+                                updateDoc(userDocRef, { companyId: cachedId }).catch(e => console.error("Auto-sync companyId failed:", e));
+                            }
+                        }
+
                         setUser({
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
                             role: data.role as UserRole,
                             name: data.name || "",
-                            companyId: data.companyId || "",
+                            companyId: finalCompanyId,
                             companyName: data.companyName || "",
                             locationId: data.locationId || "",
                             locationName: data.locationName || "",

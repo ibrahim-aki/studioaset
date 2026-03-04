@@ -250,17 +250,20 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         const isSuperAdmin = user.role === "SUPER_ADMIN";
         const companyId = user.companyId;
 
-        // Jika bukan Super Admin tapi companyId belum ada, tunggu sampai siap
-        // Ini mencegah query "where companyId == undefined" yang mengakibatkan data kosong
-        if (!isSuperAdmin && !companyId) {
-            console.warn("LocalDb: Waiting for companyId for role:", user.role);
-            return;
+        // Jika bukan Super Admin tapi companyId belum ada, tunggu atau gunakan fallback
+        let finalCompanyId = companyId;
+        if (!isSuperAdmin && !finalCompanyId) {
+            finalCompanyId = localStorage.getItem("last_known_company_id") || "";
+            if (!finalCompanyId) {
+                console.warn("LocalDb: Waiting for companyId for role:", user.role);
+                return;
+            }
         }
 
         // Helper to get base collection or filtered query
         const getBaseQuery = (collName: string) => {
             if (isSuperAdmin) return collection(db, collName);
-            return query(collection(db, collName), where("companyId", "==", companyId));
+            return query(collection(db, collName), where("companyId", "==", finalCompanyId));
         };
 
         // Listen to companies (Super Admin sees all, Admin/Operator sees only their own)
@@ -303,7 +306,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         const unsubLogs = onSnapshot(
             isSuperAdmin
                 ? collection(db, "assetLogs")
-                : query(collection(db, "assetLogs"), where("companyId", "==", companyId)),
+                : query(collection(db, "assetLogs"), where("companyId", "==", finalCompanyId)),
             (snap) => {
                 const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog));
                 setAssetLogs(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
