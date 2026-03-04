@@ -888,9 +888,16 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         operatorShifts,
         addShift: async (shiftData) => {
-            const id = uuidv4();
             const companyId = user?.companyId || "";
             const operatorId = user?.uid || "";
+
+            // Anti-double shift check: verify if there's any shift with status ACTIVE for this operator
+            const activeShift = operatorShifts.find(s => s.operatorId === operatorId && s.status === "ACTIVE");
+            if (activeShift) {
+                throw new Error("Selesaikan tugas Anda saat ini terlebih dahulu sebelum memulai tugas baru.");
+            }
+
+            const id = uuidv4();
             const operatorName = user?.name || user?.email || "Operator";
             const operatorPhone = user?.phone || "";
 

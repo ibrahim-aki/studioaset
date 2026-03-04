@@ -45,7 +45,8 @@ export default function OperatorPage() {
             router.push(`/operator/rooms?locationId=${locationId}`);
         } catch (error) {
             console.error(error);
-            alert("Gagal memulai tugas.");
+            const msg = error instanceof Error ? error.message : "Gagal memulai tugas.";
+            alert(msg);
         } finally {
             setLoading(false);
         }

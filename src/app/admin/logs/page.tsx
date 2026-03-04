@@ -16,12 +16,10 @@ export default function AdminLogsPage() {
     const [filteredLogs, setFilteredLogs] = useState<AssetLog[]>([]);
 
     useEffect(() => {
-        // Hanya tampilkan log yang secara eksplisit memiliki role "ADMIN"
-        // Tambahan: Sembunyikan jika isinya mengandung "Super Admin" (untuk membersihkan log lama yang salah label)
+        // Tampilkan semua log untuk perusahaan ini (sudah difilter di context)
+        // Kecuali kegiatan yang dilakukan oleh Super Admin agar tidak membingungkan
         let docs = assetLogs.filter(log => {
-            const isRoleAdmin = log.operatorRole === "ADMIN";
-            const isContentSuperAdmin = log.toValue?.toLowerCase().includes("super admin");
-            return isRoleAdmin && !isContentSuperAdmin;
+            return log.operatorRole !== "SUPER_ADMIN";
         });
 
         if (typeFilter !== "ALL") {

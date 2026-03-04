@@ -375,9 +375,21 @@ export default function AdminPage() {
                                 <Users className="w-3.5 h-3.5 text-amber-500" />
                                 Operator Aktif
                             </h3>
-                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">
-                                {operatorShifts.filter(s => s.status === "ACTIVE").length}
-                            </span>
+                            {(() => {
+                                const activeShifts = operatorShifts.filter(s => s.status === "ACTIVE");
+                                const uniqueShiftsMap: Record<string, typeof activeShifts[0]> = {};
+                                activeShifts.forEach(s => {
+                                    if (!uniqueShiftsMap[s.operatorId] || new Date(s.createdAt) > new Date(uniqueShiftsMap[s.operatorId].createdAt)) {
+                                        uniqueShiftsMap[s.operatorId] = s;
+                                    }
+                                });
+                                const count = Object.keys(uniqueShiftsMap).length;
+                                return count > 0 && (
+                                    <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">
+                                        {count}
+                                    </span>
+                                );
+                            })()}
                         </div>
                         <div className="p-1 space-y-0.5">
                             {(() => {
@@ -390,7 +402,6 @@ export default function AdminPage() {
                                     );
                                 }
 
-                                // Handle double names: group by operatorId and take the latest one
                                 const uniqueShiftsMap: Record<string, typeof activeShifts[0]> = {};
                                 activeShifts.forEach(s => {
                                     if (!uniqueShiftsMap[s.operatorId] || new Date(s.createdAt) > new Date(uniqueShiftsMap[s.operatorId].createdAt)) {
