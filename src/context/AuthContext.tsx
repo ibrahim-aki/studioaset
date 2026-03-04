@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | null;
@@ -18,6 +18,7 @@ interface AppUser {
     locationName?: string;
     isDemo?: boolean;
     phone?: string;
+    lastSessionId?: string;
 }
 
 interface AuthContextType {
@@ -37,8 +38,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
                 try {
+                    // Generate or get session ID from local storage
+                    let localSessionId = localStorage.getItem("studio_session_id");
+                    if (!localSessionId) {
+                        localSessionId = Math.random().toString(36).substring(2, 15);
+                        localStorage.setItem("studio_session_id", localSessionId);
+                    }
+
                     // Fetch role and company from Firestore
                     const userDocRef = doc(db, "users", firebaseUser.uid);
+
+                    // Update session ID in Firestore
+                    await setDoc(userDocRef, {
+                        lastSessionId: localSessionId,
+                        lastLogin: new Date().toISOString()
+                    }, { merge: true });
+
                     const userDocSnap = await getDoc(userDocRef);
 
                     let role: UserRole = null;
@@ -59,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             locationId: data.locationId || "",
                             locationName: data.locationName || "",
                             phone: data.phone || "",
+                            lastSessionId: localSessionId, // Use the one we just wrote
                             isDemo: false,
                         });
                     } else {
@@ -86,6 +102,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return () => unsubscribe();
     }, []);
+
+    // Check for session hijacking (Single Session Login)
+    useEffect(() => {
+        if (user && !user.isDemo && db) {
+            const userDocRef = doc(db, "users", user.uid);
+            const unsubSession = onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const localSessionId = localStorage.getItem("studio_session_id");
+
+                    if (data.lastSessionId && data.lastSessionId !== localSessionId) {
+                        alert("Sesi Anda telah berakhir karena akun ini login di perangkat lain.");
+                        logout();
+                    }
+                }
+            });
+            return () => unsubSession();
+        }
+    }, [user?.uid]);
 
     // Fungsi khusus untuk Demo
     const triggerDemoLogin = (role: UserRole) => {

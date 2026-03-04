@@ -380,12 +380,25 @@ export default function AdminPage() {
                             </span>
                         </div>
                         <div className="p-1 space-y-0.5">
-                            {operatorShifts.filter(s => s.status === "ACTIVE").length === 0 ? (
-                                <div className="p-6 text-center">
-                                    <p className="text-[9px] font-black text-gray-300 uppercase italic tracking-widest">Tidak ada bertugas</p>
-                                </div>
-                            ) : (
-                                operatorShifts.filter(s => s.status === "ACTIVE").map(shift => (
+                            {(() => {
+                                const activeShifts = operatorShifts.filter(s => s.status === "ACTIVE");
+                                if (activeShifts.length === 0) {
+                                    return (
+                                        <div className="p-6 text-center">
+                                            <p className="text-[9px] font-black text-gray-300 uppercase italic tracking-widest">Tidak ada bertugas</p>
+                                        </div>
+                                    );
+                                }
+
+                                // Handle double names: group by operatorId and take the latest one
+                                const uniqueShiftsMap: Record<string, typeof activeShifts[0]> = {};
+                                activeShifts.forEach(s => {
+                                    if (!uniqueShiftsMap[s.operatorId] || new Date(s.createdAt) > new Date(uniqueShiftsMap[s.operatorId].createdAt)) {
+                                        uniqueShiftsMap[s.operatorId] = s;
+                                    }
+                                });
+
+                                return Object.values(uniqueShiftsMap).map(shift => (
                                     <div key={shift.id} className="bg-white p-3 border border-gray-50 hover:border-amber-200 transition-all flex flex-col gap-1.5 shadow-sm">
                                         <div className="flex items-center justify-between">
                                             <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">{shift.operatorName}</p>
@@ -408,8 +421,8 @@ export default function AdminPage() {
                                             )}
                                         </div>
                                     </div>
-                                ))
-                            )}
+                                ));
+                            })()}
                         </div>
                     </div>
                 </div>

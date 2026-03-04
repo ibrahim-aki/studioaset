@@ -9,8 +9,10 @@ import clsx from "clsx";
 
 export default function OperatorPage() {
     const { user } = useAuth();
-    const { locations, addShift } = useLocalDb();
+    const { locations, addShift, endShift, operatorShifts } = useLocalDb();
     const router = useRouter();
+
+    const activeShift = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [stHour, setStHour] = useState("");
@@ -59,20 +61,78 @@ export default function OperatorPage() {
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
             </div>
 
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className="w-full text-left bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all active:scale-[0.98] transform group"
-            >
-                <div className="flex items-center space-x-6">
-                    <div className="bg-indigo-50 p-6 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner">
-                        <DoorOpen className="w-10 h-10" />
+            {!activeShift ? (
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="w-full text-left bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all active:scale-[0.98] transform group"
+                >
+                    <div className="flex items-center space-x-6">
+                        <div className="bg-indigo-50 p-6 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner">
+                            <DoorOpen className="w-10 h-10" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Mulai Checklist</h2>
+                            <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-1">Inisiasi Tugas Lapangan</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Mulai Checklist</h2>
-                        <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-1">Inisiasi Tugas Lapangan</p>
+                </button>
+            ) : (
+                <div className="space-y-4">
+                    <div className="bg-white border-2 border-indigo-100 rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4">
+                            <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full border border-emerald-100 animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Sedang Bertugas
+                            </span>
+                        </div>
+
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center gap-6">
+                                <div className="bg-indigo-600 p-6 rounded-2xl text-white shadow-lg shadow-indigo-100">
+                                    <Clock className="w-10 h-10" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Sesi Aktif</h2>
+                                    <p className="text-sm text-indigo-600 font-bold uppercase tracking-widest mt-1">{activeShift.locationName}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Jam Kerja</p>
+                                    <p className="text-sm font-black text-gray-700">{activeShift.startTime} - {activeShift.endTime}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mulai Pada</p>
+                                    <p className="text-sm font-black text-gray-700">{new Date(activeShift.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => router.push(`/operator/rooms?locationId=${activeShift.locationId}`)}
+                                    className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-100 text-sm uppercase tracking-widest"
+                                >
+                                    Lanjut Checklist
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (confirm("Apakah Anda yakin ingin mengakhiri tugas hari ini?")) {
+                                            setLoading(true);
+                                            await endShift(activeShift.id);
+                                            setLoading(false);
+                                        }
+                                    }}
+                                    disabled={loading}
+                                    className="px-6 py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 font-black rounded-2xl transition-all text-sm uppercase tracking-widest border border-rose-100"
+                                >
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Akhiri"}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </button>
+            )}
 
             {/* Modal Shift */}
             {isModalOpen && (
