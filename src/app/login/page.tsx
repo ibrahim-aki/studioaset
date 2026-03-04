@@ -43,37 +43,53 @@ export default function LoginPage() {
             const userDocSnap = await getDoc(userDocRef);
 
             if (userDocSnap.exists()) {
-                const role = userDocSnap.data().role;
-                if (role === "SUPER_ADMIN") {
-                    addLog({
-                        type: "AUTH",
-                        toValue: "Login (Super Admin)",
-                        operatorName: userDocSnap.data().name || email,
-                        operatorRole: "SUPER_ADMIN",
-                        companyId: userDocSnap.data().companyId || "",
-                        notes: `Email: ${email}`
-                    });
-                    router.push("/super-admin");
-                } else if (role === "ADMIN") {
-                    addLog({
-                        type: "AUTH",
-                        toValue: "Login (Admin)",
-                        operatorName: userDocSnap.data().name || email,
-                        operatorRole: "ADMIN",
-                        companyId: userDocSnap.data().companyId || "",
-                        notes: `Email: ${email}`
-                    });
-                    router.push("/admin");
-                } else if (role === "OPERATOR") {
-                    addLog({
-                        type: "AUTH",
-                        toValue: "Login (Operator)",
-                        operatorName: userDocSnap.data().name || email,
-                        operatorRole: "OPERATOR",
-                        companyId: userDocSnap.data().companyId || "",
-                        notes: `Email: ${email}`
-                    });
-                    router.push("/operator");
+                const userData = userDocSnap.data();
+                const role = userData.role;
+
+                if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR") {
+                    // SESSION MANAGEMENT: Generate and save new session ID on login
+                    const newSessionId = Math.random().toString(36).substring(2, 15);
+                    localStorage.setItem("studio_session_id", newSessionId);
+
+                    // Update session in Firestore (non-blocking)
+                    const { updateDoc } = await import("firebase/firestore");
+                    updateDoc(userDocRef, {
+                        lastSessionId: newSessionId,
+                        lastLogin: new Date().toISOString()
+                    }).catch(err => console.error("Session update failed:", err));
+
+                    // Add logs and redirect
+                    if (role === "SUPER_ADMIN") {
+                        addLog({
+                            type: "AUTH",
+                            toValue: "Login (Super Admin)",
+                            operatorName: userData.name || email,
+                            operatorRole: "SUPER_ADMIN",
+                            companyId: userData.companyId || "",
+                            notes: `Email: ${email}`
+                        });
+                        router.push("/super-admin");
+                    } else if (role === "ADMIN") {
+                        addLog({
+                            type: "AUTH",
+                            toValue: "Login (Admin)",
+                            operatorName: userData.name || email,
+                            operatorRole: "ADMIN",
+                            companyId: userData.companyId || "",
+                            notes: `Email: ${email}`
+                        });
+                        router.push("/admin");
+                    } else if (role === "OPERATOR") {
+                        addLog({
+                            type: "AUTH",
+                            toValue: "Login (Operator)",
+                            operatorName: userData.name || email,
+                            operatorRole: "OPERATOR",
+                            companyId: userData.companyId || "",
+                            notes: `Email: ${email}`
+                        });
+                        router.push("/operator");
+                    }
                 } else {
                     setDisplayMessage("Peran pengguna tidak valid. Silakan hubungi admin sistem.");
                     auth.signOut();

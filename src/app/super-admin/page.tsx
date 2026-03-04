@@ -14,7 +14,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
-    const [role, setRole] = useState<"ADMIN" | "OPERATOR">("OPERATOR");
+    const [role, setRole] = useState<"SUPER_ADMIN" | "ADMIN" | "OPERATOR">("OPERATOR");
     const [locationId, setLocationId] = useState("HQ");
     const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
@@ -53,11 +53,18 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
 
             const selectedLocation = locations.find(l => l.id === locationId);
 
+            // Validasi Kritis: Pastikan Perusahaan Terpilih
+            if (role !== "SUPER_ADMIN" && !companyId) {
+                setError("Pilih perusahaan terlebih dahulu melalui menu Kelola Perusahaan sebelum menambah Admin/Operator.");
+                setLoading(false);
+                return;
+            }
+
             await setDoc(doc(db, "users", newUser.uid), {
                 name,
                 email,
                 role,
-                companyId: companyId || "", // If creating from company drill-down, use that.
+                companyId: companyId || "",
                 companyName: companyName || "",
                 locationId,
                 locationName: selectedLocation ? selectedLocation.name : (locationId === "HQ" ? "Kantor Pusat (HQ)" : "-"),

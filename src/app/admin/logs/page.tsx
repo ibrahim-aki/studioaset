@@ -17,7 +17,7 @@ export default function AdminLogsPage() {
 
     useEffect(() => {
         // Tampilkan semua log untuk perusahaan ini (sudah difilter di context)
-        // Kecuali kegiatan yang dilakukan oleh Super Admin agar tidak membingungkan
+        // PENTING: Sembunyikan semua kegiatan Super Admin demi privasi & keamanan sistem utama
         let docs = assetLogs.filter(log => {
             return log.operatorRole !== "SUPER_ADMIN";
         });

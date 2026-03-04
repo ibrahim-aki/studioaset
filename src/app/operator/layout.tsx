@@ -10,16 +10,26 @@ import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
     const { user, logout } = useAuth();
-    const { addLog } = useLocalDb();
+    const { addLog, operatorShifts, endShift } = useLocalDb();
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const router = useRouter();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        // Otomatis akhiri shift jika masih ada yang aktif
+        const activeShift = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
+        if (activeShift) {
+            try {
+                await endShift(activeShift.id);
+            } catch (err) {
+                console.error("Gagal mengakhiri shift saat logout:", err);
+            }
+        }
+
         addLog({
             type: "AUTH",
             toValue: "Logout",
             operatorName: user?.name || user?.email || "Unknown",
-            notes: "Role: OPERATOR"
+            notes: "Role: OPERATOR (Shift Berakhir Otomatis)"
         });
         logout();
         router.push("/login");

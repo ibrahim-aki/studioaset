@@ -38,57 +38,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
                 try {
-                    // Generate or get session ID from local storage
-                    let localSessionId = localStorage.getItem("studio_session_id");
-                    if (!localSessionId) {
-                        localSessionId = Math.random().toString(36).substring(2, 15);
-                        localStorage.setItem("studio_session_id", localSessionId);
-                    }
-
-                    // Fetch role and company from Firestore
                     const userDocRef = doc(db, "users", firebaseUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
-
-                    let role: UserRole = null;
-                    let name = "";
 
                     if (userDocSnap.exists()) {
                         const data = userDocSnap.data();
 
-                        // Safety check: ensure role exists to prevent "Invalid Role" error
+                        // Safety check: Don't login if role is missing (corrupted doc)
                         if (!data.role) {
-                            console.error("User document found but role is missing:", firebaseUser.uid);
                             setUser({
                                 uid: firebaseUser.uid,
                                 email: firebaseUser.email,
                                 role: null,
                                 isDemo: false,
                             });
+                            setLoading(false);
                             return;
                         }
-
-                        role = data.role as UserRole;
-                        name = data.name || "";
-
-                        // Use updateDoc (SAFEST) to only update session ID without risk of overwriting the whole doc
-                        updateDoc(userDocRef, {
-                            lastSessionId: localSessionId,
-                            lastLogin: new Date().toISOString()
-                        }).catch(err => {
-                            console.warn("Session update failed (possibly due to incomplete initial setup):", err.message);
-                        });
 
                         setUser({
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
-                            role,
-                            name,
+                            role: data.role as UserRole,
+                            name: data.name || "",
                             companyId: data.companyId || "",
                             companyName: data.companyName || "",
                             locationId: data.locationId || "",
                             locationName: data.locationName || "",
                             phone: data.phone || "",
-                            lastSessionId: localSessionId,
+                            lastSessionId: data.lastSessionId || "",
                             isDemo: false,
                         });
                     } else {
@@ -100,13 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         });
                     }
                 } catch (error) {
-                    console.error("Error fetching user role:", error);
-                    setUser({
-                        uid: firebaseUser.uid,
-                        email: firebaseUser.email,
-                        role: null,
-                        isDemo: false,
-                    });
+                    console.error("Auth initialization error:", error);
                 }
             } else {
                 setUser(null);
@@ -117,30 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => unsubscribe();
     }, []);
 
-    // Check for session hijacking (Single Session Login)
+    // Monitor session mismatch
     useEffect(() => {
-        if (user && !user.isDemo && db && user.lastSessionId) {
+        if (user && !user.isDemo && user.role) {
             const userDocRef = doc(db, "users", user.uid);
             const localSessionId = localStorage.getItem("studio_session_id");
 
-            const unsubSession = onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists() && !docSnap.metadata.hasPendingWrites) {
-                    const data = docSnap.data();
-
-                    // Only logout if:
-                    // 1. There is a session ID in Firestore
-                    // 2. We have a session ID locally
-                    // 3. They don't match
-                    if (data.lastSessionId && localSessionId && data.lastSessionId !== localSessionId) {
-                        console.warn("Session Mismatch:", { server: data.lastSessionId, local: localSessionId });
-                        alert("Sesi Anda telah berakhir karena akun ini login di perangkat lain.");
+            const unsub = onSnapshot(userDocRef, (snap) => {
+                if (snap.exists() && !snap.metadata.hasPendingWrites) {
+                    const cloudSessionId = snap.data().lastSessionId;
+                    if (cloudSessionId && localSessionId && cloudSessionId !== localSessionId) {
+                        alert("Sesi Anda berakhir karena login di perangkat lain.");
                         logout();
                     }
                 }
             });
-            return () => unsubSession();
+            return () => unsub();
         }
-    }, [user?.uid]);
+    }, [user?.uid, user?.role]);
 
     // Fungsi khusus untuk Demo
     const triggerDemoLogin = (role: UserRole) => {

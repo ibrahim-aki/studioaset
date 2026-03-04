@@ -250,6 +250,13 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         const isSuperAdmin = user.role === "SUPER_ADMIN";
         const companyId = user.companyId;
 
+        // Jika bukan Super Admin tapi companyId belum ada, tunggu sampai siap
+        // Ini mencegah query "where companyId == undefined" yang mengakibatkan data kosong
+        if (!isSuperAdmin && !companyId) {
+            console.warn("LocalDb: Waiting for companyId for role:", user.role);
+            return;
+        }
+
         // Helper to get base collection or filtered query
         const getBaseQuery = (collName: string) => {
             if (isSuperAdmin) return collection(db, collName);
@@ -855,6 +862,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const finalRole = log.operatorRole || user?.role || "SYSTEM";
 
             const companyId = log.companyId || user?.companyId || "";
+            if (!companyId && finalRole !== "SUPER_ADMIN" && finalRole !== "SYSTEM") {
+                console.error("DEBUG: Log without companyId", { finalRole, finalName, log });
+            }
 
             const newLog: AssetLog = {
                 ...log,
