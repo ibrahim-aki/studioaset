@@ -318,6 +318,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         });
         unsubs.push(unsubCats);
 
+        const unsubShifts = onSnapshot(getBaseQuery("operatorShifts"), (snap) => {
+            setOperatorShifts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as OperatorShift)));
+        });
+        unsubs.push(unsubShifts);
+
         setIsInitialized(true);
         return () => unsubs.forEach(unsub => unsub());
     }, [isDemo, user?.uid, user?.companyId]);
