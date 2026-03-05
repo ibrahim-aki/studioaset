@@ -63,7 +63,7 @@ export default function ChangelogPage() {
     }
 
     return (
-        <div className="p-4 sm:p-8 max-w-3xl mx-auto font-mono text-[13px] text-[#333] leading-normal uppercase">
+        <div className="p-4 sm:p-8 max-w-3xl mx-auto font-mono text-[11px] text-[#333] leading-normal uppercase">
             <h1 className="font-bold mb-4 text-[14px]">Changelog:</h1>
 
             {error && (
@@ -75,6 +75,12 @@ export default function ChangelogPage() {
             <div className="space-y-4 border-l border-gray-200 ml-1 pl-6 relative">
                 {commits.map((item, index) => {
                     const commitDate = new Date(item.commit.author.date);
+                    const day = commitDate.getDay();
+                    const hour = commitDate.getHours();
+
+                    // Hari Kerja: Senin-Jumat (1-5), Jam Kerja: 09:00-18:00
+                    const isOutsideWorkHours = day === 0 || day === 6 || hour < 9 || hour >= 18;
+
                     const dayStr = commitDate.toLocaleDateString('id-ID', { weekday: 'long' });
                     const dateStr = `${commitDate.getDate()}/${commitDate.getMonth() + 1}/${commitDate.getFullYear()}`;
                     const timeStr = commitDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
@@ -88,7 +94,10 @@ export default function ChangelogPage() {
                                 index === 0 ? "bg-emerald-500 animate-pulse" : "bg-gray-300"
                             )} />
 
-                            <div className="font-bold mb-1 text-gray-900">
+                            <div className={clsx(
+                                "font-bold mb-1 flex items-center gap-2",
+                                isOutsideWorkHours ? "text-rose-600" : "text-gray-900"
+                            )}>
                                 {dayStr}, {dateStr} {timeStr}
                             </div>
 

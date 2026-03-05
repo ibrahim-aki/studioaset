@@ -5,7 +5,7 @@ import { useLocalDb, AssetLog } from "@/context/LocalDbContext";
 import {
     History, Search, Filter, Clock, User,
     Tag, Activity, ShieldCheck, LogIn, ExternalLink,
-    AlertCircle, CheckCircle2, Info
+    AlertCircle, CheckCircle2, Info, Box
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -106,76 +106,78 @@ export default function AdminLogsPage() {
                 </div>
             </div>
 
-            {/* Logs List */}
-            <div className="space-y-4">
-                {filteredLogs.map((log) => (
-                    <div
-                        key={log.id}
-                        className="group bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all border-l-4"
-                        style={{
-                            borderLeftColor:
-                                log.type === 'AUTH' ? '#10b981' :
-                                    log.type === 'SYSTEM' ? '#a855f7' :
-                                        log.type === 'MOVEMENT' ? '#f59e0b' : '#3b82f6'
-                        }}
-                    >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-start gap-4">
-                                <div className={clsx(
-                                    "p-2.5 rounded-xl border shrink-0",
-                                    getLogBadge(log.type)
-                                )}>
-                                    {getLogIcon(log.type)}
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-sm font-bold text-gray-900">{log.toValue}</h3>
-                                        <span className={clsx(
-                                            "text-[9px] font-black uppercase px-1.5 py-0.5 rounded border tracking-widest",
-                                            getLogBadge(log.type)
-                                        )}>
-                                            {log.type}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-gray-500 leading-relaxed">
-                                        {log.notes || "Tidak ada catatan tambahan."}
-                                    </p>
-                                    {log.assetName && (
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <Tag className="w-3 h-3 text-indigo-400" />
-                                            <span className="text-[10px] font-bold text-indigo-600 uppercase">
-                                                ASET: {log.assetName}
+            {/* Logs List - COMPACT TABLE STYLE (Inspired by Super Admin) */}
+            <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto max-h-[700px] custom-scrollbar">
+                    <table className="w-full text-left">
+                        <thead className="bg-white sticky top-0 z-10 border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest">Waktu Log</th>
+                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest">Jenis & Kejadian</th>
+                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest text-center">Admin / Operator</th>
+                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest">Detail Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {filteredLogs.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="py-24 text-center">
+                                        <Activity className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                                        <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest italic">Belum ada aktivitas tercatat</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredLogs.map((log) => (
+                                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors group border-b border-gray-50 last:border-0">
+                                        <td className="px-6 py-1.5 whitespace-nowrap">
+                                            <span className="text-[10px] font-bold text-gray-900 mr-2">
+                                                {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="md:text-right border-t md:border-t-0 pt-3 md:pt-0 space-y-1">
-                                <div className="flex md:justify-end items-center gap-1.5 text-gray-700">
-                                    <User className="w-3.5 h-3.5" />
-                                    <span className="text-xs font-bold uppercase tracking-tight">{log.operatorName}</span>
-                                </div>
-                                <div className="flex md:justify-end items-center gap-1.5 text-gray-400">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    <span className="text-[10px] font-medium">
-                                        {new Date(log.timestamp).toLocaleDateString('id-ID', {
-                                            day: 'numeric', month: 'short', year: 'numeric',
-                                            hour: '2-digit', minute: '2-digit'
-                                        })}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-
-                {filteredLogs.length === 0 && (
-                    <div className="py-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                        <Activity className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 font-medium">Belum ada aktivitas yang tercatat untuk filter ini.</p>
-                    </div>
-                )}
+                                            <span className="text-[10px] text-gray-400 font-medium tracking-tighter">
+                                                {new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-1.5">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <span className={clsx(
+                                                    "text-[10px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0 tracking-tighter",
+                                                    log.type === "MOVEMENT" ? "text-amber-600 border-amber-100 bg-amber-50" :
+                                                        log.type === "STATUS" ? "text-blue-600 border-blue-100 bg-blue-50" :
+                                                            log.type === "AUTH" ? "text-emerald-600 border-emerald-100 bg-emerald-50" :
+                                                                log.type === "SYSTEM" ? "text-purple-600 border-purple-100 bg-purple-51" : "text-gray-400 border-gray-100 bg-gray-50"
+                                                )}>
+                                                    {log.type}
+                                                </span>
+                                                <div className="flex items-center gap-2 truncate">
+                                                    <span className="text-[10px] font-bold text-gray-700 truncate group-hover:text-indigo-600 transition-colors">{log.toValue}</span>
+                                                    {log.assetName && (
+                                                        <span className="text-[10px] text-indigo-400/70 font-bold uppercase flex items-center gap-1 shrink-0 italic">
+                                                            • {log.assetName}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-1.5 text-center whitespace-nowrap">
+                                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md border border-gray-100 group-hover:bg-white group-hover:border-indigo-100 transition-all">
+                                                <User className="w-2.5 h-2.5 text-gray-400" />
+                                                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">
+                                                    {log.operatorName.split(' ')[0]}
+                                                    <span className="ml-1 text-gray-400 font-medium">({log.operatorRole || 'USER'})</span>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-1.5">
+                                            <p className="text-[10px] text-gray-400 italic truncate max-w-[300px]" title={log.notes || "-"}>
+                                                {log.notes || "-"}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <footer className="mt-20 pt-8 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">

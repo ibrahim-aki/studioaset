@@ -133,11 +133,25 @@ export interface OperatorShift {
     createdAt: string;
 }
 
+export interface DeletedAsset {
+    id: string;
+    companyId: string;
+    assetId: string;
+    assetName: string;
+    assetCode: string;
+    category: string;
+    deletedBy: string;
+    deleteDate: string;
+    reason: string;
+    originalAssetData: any;
+}
+
 interface LocalDbContextType {
     companies: Company[];
     locations: Location[];
     rooms: Room[];
     assets: MasterAsset[];
+    deletedAssets: DeletedAsset[];
     roomAssets: RoomAsset[];
     checklists: Checklist[];
     assetLogs: AssetLog[];
@@ -162,9 +176,9 @@ interface LocalDbContextType {
     changelogs: ChangelogEntry[];
     addChangelog: (entry: Omit<ChangelogEntry, "id">) => void;
 
-    addAsset: (asset: Omit<MasterAsset, "id" | "companyId">) => void;
+    addAsset: (asset: Omit<MasterAsset, "id" | "companyId">) => Promise<void>;
     updateAsset: (id: string, asset: Partial<Omit<MasterAsset, "id" | "companyId">>) => void;
-    deleteAsset: (id: string) => void;
+    deleteAsset: (id: string, reason?: string) => Promise<void>;
 
     addRoomAsset: (roomAsset: Omit<RoomAsset, "id" | "companyId">, opName?: string) => void;
     deleteRoomAsset: (id: string, opName?: string) => void;
@@ -217,6 +231,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [categories, setCategories] = useState<string[]>([
         "Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"
     ]);
+    const [deletedAssets, setDeletedAssets] = useState<DeletedAsset[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
 
     // Initial load for LocalStorage (if Demo)
@@ -238,6 +253,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             loadLocal(STORAGE_KEYS.CATEGORIES, setCategories, ["Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"]);
             loadLocal(STORAGE_KEYS.COMPANIES, setCompanies);
             loadLocal(STORAGE_KEYS.OPERATOR_SHIFTS, setOperatorShifts);
+            loadLocal("deleted_assets", setDeletedAssets);
             setIsInitialized(true);
         }
     }, [isDemo]);
@@ -288,6 +304,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             setAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterAsset)));
         });
         unsubs.push(unsubAssets);
+
+        const unsubDeleted = onSnapshot(getBaseQuery("deleted_assets"), (snap) => {
+            setDeletedAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DeletedAsset)));
+        });
+        unsubs.push(unsubDeleted);
 
         const unsubRoomAssets = onSnapshot(getBaseQuery("roomAssets"), (snap) => {
             setRoomAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoomAsset)));
@@ -346,11 +367,13 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         locations,
         rooms,
         assets,
+        deletedAssets,
         roomAssets,
         checklists,
         assetLogs,
         categories,
         changelogs,
+        operatorShifts,
 
         addCompany: async (comp) => {
             const id = uuidv4();
@@ -361,9 +384,11 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 createdAt: new Date().toISOString()
             };
             if (isDemo) {
-                const updated = [...companies, newComp];
-                setCompanies(updated);
-                saveToLocal(STORAGE_KEYS.COMPANIES, updated);
+                setCompanies(prev => [...prev, newComp]);
+                // We'll trust the state for demo mode, or we could re-read from localStorage
+                // but for now let's just ensure we don't lose updates.
+                const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPANIES) || "[]");
+                saveToLocal(STORAGE_KEYS.COMPANIES, [...current, newComp]);
             } else {
                 await setDoc(doc(db, "companies", id), newComp);
             }
@@ -392,9 +417,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const companyId = user?.companyId || "";
             const newLoc = { ...loc, id, companyId };
             if (isDemo) {
-                const updated = [...locations, newLoc];
-                setLocations(updated);
-                saveToLocal(STORAGE_KEYS.LOCATIONS, updated);
+                setLocations(prev => [...prev, newLoc]);
+                const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOCATIONS) || "[]");
+                saveToLocal(STORAGE_KEYS.LOCATIONS, [...current, newLoc]);
             } else {
                 await setDoc(doc(db, "locations", id), newLoc);
             }
@@ -447,9 +472,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const companyId = user?.companyId || "";
             const newRoom = { ...r, id, companyId };
             if (isDemo) {
-                const updated = [...rooms, newRoom];
-                setRooms(updated);
-                saveToLocal(STORAGE_KEYS.ROOMS, updated);
+                setRooms(prev => [...prev, newRoom]);
+                const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.ROOMS) || "[]");
+                saveToLocal(STORAGE_KEYS.ROOMS, [...current, newRoom]);
             } else {
                 await setDoc(doc(db, "rooms", id), newRoom);
             }
@@ -509,9 +534,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const newAsset = { ...a, id, companyId };
 
             if (isDemo) {
-                const updatedAssets = [...assets, newAsset];
-                setAssets(updatedAssets);
-                saveToLocal(STORAGE_KEYS.ASSETS, updatedAssets);
+                setAssets(prev => [...prev, newAsset]);
+                const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.ASSETS) || "[]");
+                saveToLocal(STORAGE_KEYS.ASSETS, [...current, newAsset]);
             } else {
                 await setDoc(doc(db, "assets", id), newAsset);
             }
@@ -545,31 +570,65 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 });
             }
         },
-        deleteAsset: async (id) => {
-            const target = assets.find(a => a.id === id);
+        async deleteAsset(id: string, reason: string = "Dihapus oleh admin") {
+            const asset = assets.find(a => a.id === id);
+            const idToDelete = id;
+            const companyId = finalCompanyId;
+            const operatorName = user?.name || user?.email || "Unknown";
+
+            if (asset) {
+                const deletedAssetRecord: DeletedAsset = {
+                    id: uuidv4(),
+                    companyId: companyId,
+                    assetId: asset.id,
+                    assetName: asset.name,
+                    assetCode: asset.assetCode || "-",
+                    category: asset.category,
+                    deletedBy: operatorName,
+                    deleteDate: new Date().toISOString(),
+                    reason: reason,
+                    originalAssetData: asset
+                };
+
+                try {
+                    if (isDemo) {
+                        setDeletedAssets(prev => [deletedAssetRecord, ...prev]);
+                        const currentDeleted = JSON.parse(localStorage.getItem("deleted_assets") || "[]");
+                        saveToLocal("deleted_assets", [deletedAssetRecord, ...currentDeleted]);
+                    } else {
+                        // Langkah 1: Simpan ke Arsip
+                        await setDoc(doc(db, "deleted_assets", deletedAssetRecord.id), deletedAssetRecord);
+                    }
+                } catch (err) {
+                    console.error("❌ Gagal membuat arsip di deleted_assets:", err);
+                    throw new Error("Gagal mengarsipkan aset. Cek Firebase Rules koleksi 'deleted_assets'.");
+                }
+            }
+
             if (isDemo) {
-                setAssets(assets.filter(a => a.id !== id));
-                saveToLocal(STORAGE_KEYS.ASSETS, assets.filter(a => a.id !== id));
-                const updatedRA = roomAssets.filter(ra => ra.assetId !== id);
+                setAssets(prev => prev.filter(a => a.id !== idToDelete));
+                const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.ASSETS) || "[]");
+                saveToLocal(STORAGE_KEYS.ASSETS, current.filter((a: any) => a.id !== idToDelete));
+
+                const updatedRA = roomAssets.filter(ra => ra.assetId !== idToDelete);
                 setRoomAssets(updatedRA);
                 saveToLocal(STORAGE_KEYS.ROOM_ASSETS, updatedRA);
             } else {
-                await deleteDoc(doc(db, "assets", id));
-                // FIX: Gunakan state lokal daripada getDocs untuk efisiensi & keamanan
-                const existingInRooms = roomAssets.filter(ra => ra.assetId === id);
+                await deleteDoc(doc(db, "assets", idToDelete));
+                const existingInRooms = roomAssets.filter(ra => ra.assetId === idToDelete);
                 for (const ra of existingInRooms) {
                     await deleteDoc(doc(db, "roomAssets", ra.id));
                 }
             }
 
-            // Tambahkan log sistem
-            if (target) {
-                await api.addLog({
-                    type: "SYSTEM",
-                    toValue: `Hapus Aset: ${target.name}`,
-                    notes: `Menghapus data aset dangan kode ${target.assetCode || "-"}`
-                });
-            }
+            await api.addLog({
+                assetId: idToDelete,
+                assetName: asset?.name || "Unknown Asset",
+                type: "SYSTEM",
+                toValue: "DELETED",
+                operatorName,
+                notes: `Aset dihapus. Alasan: ${reason}`
+            });
         },
 
         addRoomAsset: async (ra, opName) => {
@@ -972,7 +1031,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             }
         },
 
-        operatorShifts,
+
         addShift: async (shiftData) => {
             const companyId = user?.companyId || "";
             const operatorId = user?.uid || "";
