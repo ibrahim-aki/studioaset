@@ -35,7 +35,6 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         setDisplayMessage(null);
-
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             // Fetch role directly to handle fast redirect
@@ -49,6 +48,9 @@ export default function LoginPage() {
                 if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR") {
                     // SESSION MANAGEMENT: Generate and save new session ID on login
                     const newSessionId = Math.random().toString(36).substring(2, 15);
+
+                    // FIX: Tetapkan ke localStorage DULU sebelum update Firestore 
+                    // agar AuthContext tidak membaca array kosong.
                     localStorage.setItem("studio_session_id", newSessionId);
 
                     // Update session in Firestore — MUST await before redirect

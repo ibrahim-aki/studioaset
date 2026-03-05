@@ -133,8 +133,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         // Additional safety: If we just logged in (within last 3 seconds), 
                         // verify we aren't seeing our own previous write
                         if (!snap.metadata.hasPendingWrites) {
-                            alert("Sesi Anda berakhir karena login di perangkat lain.");
-                            logout();
+
+                            // Cek jika cloudSessionId baru saja di-generate di perangkat lain (ini ditandakan
+                            // dengan perbedaan waktu sejak login atau penulisan ID).
+                            // Karena saat login, kita menghapus localSessionId sesaat sebelum Firebase onAuthStateChanged
+                            // terpanggil, kita beri jeda sebentar agar context tidak buru-buru menendang user 
+                            // sebelum `updateDoc` di halaman login selesai.
+                            setTimeout(() => {
+                                const currentLocalSessionId = localStorage.getItem("studio_session_id");
+                                if (cloudSessionId !== currentLocalSessionId) {
+                                    alert("Sesi Anda berakhir karena login di perangkat lain.");
+                                    logout();
+                                }
+                            }, 2000); // Beri delay 2 detik untuk memastikan penulisan selesai
                         }
                     }
                 }
@@ -159,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = async () => {
         try {
             setUser(null);
+            localStorage.removeItem("studio_session_id");
             await auth.signOut();
         } catch (error) {
             console.error("Logout Error:", error);
