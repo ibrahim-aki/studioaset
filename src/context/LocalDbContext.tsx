@@ -167,6 +167,7 @@ interface LocalDbContextType {
     deleteLocation: (id: string) => void;
 
     addCategory: (cat: string) => void;
+    bulkAddCategories: (cats: string[]) => Promise<void>;
     deleteCategory: (cat: string) => void;
 
     addRoom: (room: Omit<Room, "id" | "companyId">) => void;
@@ -561,12 +562,43 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 await updateDoc(doc(db, "assets", id), data as any);
             }
 
-            // Tambahkan log sistem
+            // Tambahkan log sistem yang lebih detail
             if (target) {
+                const changes: string[] = [];
+                const fieldLabels: Record<string, string> = {
+                    name: "Nama",
+                    assetCode: "Kode",
+                    category: "Kategori",
+                    status: "Status/Kondisi",
+                    conditionNotes: "Catatan Kondisi",
+                    description: "Deskripsi",
+                    locationId: "Lokasi (ID)",
+                    position: "Posisi",
+                    entryDate: "Tgl Masuk"
+                };
+
+                Object.keys(data).forEach((key) => {
+                    const newValue = (data as any)[key];
+                    const oldValue = (target as any)[key];
+
+                    // Hanya catat jika nilai berubah dan kunci ada dalam daftar label
+                    if (newValue !== undefined && newValue !== oldValue && fieldLabels[key]) {
+                        const label = fieldLabels[key];
+                        changes.push(`${label}: ${oldValue || "-"} → ${newValue || "-"}`);
+                    }
+                });
+
+                const logNotes = changes.length > 0
+                    ? `Perubahan: ${changes.join(", ")}`
+                    : `Memperbarui info aset tanpa perubahan nilai signifikan.`;
+
                 await api.addLog({
+                    assetId: id,
+                    assetName: data.name || target.name,
                     type: "SYSTEM",
-                    toValue: `Update Aset: ${data.name || target.name}`,
-                    notes: `Memperbarui info aset. Kode: ${target.assetCode || "-"}`
+                    toValue: `Update Aset`,
+                    operatorName: (data as any).lastModifiedBy, // Ambil dari data update jika ada
+                    notes: `${logNotes} (Kode: ${target.assetCode || "-"})`
                 });
             }
         },
@@ -870,10 +902,12 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 let updatedLogs = [...assetLogs];
 
                 for (const item of c.items) {
+                    const currentAsset = assets.find(a => a.id === item.assetId);
                     await api.addLog({
                         assetId: item.assetId,
                         assetName: item.assetName,
                         type: "STATUS",
+                        fromValue: currentAsset?.status || "BAIK",
                         toValue: item.status,
                         operatorName: c.operatorName,
                         notes: item.notes || `Pengecekan rutin di ${c.roomName}`
@@ -907,11 +941,13 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 // Dibungkus try-catch individual agar kegagalan permission rules
                 // pada koleksi 'assets' tidak membatalkan seluruh pengiriman laporan.
                 for (const item of c.items) {
+                    const currentAsset = assets.find(a => a.id === item.assetId);
                     try {
                         await api.addLog({
                             assetId: item.assetId,
                             assetName: item.assetName,
                             type: "STATUS",
+                            fromValue: currentAsset?.status || "BAIK",
                             toValue: item.status,
                             operatorName: c.operatorName,
                             companyId: companyId,
@@ -961,13 +997,56 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         },
 
         addCategory: async (cat) => {
-            const newList = [...categories, cat].sort((a, b) => a.localeCompare(b));
-            if (isDemo) {
-                setCategories(newList);
-                saveToLocal(STORAGE_KEYS.CATEGORIES, newList);
-            } else {
-                await setDoc(doc(db, "settings", "categories"), { list: newList });
-            }
+            const trimmedCat = cat.trim();
+            if (!trimmedCat) return;
+
+            setCategories(prev => {
+                // Jangan tambah jika sudah ada (case-insensitive)
+                if (prev.some(c => c.toLowerCase() === trimmedCat.toLowerCase())) return prev;
+                const newList = [...prev, trimmedCat].sort((a, b) => a.localeCompare(b));
+
+                if (isDemo) {
+                    saveToLocal(STORAGE_KEYS.CATEGORIES, newList);
+                } else {
+                    setDoc(doc(db, "settings", "categories"), { list: newList });
+                }
+
+                // Log activity
+                api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Kategori Baru: ${trimmedCat}`,
+                    notes: `Menambahkan kategori peralatan baru ke sistem`
+                });
+
+                return newList;
+            });
+        },
+        bulkAddCategories: async (cats) => {
+            if (!cats || cats.length === 0) return;
+
+            setCategories(prev => {
+                const uniqueNew = cats
+                    .map(c => c.trim())
+                    .filter(c => c && !prev.some(p => p.toLowerCase() === c.toLowerCase()));
+
+                if (uniqueNew.length === 0) return prev;
+
+                const newList = [...prev, ...uniqueNew].sort((a, b) => a.localeCompare(b));
+
+                if (isDemo) {
+                    saveToLocal(STORAGE_KEYS.CATEGORIES, newList);
+                } else {
+                    setDoc(doc(db, "settings", "categories"), { list: newList });
+                }
+
+                api.addLog({
+                    type: "SYSTEM",
+                    toValue: `Bulk Kategori: ${uniqueNew.length} Baru`,
+                    notes: `Sinkronisasi kategori baru dari data aset: ${uniqueNew.join(", ")}`
+                });
+
+                return newList;
+            });
         },
         deleteCategory: async (cat) => {
             const newList = categories.filter(c => c !== cat);
@@ -977,6 +1056,12 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             } else {
                 await setDoc(doc(db, "settings", "categories"), { list: newList });
             }
+
+            api.addLog({
+                type: "SYSTEM",
+                toValue: `Hapus Kategori: ${cat}`,
+                notes: `Menghapus kategori dari daftar resmi sistem`
+            });
         },
 
         addLog: async (log) => {

@@ -14,6 +14,7 @@ export default function AdminLogsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [filteredLogs, setFilteredLogs] = useState<AssetLog[]>([]);
+    const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
     useEffect(() => {
         // Tampilkan semua log untuk perusahaan ini (sudah difilter di context)
@@ -60,7 +61,7 @@ export default function AdminLogsPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto min-h-screen">
             {/* Header */}
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
@@ -107,70 +108,78 @@ export default function AdminLogsPage() {
             </div>
 
             {/* Logs List - COMPACT TABLE STYLE (Inspired by Super Admin) */}
-            <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+            {/* Logs List - COMPACT TABLE STYLE (Minimalist List Style) */}
+            <div className="bg-transparent overflow-hidden">
                 <div className="overflow-x-auto max-h-[700px] custom-scrollbar">
-                    <table className="w-full text-left">
-                        <thead className="bg-white sticky top-0 z-10 border-b border-gray-100">
-                            <tr>
-                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest">Waktu Log</th>
-                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest">Jenis & Kejadian</th>
-                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest text-center">Admin / Operator</th>
-                                <th className="px-6 py-4 text-[9px] uppercase font-black text-gray-400 tracking-widest">Detail Catatan</th>
+                    <table className="w-full border-collapse table-fixed">
+                        <thead>
+                            <tr className="text-gray-400">
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-400 tracking-wider text-left w-[140px]">Waktu Log</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-400 tracking-wider text-left w-[350px]">Jenis & Kejadian</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-400 tracking-wider text-center w-[150px]">Admin / Operator</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-400 tracking-wider text-left">Detail Catatan</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {filteredLogs.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="py-24 text-center">
                                         <Activity className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                                        <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest italic">Belum ada aktivitas tercatat</p>
+                                        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic">Belum ada aktivitas tercatat</p>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredLogs.map((log) => (
-                                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors group border-b border-gray-50 last:border-0">
-                                        <td className="px-6 py-1.5 whitespace-nowrap">
-                                            <span className="text-[10px] font-bold text-gray-900 mr-2">
+                                    <tr key={log.id} className="group hover:bg-orange-100/70 transition-all duration-200 border-b border-gray-100 last:border-0 text-[10px]">
+                                        <td className="px-2 py-1 whitespace-nowrap">
+                                            <span className="font-bold text-gray-900 mr-2">
                                                 {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 font-medium tracking-tighter">
+                                            <span className="text-gray-400 font-medium tracking-tighter">
                                                 {new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-1.5">
+                                        <td className="px-2 py-1">
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <span className={clsx(
-                                                    "text-[10px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0 tracking-tighter",
+                                                    "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none shrink-0 tracking-tighter",
                                                     log.type === "MOVEMENT" ? "text-amber-600 border-amber-100 bg-amber-50" :
                                                         log.type === "STATUS" ? "text-blue-600 border-blue-100 bg-blue-50" :
                                                             log.type === "AUTH" ? "text-emerald-600 border-emerald-100 bg-emerald-50" :
-                                                                log.type === "SYSTEM" ? "text-purple-600 border-purple-100 bg-purple-51" : "text-gray-400 border-gray-100 bg-gray-50"
+                                                                log.type === "SYSTEM" ? "text-purple-600 border-purple-100 bg-purple-50" : "text-gray-400 border-gray-100 bg-gray-50"
                                                 )}>
                                                     {log.type}
                                                 </span>
-                                                <div className="flex items-center gap-2 truncate">
-                                                    <span className="text-[10px] font-bold text-gray-700 truncate group-hover:text-indigo-600 transition-colors">{log.toValue}</span>
+                                                <div className="flex items-center gap-2 truncate group-hover:whitespace-normal transition-all duration-300">
+                                                    <span className="font-bold text-gray-700 truncate group-hover:text-indigo-600 transition-colors" title={log.toValue}>{log.toValue}</span>
                                                     {log.assetName && (
-                                                        <span className="text-[10px] text-indigo-400/70 font-bold uppercase flex items-center gap-1 shrink-0 italic">
+                                                        <span className="text-indigo-400/70 font-bold uppercase flex items-center gap-1 shrink-0 italic">
                                                             • {log.assetName}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-1.5 text-center whitespace-nowrap">
+                                        <td className="px-2 py-1 text-center whitespace-nowrap">
                                             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md border border-gray-100 group-hover:bg-white group-hover:border-indigo-100 transition-all">
                                                 <User className="w-2.5 h-2.5 text-gray-400" />
-                                                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">
+                                                <span className="font-bold text-gray-600 uppercase tracking-tighter">
                                                     {log.operatorName.split(' ')[0]}
-                                                    <span className="ml-1 text-gray-400 font-medium">({log.operatorRole || 'USER'})</span>
+                                                    <span className="ml-1 text-gray-400 font-medium font-bold">({log.operatorRole || 'USER'})</span>
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-1.5">
-                                            <p className="text-[10px] text-gray-400 italic truncate max-w-[300px]" title={log.notes || "-"}>
+                                        <td className="px-2 py-1 min-w-[200px]">
+                                            <div
+                                                onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                                                className={clsx(
+                                                    "text-gray-500 italic leading-relaxed cursor-pointer transition-all duration-300",
+                                                    expandedLogId === log.id ? "whitespace-normal bg-gray-50/80 p-1 rounded-md border border-gray-100 shadow-sm" : "truncate hover:text-indigo-600"
+                                                )}
+                                                title={expandedLogId === log.id ? "Klik untuk memperkecil" : (log.notes ? "Klik untuk melihat catatan lengkap" : "")}
+                                            >
                                                 {log.notes || "-"}
-                                            </p>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

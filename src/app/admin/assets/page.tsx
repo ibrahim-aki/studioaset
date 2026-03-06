@@ -13,6 +13,37 @@ import {
     ChevronDown, ChevronUp, Box, Settings
 } from "lucide-react";
 
+// Helper function to calculate asset age precisely
+const calculateAssetAge = (entryDate?: string | Date) => {
+    if (!entryDate) return "-";
+    const entry = new Date(entryDate);
+    const now = new Date();
+    if (isNaN(entry.getTime())) return "-";
+
+    let years = now.getFullYear() - entry.getFullYear();
+    let months = now.getMonth() - entry.getMonth();
+    let days = now.getDate() - entry.getDate();
+
+    if (days < 0) {
+        months--;
+        // Get number of days in the previous month
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    const parts = [];
+    if (years > 0) parts.push(`${years} Thn`);
+    if (months > 0) parts.push(`${months} Bln`);
+    if (days > 0 || parts.length === 0) parts.push(`${days} Hari`);
+
+    return parts.join(" ");
+};
+
 function AssetsContent() {
     const searchParams = useSearchParams();
     const initialSearch = searchParams.get("search") || "";
@@ -42,6 +73,7 @@ function AssetsContent() {
     const [deleteReason, setDeleteReason] = useState("");
     const [deletePassword, setDeletePassword] = useState("");
     const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+    const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
     const {
         assets: rawAssets,
@@ -56,6 +88,7 @@ function AssetsContent() {
         deleteAsset,
         deletedAssets,
         addCategory,
+        bulkAddCategories,
         deleteCategory
     } = useLocalDb();
 
@@ -307,20 +340,10 @@ function AssetsContent() {
                     "Nama Barang": asset.name || "-",
                     "Kategori": asset.category || "-",
                     "Tanggal Masuk": asset.entryDate || "-",
-                    "Umur Aset": (() => {
-                        if (!asset.entryDate) return "-";
-                        const entry = new Date(asset.entryDate);
-                        const now = new Date();
-                        if (isNaN(entry.getTime())) return "-";
-                        let years = now.getFullYear() - entry.getFullYear();
-                        let months = now.getMonth() - entry.getMonth();
-                        if (months < 0) { years--; months += 12; }
-                        if (years > 0) return `${years} Thn ${months} Bln`;
-                        return `${months} Bln`;
-                    })(),
+                    "Umur Aset": calculateAssetAge(asset.entryDate),
                     "Cabang": assetLocation?.name || "-",
                     "Ruangan": (() => {
-                        if (!roomAsset) return "Di Gudang";
+                        if (!roomAsset) return "Gudang";
                         return currentRoom?.name || "-";
                     })(),
                     "Riwayat Servis": (() => {
@@ -406,6 +429,7 @@ function AssetsContent() {
 
                 let importedCount = 0;
                 let currentAssetsList = [...rawAssets];
+                const processedCategories = new Set([...categories]);
 
                 // Helper Fungsi untuk Parse Tanggal yang Sangat Robust
                 const parseDateRobust = (val: any): string => {
@@ -484,8 +508,9 @@ function AssetsContent() {
                     if (name && category) {
                         const catFinal = String(category).trim();
                         // Auto-register discovered categories
-                        if (catFinal && !categories.includes(catFinal)) {
+                        if (catFinal && !processedCategories.has(catFinal)) {
                             await addCategory(catFinal);
+                            processedCategories.add(catFinal);
                         }
 
                         const { assetCode: generatedCode, finalName } = getSmartAssetInfo(String(name), catFinal, currentAssetsList);
@@ -563,7 +588,7 @@ function AssetsContent() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto min-h-screen">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto min-h-screen">
             {/* Header section with Tabs */}
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
@@ -756,22 +781,23 @@ function AssetsContent() {
                             </div>
                         ) : (
                             <>
-                                {/* Desktop Table */}
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full border-separate border-spacing-y-2 px-4">
+                                {/* Desktop Table - Minimalist List Style */}
+                                <div className="hidden md:block overflow-hidden">
+                                    <table className="w-full border-collapse table-fixed">
                                         <thead>
                                             <tr className="text-gray-400">
-                                                <th scope="col" className="py-3 px-4 text-center text-[10px] font-bold uppercase tracking-wider w-12">No</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Kode</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Identitas Aset</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Kategori</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Tgl Masuk</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Umur Aset</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Cabang</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Ruangan</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Riwayat Servis</th>
-                                                <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Kondisi</th>
-                                                <th scope="col" className="relative py-3 px-4 text-right text-[10px] font-bold uppercase tracking-wider w-16">Aksi</th>
+                                                <th scope="col" className="py-2 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[40px]">No</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px]">Kode</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[180px]">Identitas Aset</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[110px]">Kategori</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px]">Tgl Masuk</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[75px]">Umur Aset</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px]">Cabang</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px]">Ruangan</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px]">Servis</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[80px]">Kondisi</th>
+                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider">Catatan</th>
+                                                <th scope="col" className="relative py-2 px-4 text-right text-[9px] font-bold uppercase tracking-wider w-[60px]">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -785,21 +811,7 @@ function AssetsContent() {
                                                 const ruanganName = isInWarehouse ? null : (currentRoom?.name || "-");
 
                                                 // Hitung Umur Aset
-                                                const umurAset = asset.entryDate ? (() => {
-                                                    const entry = new Date(asset.entryDate);
-                                                    const now = new Date();
-                                                    if (isNaN(entry.getTime())) return "-";
-
-                                                    let years = now.getFullYear() - entry.getFullYear();
-                                                    let months = now.getMonth() - entry.getMonth();
-                                                    if (months < 0) {
-                                                        years--;
-                                                        months += 12;
-                                                    }
-
-                                                    if (years > 0) return `${years} Thn ${months} Bln`;
-                                                    return `${months} Bln`;
-                                                })() : "-";
+                                                const umurAset = calculateAssetAge(asset.entryDate);
 
                                                 // Hitung Riwayat Servis (Filter log tipe STATUS ke SERVIS atau mengandung kata servis)
                                                 const serviceLogs = assetLogs.filter(log =>
@@ -815,50 +827,50 @@ function AssetsContent() {
                                                 })() : "-";
 
                                                 return (
-                                                    <tr key={asset.id} className="group bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm border border-gray-100 rounded-lg">
-                                                        <td className="py-3 px-4 text-[10px] text-gray-400 text-center rounded-l-lg border-y border-l border-gray-100">
+                                                    <tr key={asset.id} className="group hover:bg-green-100/70 transition-all duration-200 border-b border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] text-gray-400 text-center">
                                                             {index + 1}
                                                         </td>
-                                                        <td className="py-3 px-4 text-[11px] font-mono font-bold text-indigo-600 border-y border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] font-mono font-bold text-indigo-600 whitespace-nowrap truncate">
                                                             {asset.assetCode || "-"}
                                                         </td>
-                                                        <td className="py-3 px-4 border-y border-gray-100">
-                                                            <span className="text-[11px] font-semibold text-gray-900">{asset.name}</span>
+                                                        <td className="py-1 px-2 truncate">
+                                                            <span className="text-[10px] font-semibold text-gray-900 whitespace-nowrap" title={asset.name}>{asset.name}</span>
                                                         </td>
-                                                        <td className="py-3 px-4 text-[11px] font-medium text-gray-500 border-y border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] font-medium text-gray-500 whitespace-nowrap truncate">
                                                             {asset.category}
                                                         </td>
-                                                        <td className="py-3 px-4 text-[11px] text-gray-400 border-y border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] text-gray-400 whitespace-nowrap">
                                                             {displayDate}
                                                         </td>
-                                                        <td className="py-3 px-4 text-[11px] font-medium text-indigo-600 border-y border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] font-medium text-indigo-600 whitespace-nowrap truncate">
                                                             {umurAset}
                                                         </td>
-                                                        <td className="py-3 px-4 text-[11px] text-gray-500 border-y border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] text-gray-500 whitespace-nowrap truncate">
                                                             {cabangName}
                                                         </td>
-                                                        <td className="py-3 px-4 text-[11px] text-gray-500 border-y border-gray-100">
+                                                        <td className="py-1 px-2 text-[10px] text-gray-500 whitespace-nowrap truncate">
                                                             {isInWarehouse ? (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight bg-orange-50 text-orange-600 border border-orange-100">
-                                                                    Di Gudang
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-tight bg-orange-50 text-orange-600 border border-orange-100">
+                                                                    Gudang
                                                                 </span>
                                                             ) : (
                                                                 ruanganName
                                                             )}
                                                         </td>
-                                                        <td className="py-3 px-4 border-y border-gray-100">
-                                                            <div className="flex items-center gap-1.5">
+                                                        <td className="py-1 px-2 whitespace-nowrap">
+                                                            <div className="flex items-center gap-1">
                                                                 <span className={clsx(
-                                                                    "px-2 py-0.5 rounded-full text-[9px] font-bold transition-all",
+                                                                    "px-1.5 py-0.5 rounded-full text-[8px] font-bold transition-all",
                                                                     serviceCount > 0 ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-gray-50 text-gray-400 border border-gray-100"
                                                                 )}>
-                                                                    {serviceCount}x Servis
+                                                                    {serviceCount}x
                                                                 </span>
                                                             </div>
                                                         </td>
-                                                        <td className="py-3 px-4 border-y border-gray-100">
+                                                        <td className="py-1 px-2 whitespace-nowrap">
                                                             <span className={clsx(
-                                                                "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight",
+                                                                "inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-tight",
                                                                 asset.status === "RUSAK" ? "bg-amber-50 text-amber-700 border border-amber-100" :
                                                                     asset.status === "MATI" ? "bg-rose-50 text-rose-700 border border-rose-100" :
                                                                         asset.status === "SERVIS" ? "bg-blue-50 text-blue-700 border border-blue-100" :
@@ -869,18 +881,35 @@ function AssetsContent() {
                                                                 {asset.status || 'BAIK'}
                                                             </span>
                                                         </td>
-                                                        <td className="py-3 px-4 text-right rounded-r-lg border-y border-r border-gray-100">
-                                                            <div className="flex items-center justify-end gap-1 relative z-40">
-                                                                <div className={`flex items-center gap-1 overflow-hidden transition-all duration-200 ease-in-out ${activeActionMenu === asset.id ? 'max-w-[120px] opacity-100 mr-1' : 'max-w-0 opacity-0'}`}>
-                                                                    <button onClick={() => { openHistory(asset); setActiveActionMenu(null); }} className="p-1 px-1.5 rounded-md text-gray-400 hover:text-indigo-600 transition-colors" title="Riwayat"><History className="w-3 h-3" /></button>
-                                                                    <button onClick={() => { openModal(asset); setActiveActionMenu(null); }} className="p-1 px-1.5 rounded-md text-gray-400 hover:text-indigo-600 transition-colors" title="Edit"><Edit2 className="w-3 h-3" /></button>
-                                                                    <button onClick={() => { handleDeleteClick(asset); setActiveActionMenu(null); }} className="p-1 px-1.5 rounded-md text-gray-400 hover:text-rose-600 transition-colors" title="Hapus"><Trash2 className="w-3 h-3" /></button>
+                                                        <td className="py-1 px-2">
+                                                            <div
+                                                                onClick={() => setExpandedNoteId(expandedNoteId === asset.id ? null : asset.id)}
+                                                                className={clsx(
+                                                                    "text-[10px] text-gray-400 font-medium cursor-pointer transition-all duration-300",
+                                                                    expandedNoteId === asset.id ? "whitespace-normal bg-gray-50/80 p-1 rounded-md border border-gray-100 shadow-sm" : "truncate hover:text-indigo-600"
+                                                                )}
+                                                                title={expandedNoteId === asset.id ? "Klik untuk memperkecil" : (asset.conditionNotes ? "Klik untuk melihat catatan lengkap" : "")}
+                                                            >
+                                                                {asset.conditionNotes || "-"}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-1 px-4 text-right w-[60px]">
+                                                            <div className="flex items-center justify-end relative">
+                                                                {/* Floating Menu - Melayang di atas kolom catatan tanpa menggeser layout */}
+                                                                <div className={clsx(
+                                                                    "absolute right-full mr-2 z-50 flex items-center gap-0.5 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-lg border border-gray-100 shadow-lg transition-all duration-300 transform",
+                                                                    activeActionMenu === asset.id ? "opacity-100 scale-100 translate-x-0" : "opacity-0 scale-95 translate-x-2 pointer-events-none"
+                                                                )}>
+                                                                    <button onClick={() => { openHistory(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Riwayat"><History className="w-3.5 h-3.5" /></button>
+                                                                    <button onClick={() => { openModal(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                                    <button onClick={() => { handleDeleteClick(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5" /></button>
                                                                 </div>
+
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); setActiveActionMenu(activeActionMenu === asset.id ? null : asset.id); }}
-                                                                    className={`p-1 rounded-md transition-all ${activeActionMenu === asset.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}
+                                                                    className={`p-1 rounded-md transition-all z-40 ${activeActionMenu === asset.id ? 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}
                                                                 >
-                                                                    <MoreVertical className="w-4 h-4" />
+                                                                    <MoreVertical className="w-3.5 h-3.5" />
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -930,7 +959,7 @@ function AssetsContent() {
                                                         </span>
                                                     ) : (
                                                         <span className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md text-xs font-medium border border-orange-100">
-                                                            Di Gudang
+                                                            Gudang
                                                         </span>
                                                     )}
                                                     <span className={clsx(
@@ -1005,179 +1034,181 @@ function AssetsContent() {
                         </table>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Asset Form Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm shadow-2xl" onClick={closeModal}></div>
-                    <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-                                    {formData.id ? "✍️ Edit Aset" : "✨ Tambah Aset"}
-                                </h2>
-                                <p className="text-[11px] text-gray-500 mt-1">
-                                    {formData.id ? `ID: ${formData.id}` : "Lengkapi detail informasi aset inventaris"}
-                                </p>
-                            </div>
-                            <button onClick={closeModal} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-50 transition-all">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cabang (Lokasi Asal)</label>
-                                    <select
-                                        required
-                                        value={formData.locationId}
-                                        onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm"
-                                    >
-                                        <option value="" disabled>Pilih Lokasi Cabang</option>
-                                        {rawLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                    </select>
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm shadow-2xl" onClick={closeModal}></div>
+                        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                                        {formData.id ? "✍️ Edit Aset" : "✨ Tambah Aset"}
+                                    </h2>
+                                    <p className="text-[11px] text-gray-500 mt-1">
+                                        {formData.id ? `ID: ${formData.id}` : "Lengkapi detail informasi aset inventaris"}
+                                    </p>
                                 </div>
+                                <button onClick={closeModal} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-50 transition-all">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
 
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kategori Alat</label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddingCategory(!isAddingCategory)}
-                                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter"
-                                        >
-                                            {isAddingCategory ? "Gunakan List" : "Tulis Baru"}
-                                        </button>
-                                    </div>
-                                    {isAddingCategory ? (
-                                        <input
-                                            required
-                                            type="text"
-                                            value={newCategoryName}
-                                            onChange={(e) => setNewCategoryName(e.target.value)}
-                                            placeholder="Masukkan nama kategori baru..."
-                                            className="w-full px-4 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/30 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm placeholder:text-indigo-300"
-                                            autoFocus
-                                        />
-                                    ) : (
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cabang (Lokasi Asal)</label>
                                         <select
                                             required
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            value={formData.locationId}
+                                            onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
                                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm"
                                         >
-                                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                            <option value="" disabled>Pilih Lokasi Cabang</option>
+                                            {rawLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                                         </select>
-                                    )}
-                                </div>
-                            </div>
+                                    </div>
 
-                            <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kode Aset / Barang (Opsional)</label>
-                                    <input
-                                        type="text"
-                                        value={formData.assetCode}
-                                        onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
-                                        placeholder="Kosongkan untuk generate otomatis"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-mono font-bold shadow-sm"
-                                    />
-                                    <p className="text-[9px] text-gray-400 italic">Contoh: CAM-0001 atau SONY-A6400-01</p>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-gray-700">Nama / Model Barang</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Misal: Sony A6400"
-                                        list="asset-names"
-                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
-                                    />
-                                    <datalist id="asset-names">
-                                        {uniqueNames.map(name => <option key={name} value={name} />)}
-                                    </datalist>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-gray-700">Deskripsi Teknis</label>
-                                    <textarea
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="Detil spesifikasi atau keterangan..."
-                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm h-24 resize-none"
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-gray-700">Tgl Akuisisi</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={formData.entryDate}
-                                        onChange={(e) => setFormData({ ...formData, entryDate: e.target.value })}
-                                        className="block w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                                    />
-                                </div>
-
-                                {formData.id && (
-                                    <div className="pt-2">
-                                        <div className="h-px bg-gray-100 mb-4"></div>
-                                        <div className="space-y-1.5 mb-4">
-                                            <label className="block text-sm font-medium text-gray-700">Kondisi & Status Terbaru</label>
-                                            <select
-                                                value={formData.status}
-                                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kategori Alat</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAddingCategory(!isAddingCategory)}
+                                                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter"
                                             >
-                                                <option value="BAIK">Kondisi Prima (Baik)</option>
-                                                <option value="RUSAK">Perlu Perbaikan (Rusak)</option>
-                                                <option value="MATI">Rusak Total / Mati</option>
-                                                <option value="SERVIS">Sedang Diservis (Servis)</option>
-                                                <option value="JUAL">Aset Dijual (Jual)</option>
-                                                <option value="HILANG">Tidak Terlacak / Hilang</option>
-                                            </select>
+                                                {isAddingCategory ? "Gunakan List" : "Tulis Baru"}
+                                            </button>
                                         </div>
+                                        {isAddingCategory ? (
+                                            <input
+                                                required
+                                                type="text"
+                                                value={newCategoryName}
+                                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                                placeholder="Masukkan nama kategori baru..."
+                                                className="w-full px-4 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/30 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm placeholder:text-indigo-300"
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <select
+                                                required
+                                                value={formData.category}
+                                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm"
+                                            >
+                                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kode Aset / Barang (Opsional)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.assetCode}
+                                            onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
+                                            placeholder="Kosongkan untuk generate otomatis"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-mono font-bold shadow-sm"
+                                        />
+                                        <p className="text-[9px] text-gray-400 italic">Contoh: CAM-0001 atau SONY-A6400-01</p>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="block text-sm font-medium text-gray-700">Nama / Model Barang</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            placeholder="Misal: Sony A6400"
+                                            list="asset-names"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                        />
+                                        <datalist id="asset-names">
+                                            {uniqueNames.map(name => <option key={name} value={name} />)}
+                                        </datalist>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="block text-sm font-medium text-gray-700">Deskripsi Teknis</label>
                                         <textarea
-                                            placeholder="Catatan hasil audit aset..."
-                                            value={formData.conditionNotes}
-                                            onChange={(e) => setFormData({ ...formData, conditionNotes: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm h-20"
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            placeholder="Detil spesifikasi atau keterangan..."
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm h-24 resize-none"
                                         />
                                     </div>
-                                )}
-                            </div>
 
-                            <div className="pt-4 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={closeModal}
-                                    className="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-[#303348] hover:bg-[#404358] transition-colors"
-                                >
-                                    {isSubmitting ? (
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            <span>Menyimpan...</span>
+                                    <div className="space-y-1.5">
+                                        <label className="block text-sm font-medium text-gray-700">Tgl Akuisisi</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={formData.entryDate}
+                                            onChange={(e) => setFormData({ ...formData, entryDate: e.target.value })}
+                                            className="block w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                                        />
+                                    </div>
+
+                                    {formData.id && (
+                                        <div className="pt-2">
+                                            <div className="h-px bg-gray-100 mb-4"></div>
+                                            <div className="space-y-1.5 mb-4">
+                                                <label className="block text-sm font-medium text-gray-700">Kondisi & Status Terbaru</label>
+                                                <select
+                                                    value={formData.status}
+                                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                                >
+                                                    <option value="BAIK">Kondisi Prima (Baik)</option>
+                                                    <option value="RUSAK">Perlu Perbaikan (Rusak)</option>
+                                                    <option value="MATI">Rusak Total / Mati</option>
+                                                    <option value="SERVIS">Sedang Diservis (Servis)</option>
+                                                    <option value="JUAL">Aset Dijual (Jual)</option>
+                                                    <option value="HILANG">Tidak Terlacak / Hilang</option>
+                                                </select>
+                                            </div>
+                                            <textarea
+                                                placeholder="Catatan hasil audit aset..."
+                                                value={formData.conditionNotes}
+                                                onChange={(e) => setFormData({ ...formData, conditionNotes: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm h-20"
+                                            />
                                         </div>
-                                    ) : (formData.id ? "Simpan Perubahan" : "Simpan Aset")}
-                                </button>
-                            </div>
-                        </form>
+                                    )}
+                                </div>
+
+                                <div className="pt-4 flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        className="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-[#303348] hover:bg-[#404358] transition-colors"
+                                    >
+                                        {isSubmitting ? (
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <span>Menyimpan...</span>
+                                            </div>
+                                        ) : (formData.id ? "Simpan Perubahan" : "Simpan Aset")}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )
+                )
             }
 
             {/* History Modal */}
@@ -1204,19 +1235,7 @@ function AssetsContent() {
                                         <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
                                             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Umur Aset</p>
                                             <p className="text-sm font-bold text-gray-900">
-                                                {(() => {
-                                                    const start = new Date(historyAsset.entryDate || historyAsset.updatedAt || new Date());
-                                                    const now = new Date();
-                                                    const diffTime = Math.abs(now.getTime() - start.getTime());
-                                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                                                    if (diffDays < 30) return `${diffDays} Hari`;
-                                                    const diffMonths = Math.floor(diffDays / 30);
-                                                    if (diffMonths < 12) return `${diffMonths} Bulan`;
-                                                    const years = Math.floor(diffMonths / 12);
-                                                    const months = diffMonths % 12;
-                                                    return `${years} Tahun ${months} Bulan`;
-                                                })()}
+                                                {calculateAssetAge(historyAsset.entryDate || historyAsset.updatedAt)}
                                             </p>
                                         </div>
                                         <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
@@ -1290,127 +1309,199 @@ function AssetsContent() {
                             </div>
                         </div>
                     </div>
-                )}
+                )
+            }
 
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md" onClick={() => !isVerifyingPassword && setIsDeleteModalOpen(false)}></div>
-                    <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 animate-in fade-in zoom-in duration-200">
-                        <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-100">
-                            <AlertOctagon className="w-8 h-8 text-rose-600" />
-                        </div>
-                        <div className="text-center mb-8">
-                            <h3 className="text-xl font-bold text-gray-900">Konfirmasi Penghapusan</h3>
-                            <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                                Anda akan menghapus <span className="font-bold text-gray-900">{assetToDelete?.name}</span> secara permanen dari sistem.
-                            </p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Alasan Penghapusan</label>
-                                <textarea
-                                    value={deleteReason}
-                                    onChange={(e) => setDeleteReason(e.target.value)}
-                                    placeholder="Wajib diisi (Misal: Rusak Total / Dijual)"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm h-24 resize-none shadow-sm"
-                                    disabled={isVerifyingPassword}
-                                />
+            {
+                isDeleteModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md" onClick={() => !isVerifyingPassword && setIsDeleteModalOpen(false)}></div>
+                        <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-100">
+                                <AlertOctagon className="w-8 h-8 text-rose-600" />
+                            </div>
+                            <div className="text-center mb-8">
+                                <h3 className="text-xl font-bold text-gray-900">Konfirmasi Penghapusan</h3>
+                                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                                    Anda akan menghapus <span className="font-bold text-gray-900">{assetToDelete?.name}</span> secara permanen dari sistem.
+                                </p>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kata Sandi Verifikasi</label>
-                                <input
-                                    type="password"
-                                    value={deletePassword}
-                                    onChange={(e) => setDeletePassword(e.target.value)}
-                                    placeholder="Masukkan password login Anda"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm shadow-sm"
-                                    disabled={isVerifyingPassword}
-                                />
-                                {user?.isDemo && <p className="text-[9px] text-indigo-500 mt-1 italic font-medium">Demo Mode: Gunakan password "admin123"</p>}
-                            </div>
-                        </div>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Alasan Penghapusan</label>
+                                    <textarea
+                                        value={deleteReason}
+                                        onChange={(e) => setDeleteReason(e.target.value)}
+                                        placeholder="Wajib diisi (Misal: Rusak Total / Dijual)"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm h-24 resize-none shadow-sm"
+                                        disabled={isVerifyingPassword}
+                                    />
+                                </div>
 
-                        <div className="mt-8 flex flex-col gap-2">
-                            <button
-                                onClick={confirmDelete}
-                                disabled={isVerifyingPassword}
-                                className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2"
-                            >
-                                {isVerifyingPassword ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Memverifikasi...
-                                    </>
-                                ) : (
-                                    "Ya, Hapus Aset"
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                disabled={isVerifyingPassword}
-                                className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm font-bold transition-all"
-                            >
-                                Batalkan
-                            </button>
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kata Sandi Verifikasi</label>
+                                    <input
+                                        type="password"
+                                        value={deletePassword}
+                                        onChange={(e) => setDeletePassword(e.target.value)}
+                                        placeholder="Masukkan password login Anda"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm shadow-sm"
+                                        disabled={isVerifyingPassword}
+                                    />
+                                    {user?.isDemo && <p className="text-[9px] text-indigo-500 mt-1 italic font-medium">Demo Mode: Gunakan password "admin123"</p>}
+                                </div>
+                            </div>
+
+                            <div className="mt-8 flex flex-col gap-2">
+                                <button
+                                    onClick={confirmDelete}
+                                    disabled={isVerifyingPassword}
+                                    className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isVerifyingPassword ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Memverifikasi...
+                                        </>
+                                    ) : (
+                                        "Ya, Hapus Aset"
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    disabled={isVerifyingPassword}
+                                    className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm font-bold transition-all"
+                                >
+                                    Batalkan
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
             {/* Category Management Modal */}
-            {isCategoryModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsCategoryModalOpen(false)}></div>
-                    <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                                    <Tag className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Kelola Kategori</h2>
-                                    <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest mt-0.5">Daftar Resmi Sistem</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setIsCategoryModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-50 transition-all">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                            <div className="grid grid-cols-1 gap-2">
-                                {categories.map((cat) => (
-                                    <div key={cat} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-indigo-100 hover:bg-white transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
-                                            <span className="text-sm font-bold text-gray-700">{cat}</span>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                if (confirm(`Hapus kategori "${cat}"? Ini tidak akan menghapus aset dengan kategori ini, namun kategori ini tidak akan muncul lagi di pilihan.`)) {
-                                                    deleteCategory(cat);
-                                                }
-                                            }}
-                                            className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+            {
+                isCategoryModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsCategoryModalOpen(false)}></div>
+                        <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                        <Tag className="w-5 h-5" />
                                     </div>
-                                ))}
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Kelola Kategori</h2>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest mt-0.5">Daftar Resmi Sistem</p>
+                                            <button
+                                                onClick={async () => {
+                                                    const allAssetCats = Array.from(new Set(rawAssets.map(a => a.category).filter(Boolean)));
+                                                    const missing = allAssetCats.filter(c => !categories.some(pc => pc.toLowerCase() === c.toLowerCase()));
+                                                    if (missing.length > 0) {
+                                                        await bulkAddCategories(missing);
+                                                        alert(`Berhasil mendaftarkan ${missing.length} kategori baru dari data aset!`);
+                                                    } else {
+                                                        alert("Semua kategori aset sudah terdaftar di sistem.");
+                                                    }
+                                                }}
+                                                className="text-[9px] font-black text-white bg-indigo-500 hover:bg-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-tighter transition-all"
+                                                title="Sinkronisasi kategori dari data aset yang sudah ada"
+                                            >
+                                                Sinkronisasi
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsCategoryModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-50 transition-all">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                        </div>
 
-                        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-                            <p className="text-[10px] text-gray-400 font-medium italic">
-                                * Kategori baru akan otomatis terdaftar saat Anda mengetik manual di form aset atau mengimpor file Excel.
-                            </p>
+                            <div className="mb-6">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Tambah kategori baru..."
+                                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                                        onKeyDown={async (e) => {
+                                            if (e.key === 'Enter') {
+                                                const val = e.currentTarget.value.trim();
+                                                if (val) {
+                                                    await addCategory(val);
+                                                    e.currentTarget.value = "";
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        onClick={async (e) => {
+                                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                            const val = input.value.trim();
+                                            if (val) {
+                                                await addCategory(val);
+                                                input.value = "";
+                                            }
+                                        }}
+                                        className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm"
+                                    >
+                                        Tambah
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="grid grid-cols-1 gap-2">
+                                    {categories.map((cat) => {
+                                        const usageCount = rawAssets.filter(a => a.category === cat).length;
+                                        const isUsed = usageCount > 0;
+
+                                        return (
+                                            <div key={cat} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-indigo-100 hover:bg-white transition-all shadow-sm">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={clsx(
+                                                        "w-2 h-2 rounded-full",
+                                                        isUsed ? "bg-emerald-400" : "bg-gray-300"
+                                                    )}></div>
+                                                    <span className="text-sm font-bold text-gray-700 block leading-tight">{cat}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        const msg = isUsed
+                                                            ? `Peringatan: Kategori "${cat}" sedang digunakan oleh ${usageCount} aset. Jika Anda menghapus kategori ini, aset tersebut akan tetap ada tetapi kategorinya tidak akan terdaftar di pilihan sistem. Lanjutkan hapus?`
+                                                            : `Hapus kategori "${cat}"?`;
+                                                        if (confirm(msg)) {
+                                                            deleteCategory(cat);
+                                                        }
+                                                    }}
+                                                    className={clsx(
+                                                        "p-2 rounded-xl transition-all",
+                                                        isUsed
+                                                            ? "text-gray-300 hover:text-rose-600 hover:bg-rose-50 opacity-0 group-hover:opacity-100"
+                                                            : "text-rose-400 hover:text-rose-600 hover:bg-rose-50"
+                                                    )}
+                                                    title={isUsed ? "Kategori Masih Digunakan" : "Hapus Kategori"}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                                <p className="text-[10px] text-gray-400 font-medium italic">
+                                    * Kategori baru akan otomatis terdaftar saat Anda mengetik manual di form aset atau mengimpor file Excel.
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 
