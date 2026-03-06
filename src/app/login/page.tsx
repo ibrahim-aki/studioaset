@@ -102,8 +102,91 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-black p-4">
-            <div className="max-w-md w-full backdrop-blur-xl bg-white/10 p-8 rounded-3xl shadow-2xl border border-white/20">
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+            {/* ── Sky Gradient Background ── */}
+            <div
+                className="absolute inset-0 -z-10"
+                style={{
+                    background: "linear-gradient(to bottom, #0d0121 0%, #2e0a6e 25%, #7b2fa0 50%, #c85a15 75%, #e87020 100%)"
+                }}
+            />
+
+            {/* ── Stars ── */}
+            <div className="absolute inset-0 -z-10 overflow-hidden">
+                {[...Array(60)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute rounded-full bg-white"
+                        style={{
+                            width: Math.random() * 2 + 1 + "px",
+                            height: Math.random() * 2 + 1 + "px",
+                            top: Math.random() * 60 + "%",
+                            left: Math.random() * 100 + "%",
+                            opacity: Math.random() * 0.7 + 0.2,
+                        }}
+                    />
+                ))}
+            </div>
+
+            {/* ── Moon ── */}
+            <div
+                className="absolute -z-10 rounded-full"
+                style={{
+                    width: "70px",
+                    height: "70px",
+                    top: "10%",
+                    left: "22%",
+                    background: "radial-gradient(circle at 35% 35%, #f5c842, #e0860d)",
+                    boxShadow: "0 0 40px 10px rgba(240,160,20,0.35)",
+                }}
+            />
+
+            {/* ── Mountain SVG Scene ── */}
+            <svg
+                className="absolute bottom-0 left-0 w-full -z-10"
+                viewBox="0 0 1440 320"
+                preserveAspectRatio="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                {/* Far mountains – lighter */}
+                <path d="M0,280 L120,160 L240,220 L360,100 L480,180 L600,80 L720,160 L840,90 L960,170 L1080,110 L1200,190 L1320,120 L1440,200 L1440,320 L0,320 Z"
+                    fill="#3d1367" opacity="0.7" />
+                {/* Mid mountains */}
+                <path d="M0,310 L80,220 L180,270 L280,180 L400,240 L520,150 L640,230 L760,170 L880,240 L1000,180 L1120,250 L1240,190 L1360,260 L1440,220 L1440,320 L0,320 Z"
+                    fill="#2a0c55" opacity="0.85" />
+                {/* Front mountains – darkest */}
+                <path d="M0,320 L60,270 L140,300 L220,250 L320,285 L420,240 L520,275 L620,230 L720,265 L820,235 L920,270 L1020,245 L1120,280 L1220,255 L1320,285 L1440,260 L1440,320 Z"
+                    fill="#170733" />
+                {/* Water reflection */}
+                <rect x="0" y="305" width="1440" height="15" fill="#1a0a3d" opacity="0.6" />
+            </svg>
+
+            {/* ── Glow orb at horizon ── */}
+            <div
+                className="absolute -z-10"
+                style={{
+                    bottom: "28%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "340px",
+                    height: "120px",
+                    borderRadius: "50%",
+                    background: "radial-gradient(ellipse, rgba(230,140,30,0.45) 0%, transparent 70%)",
+                    filter: "blur(18px)",
+                }}
+            />
+
+            {/* ── Glass Card ── */}
+            <div
+                className="max-w-md w-full p-8 rounded-2xl relative z-10"
+                style={{
+                    background: "rgba(255,255,255,0.07)",
+                    backdropFilter: "blur(24px)",
+                    WebkitBackdropFilter: "blur(24px)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    boxShadow: "0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)",
+                }}
+            >
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30">
                         <Lock className="text-white w-8 h-8" />
@@ -144,7 +227,12 @@ export default function LoginPage() {
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="block w-full pl-12 pr-4 py-4 bg-white/10 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all sm:text-sm"
+                                        className="block w-full pl-12 pr-4 py-4 border border-white/25 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400/60 focus:border-white/40 transition-all sm:text-sm"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.06)',
+                                            WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.06) inset',
+                                            WebkitTextFillColor: 'white',
+                                        }}
                                         placeholder="Alamat Email"
                                         required
                                     />
@@ -158,7 +246,12 @@ export default function LoginPage() {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="block w-full pl-12 pr-4 py-4 bg-white/10 border border-white/30 rounded-xl text-white placeholder-gray-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all sm:text-sm"
+                                        className="block w-full pl-12 pr-4 py-4 border border-white/25 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400/60 focus:border-white/40 transition-all sm:text-sm"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.06)',
+                                            WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.06) inset',
+                                            WebkitTextFillColor: 'white',
+                                        }}
                                         placeholder="Kata Sandi"
                                         required
                                     />

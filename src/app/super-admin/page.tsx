@@ -1073,44 +1073,46 @@ export default function UserManagementPage() {
                     <div id="super-admin-settings-content" className="space-y-8 animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                             {/* Global Configuration */}
-                            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-indigo-600" />
-                                    Konfigurasi Sistem Global
-                                </h3>
+                            {!selectedCompany && (
+                                <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
+                                        <Shield className="w-4 h-4 text-indigo-600" />
+                                        Konfigurasi Sistem Global
+                                    </h3>
 
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                                                <ShieldAlert className="w-5 h-5" />
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                                    <ShieldAlert className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-indigo-900 uppercase tracking-tight">Mode Uji Coba (Demo)</p>
+                                                    <p className="text-[10px] text-indigo-600 font-bold uppercase py-0.5">Status: {trialMode ? 'AKTIF' : 'NON-AKTIF'}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-xs font-black text-indigo-900 uppercase tracking-tight">Mode Uji Coba (Demo)</p>
-                                                <p className="text-[10px] text-indigo-600 font-bold uppercase py-0.5">Status: {trialMode ? 'AKTIF' : 'NON-AKTIF'}</p>
-                                            </div>
+                                            <button
+                                                onClick={() => toggleTrialMode()}
+                                                className={clsx(
+                                                    "w-12 h-6 rounded-full transition-all relative flex items-center px-1 shadow-inner",
+                                                    trialMode ? "bg-emerald-500" : "bg-gray-300"
+                                                )}
+                                            >
+                                                <div className={clsx("w-4 h-4 bg-white rounded-full transition-all shadow-md", trialMode ? "translate-x-6" : "translate-x-0")}></div>
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => toggleTrialMode()}
-                                            className={clsx(
-                                                "w-12 h-6 rounded-full transition-all relative flex items-center px-1 shadow-inner",
-                                                trialMode ? "bg-emerald-500" : "bg-gray-300"
-                                            )}
-                                        >
-                                            <div className={clsx("w-4 h-4 bg-white rounded-full transition-all shadow-md", trialMode ? "translate-x-6" : "translate-x-0")}></div>
-                                        </button>
-                                    </div>
 
-                                    {trialMode && (
-                                        <button
-                                            onClick={resetTrialData}
-                                            className="w-full py-3 px-4 bg-white border border-rose-100 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" /> Bersihkan Data Dummy
-                                        </button>
-                                    )}
+                                        {trialMode && (
+                                            <button
+                                                onClick={resetTrialData}
+                                                className="w-full py-3 px-4 bg-white border border-rose-100 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" /> Bersihkan Data Dummy
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Danger Zone & Maintenance */}
                             <div className="space-y-6">
