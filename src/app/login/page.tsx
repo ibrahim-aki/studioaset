@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { useToast } from "@/context/ToastContext";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -102,191 +103,170 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-            {/* ── Sky Gradient Background ── */}
-            <div
-                className="absolute inset-0 -z-10"
-                style={{
-                    background: "linear-gradient(to bottom, #0d0121 0%, #2e0a6e 25%, #7b2fa0 50%, #c85a15 75%, #e87020 100%)"
-                }}
-            />
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0c]">
+            {/* ── Dynamic Animated Background ── */}
+            <div className="absolute inset-0 -z-10">
+                {/* Mesh Gradient Orbs */}
+                <motion.div
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 90, 0],
+                        x: [0, 100, 0],
+                        y: [0, 50, 0]
+                    }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-600/20 rounded-full blur-[120px]"
+                />
+                <motion.div
+                    animate={{
+                        scale: [1, 1.3, 1],
+                        rotate: [0, -90, 0],
+                        x: [0, -100, 0],
+                        y: [0, -50, 0]
+                    }}
+                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                    className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[120px]"
+                />
+                <motion.div
+                    animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                        scale: [1, 1.5, 1]
+                    }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute top-[30%] right-[20%] w-[30%] h-[30%] bg-rose-600/10 rounded-full blur-[100px]"
+                />
 
-            {/* ── Stars ── */}
-            <div className="absolute inset-0 -z-10 overflow-hidden">
-                {[...Array(60)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute rounded-full bg-white"
-                        style={{
-                            width: Math.random() * 2 + 1 + "px",
-                            height: Math.random() * 2 + 1 + "px",
-                            top: Math.random() * 60 + "%",
-                            left: Math.random() * 100 + "%",
-                            opacity: Math.random() * 0.7 + 0.2,
-                        }}
-                    />
-                ))}
+                {/* Floating Glass Particles */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {[...Array(8)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ x: Math.random() * 100 + "%", y: Math.random() * 100 + "%" }}
+                            animate={{
+                                x: [Math.random() * 100 + "%", Math.random() * 100 + "%"],
+                                y: [Math.random() * 100 + "%", Math.random() * 100 + "%"],
+                                rotate: [0, 360]
+                            }}
+                            transition={{ duration: Math.random() * 20 + 20, repeat: Infinity, ease: "linear" }}
+                            className="absolute w-64 h-64 bg-white/5 border border-white/10 rounded-full backdrop-blur-[60px]"
+                            style={{ opacity: 0.3 }}
+                        />
+                    ))}
+                </div>
             </div>
 
-            {/* ── Moon ── */}
-            <div
-                className="absolute -z-10 rounded-full"
-                style={{
-                    width: "70px",
-                    height: "70px",
-                    top: "10%",
-                    left: "22%",
-                    background: "radial-gradient(circle at 35% 35%, #f5c842, #e0860d)",
-                    boxShadow: "0 0 40px 10px rgba(240,160,20,0.35)",
-                }}
-            />
-
-            {/* ── Mountain SVG Scene ── */}
-            <svg
-                className="absolute bottom-0 left-0 w-full -z-10"
-                viewBox="0 0 1440 320"
-                preserveAspectRatio="none"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                {/* Far mountains – lighter */}
-                <path d="M0,280 L120,160 L240,220 L360,100 L480,180 L600,80 L720,160 L840,90 L960,170 L1080,110 L1200,190 L1320,120 L1440,200 L1440,320 L0,320 Z"
-                    fill="#3d1367" opacity="0.7" />
-                {/* Mid mountains */}
-                <path d="M0,310 L80,220 L180,270 L280,180 L400,240 L520,150 L640,230 L760,170 L880,240 L1000,180 L1120,250 L1240,190 L1360,260 L1440,220 L1440,320 L0,320 Z"
-                    fill="#2a0c55" opacity="0.85" />
-                {/* Front mountains – darkest */}
-                <path d="M0,320 L60,270 L140,300 L220,250 L320,285 L420,240 L520,275 L620,230 L720,265 L820,235 L920,270 L1020,245 L1120,280 L1220,255 L1320,285 L1440,260 L1440,320 Z"
-                    fill="#170733" />
-                {/* Water reflection */}
-                <rect x="0" y="305" width="1440" height="15" fill="#1a0a3d" opacity="0.6" />
-            </svg>
-
-            {/* ── Glow orb at horizon ── */}
-            <div
-                className="absolute -z-10"
-                style={{
-                    bottom: "28%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "340px",
-                    height: "120px",
-                    borderRadius: "50%",
-                    background: "radial-gradient(ellipse, rgba(230,140,30,0.45) 0%, transparent 70%)",
-                    filter: "blur(18px)",
-                }}
-            />
-
             {/* ── Glass Card ── */}
-            <div
-                className="max-w-md w-full p-8 rounded-2xl relative z-10"
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="max-w-md w-full p-10 rounded-[2.5rem] relative z-10 overflow-hidden"
                 style={{
-                    background: "rgba(255,255,255,0.07)",
-                    backdropFilter: "blur(24px)",
-                    WebkitBackdropFilter: "blur(24px)",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    boxShadow: "0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)",
+                    background: "rgba(255, 255, 255, 0.03)",
+                    backdropFilter: "blur(40px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(40px) saturate(180%)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05)",
                 }}
             >
-                <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30">
-                        <Lock className="text-white w-8 h-8" />
-                    </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Login Studio</h1>
-                    <p className="text-gray-300">
-                        {displayMessage ? "Informasi Sistem" : "Masuk untuk mengelola aset streaming Anda"}
+                {/* Internal Glows */}
+                <div className="absolute -top-32 -right-32 w-64 h-64 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none" />
+                <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+
+                <div className="text-center mb-10 relative">
+                    <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl"
+                    >
+                        <Lock className="text-white w-7 h-7" />
+                    </motion.div>
+                    <h1 className="text-4xl font-black text-white mb-2 tracking-tighter">STUDIO ASET</h1>
+                    <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.3em]">
+                        {displayMessage ? "Sistem Notifikasi" : "Authentication Required"}
                     </p>
                 </div>
 
                 {displayMessage ? (
                     <div className="space-y-6 animate-in fade-in zoom-in duration-500">
-                        <div className="p-6 bg-white/10 border border-rose-400/30 rounded-2xl text-center">
-                            <div className="relative w-12 h-12 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <ShieldAlert className="w-6 h-6 text-rose-500 animate-pulse" />
-                                <div className="absolute inset-0 bg-rose-500/20 rounded-full animate-ping" />
+                        <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-center">
+                            <div className="relative w-12 h-12 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <ShieldAlert className="w-6 h-6 text-rose-500" />
                             </div>
-                            <p className="text-white font-medium leading-relaxed">
+                            <p className="text-white/80 font-medium leading-relaxed text-sm">
                                 {displayMessage}
                             </p>
                         </div>
                         <button
                             onClick={() => setDisplayMessage(null)}
-                            className="w-full py-4 px-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-bold transition-all"
+                            className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition-all text-xs uppercase tracking-widest"
                         >
-                            Kembali ke Menu Login
+                            Back to Login
                         </button>
                     </div>
                 ) : (
                     <>
-                        <form onSubmit={handleLogin} className="space-y-6">
-                            <div className="space-y-4">
+                        <form onSubmit={handleLogin} className="space-y-5 relative">
+                            <div className="space-y-3">
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <User className="h-5 w-5 text-gray-400 group-focus-within:text-purple-400 transition-colors" />
+                                        <User className="h-4 w-4 text-white/20 group-focus-within:text-blue-400 transition-colors" />
                                     </div>
                                     <input
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="block w-full pl-12 pr-4 py-4 border border-white/25 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400/60 focus:border-white/40 transition-all sm:text-sm"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.06)',
-                                            WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.06) inset',
-                                            WebkitTextFillColor: 'white',
-                                        }}
-                                        placeholder="Alamat Email"
+                                        className="block w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-white/20 transition-all text-sm font-medium"
+                                        placeholder="Email Address"
                                         required
                                     />
                                 </div>
 
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-purple-400 transition-colors" />
+                                        <Lock className="h-4 w-4 text-white/20 group-focus-within:text-purple-400 transition-colors" />
                                     </div>
                                     <input
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="block w-full pl-12 pr-4 py-4 border border-white/25 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400/60 focus:border-white/40 transition-all sm:text-sm"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.06)',
-                                            WebkitBoxShadow: '0 0 0 1000px rgba(255,255,255,0.06) inset',
-                                            WebkitTextFillColor: 'white',
-                                        }}
-                                        placeholder="Kata Sandi"
+                                        className="block w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-white/20 transition-all text-sm font-medium"
+                                        placeholder="Password"
                                         required
                                     />
                                 </div>
                             </div>
 
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                                className="w-full flex justify-center py-4 px-4 rounded-xl shadow-2xl text-[12px] font-black uppercase tracking-[0.2em] text-white bg-white/10 hover:bg-white/20 border border-white/10 focus:outline-none transition-all disabled:opacity-50"
                             >
                                 {loading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
-                                    "Masuk ke Sistem"
+                                    "Masuk"
                                 )}
-                            </button>
+                            </motion.button>
 
-                            <div className="text-center">
+                            <div className="text-center pt-2">
                                 <button
                                     type="button"
                                     onClick={async () => {
                                         if (!email) {
-                                            setDisplayMessage("Silakan masukkan alamat email Anda terlebih dahulu di kolom email.");
+                                            setDisplayMessage("Masukkan email Anda terlebih dahulu.");
                                             return;
                                         }
                                         try {
                                             const { sendPasswordResetEmail } = await import("firebase/auth");
                                             await sendPasswordResetEmail(auth, email);
-                                            setDisplayMessage("Cek email masuk, jika tidak ada pastikan cek email di folder Spam, Terimakasih .");
+                                            setDisplayMessage("Cek email masuk/spam untuk reset password.");
                                         } catch (error) {
-                                            setDisplayMessage("Gagal mengirim email reset password. Pastikan alamat email Anda sudah terdaftar dengan benar.");
+                                            setDisplayMessage("Gagal mengirim email reset password.");
                                         }
                                     }}
-                                    className="text-xs font-bold text-gray-400 hover:text-white transition-colors underline underline-offset-4"
+                                    className="text-[10px] font-bold text-white/20 hover:text-white/60 transition-colors tracking-[0.15em] uppercase"
                                 >
                                     Lupa Password?
                                 </button>
@@ -294,12 +274,12 @@ export default function LoginPage() {
                         </form>
 
                         {trialMode && (
-                            <div className="mt-8 border-t border-white/20 pt-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="flex items-center justify-center gap-2 mb-4">
-                                    <ShieldAlert className="w-3 h-3 text-amber-400" />
-                                    <p className="text-[10px] text-amber-200/60 font-black uppercase tracking-[0.2em]">Mode Uji Coba Aktif</p>
+                            <div className="mt-8 border-t border-white/5 pt-8 animate-in fade-in slide-in-from-top-4 duration-700">
+                                <div className="flex items-center justify-center gap-2 mb-5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
+                                    <p className="text-[10px] text-amber-500/30 font-black uppercase tracking-[0.3em]">Quick Access Mode</p>
                                 </div>
-                                <div className="flex gap-4">
+                                <div className="flex gap-3">
                                     <button
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -310,13 +290,13 @@ export default function LoginPage() {
                                                 operatorName: "Demo Admin",
                                                 operatorRole: "ADMIN",
                                                 companyId: "DEMO_COMPANY",
-                                                notes: "Menggunakan mode uji coba"
+                                                notes: "Trial mode login"
                                             });
                                             router.push("/admin");
                                         }}
-                                        className="w-full flex justify-center py-3 px-4 border border-blue-500/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-300 hover:bg-blue-900/40 transition-all active:scale-95"
+                                        className="w-full py-3 px-2 border border-white/5 bg-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white/80 transition-all"
                                     >
-                                        Demo Admin
+                                        Admin
                                     </button>
                                     <button
                                         onClick={(e) => {
@@ -328,31 +308,31 @@ export default function LoginPage() {
                                                 operatorName: "Demo Operator",
                                                 operatorRole: "OPERATOR",
                                                 companyId: "DEMO_COMPANY",
-                                                notes: "Menggunakan mode uji coba"
+                                                notes: "Trial mode login"
                                             });
                                             router.push("/operator");
                                         }}
-                                        className="w-full flex justify-center py-3 px-4 border border-rose-500/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-300 hover:bg-rose-900/40 transition-all active:scale-95"
+                                        className="w-full py-3 px-2 border border-white/5 bg-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white/80 transition-all"
                                     >
-                                        Demo Operator
+                                        Operator
                                     </button>
                                 </div>
-                                <div className="mt-4 text-center">
+                                <div className="mt-6 text-center">
                                     <a
                                         href="https://drive.google.com/file/d/1ycabUmyIv57c9FNevO2duppur_u1vp6M/view?usp=sharing"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-[10px] text-white/40 hover:text-white/80 transition-colors flex items-center justify-center gap-1.5 font-medium underline underline-offset-4"
+                                        className="text-[9px] text-white/10 hover:text-white/30 transition-colors inline-flex items-center gap-1.5 font-bold uppercase tracking-widest underline underline-offset-8"
                                     >
                                         <ClipboardCheck className="w-3 h-3" />
-                                        DownLoad Panduan Pengguna
+                                        User Guide
                                     </a>
                                 </div>
                             </div>
                         )}
                     </>
                 )}
-            </div>
+            </motion.div>
         </div>
     );
 }
