@@ -55,7 +55,9 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                 if (loc) setLocationName(loc.name);
             }
 
-            const roomAssetsData = rawRoomAssets.filter(ra => ra.roomId === roomId);
+            const roomAssetsData = rawRoomAssets
+                .filter(ra => ra.roomId === roomId)
+                .filter(ra => rawAssets.some(ma => ma.id === ra.assetId));
 
             const assetsData: RoomAsset[] = roomAssetsData.map(doc => ({
                 id: doc.id,

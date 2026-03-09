@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { DoorOpen, Box, CheckCircle2, AlertTriangle, AlertOctagon, Video, MapPin, Users, History, Bell, DoorClosed, XCircle, Clock, ChevronDown, ChevronUp, ClipboardCheck } from "lucide-react";
+import { DoorOpen, Box, CheckCircle2, AlertTriangle, AlertOctagon, Video, MapPin, Users, History, Bell, DoorClosed, XCircle, Clock, ChevronDown, ChevronUp, ClipboardCheck, Tag } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import clsx from "clsx";
@@ -38,15 +38,25 @@ export default function AdminPage() {
         return { liveCount, totalRooms };
     }, [rooms, checklists]);
 
-    // Calculate asset condition breakdown
+    // Calculate asset condition breakdown for Studio and Client
     const assetStats = useMemo(() => {
-        const total = assets.length;
-        const good = assets.filter(a => a.status === "BAIK" || !a.status || a.status === "").length;
-        const broken = assets.filter(a => a.status === "RUSAK").length;
-        const dead = assets.filter(a => a.status === "MATI").length;
-        const lost = assets.filter(a => a.status === "HILANG").length;
+        const studioAssets = assets.filter(a => a.category !== "Client Asset");
+        const clientAssets = assets.filter(a => a.category === "Client Asset");
 
-        return { total, good, broken, dead, lost };
+        const getStats = (list: any[]) => {
+            const total = list.length;
+            const good = list.filter(a => a.status === "BAIK" || !a.status || a.status === "").length;
+            const broken = list.filter(a => a.status === "RUSAK").length;
+            const dead = list.filter(a => a.status === "MATI").length;
+            const lost = list.filter(a => a.status === "HILANG").length;
+            return { total, good, broken, dead, lost };
+        };
+
+        return {
+            studio: getStats(studioAssets),
+            client: getStats(clientAssets),
+            totalAll: assets.length
+        };
     }, [assets]);
 
     // Location-wise overview
@@ -126,7 +136,7 @@ export default function AdminPage() {
                 {[
                     { label: "Laporan Belum Dibaca", value: checklists.filter(c => c.isRead === false).length, icon: Bell, color: "bg-rose-600", href: "/admin/checklists" },
                     { label: "Total Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "bg-blue-600", href: "/admin/rooms" },
-                    { label: "Inventaris Aset", value: assetStats.total, icon: Box, color: "bg-purple-600", href: "/admin/assets" },
+                    { label: "Inventaris Aset", value: assetStats.totalAll, icon: Box, color: "bg-purple-600", href: "/admin/assets" },
                     { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "bg-amber-600", href: "/admin/checklists" }
                 ].map((stat, i) => (
                     <Link
@@ -191,23 +201,23 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    {/* 5. STATUS ALAT BOARD */}
+                    {/* 5. ASET STUDIO BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
                         <div className="h-1 bg-purple-600 w-full"></div>
                         <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
                             <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
                                 <Box className="w-3.5 h-3.5 text-purple-600" />
-                                Status Alat
+                                Aset Studio
                             </h3>
-                            <span className="text-[9px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded-sm">{assetStats.total}</span>
+                            <span className="text-[9px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded-sm">{assetStats.studio.total}</span>
                         </div>
                         <div className="p-3 bg-white">
                             <div className="space-y-3">
                                 {[
-                                    { label: "BAIK", value: assetStats.good, color: "bg-green-500", text: "text-green-600" },
-                                    { label: "RUSAK", value: assetStats.broken, color: "bg-amber-500", text: "text-amber-600" },
-                                    { label: "MATI", value: assetStats.dead, color: "bg-rose-500", text: "text-rose-600" },
-                                    { label: "HILANG", value: assetStats.lost, color: "bg-gray-400", text: "text-gray-400" }
+                                    { label: "BAIK", value: assetStats.studio.good, color: "bg-green-500", text: "text-green-600" },
+                                    { label: "RUSAK", value: assetStats.studio.broken, color: "bg-amber-500", text: "text-amber-600" },
+                                    { label: "MATI", value: assetStats.studio.dead, color: "bg-rose-500", text: "text-rose-600" },
+                                    { label: "HILANG", value: assetStats.studio.lost, color: "bg-gray-400", text: "text-gray-400" }
                                 ].map((stat, i) => (
                                     <div key={i} className="space-y-1">
                                         <div className="flex items-end justify-between">
@@ -215,7 +225,39 @@ export default function AdminPage() {
                                             <span className={clsx("text-sm font-black tabular-nums leading-none", stat.text)}>{stat.value}</span>
                                         </div>
                                         <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                                            <div className={clsx("h-full", stat.color)} style={{ width: `${assetStats.total > 0 ? (stat.value / assetStats.total) * 100 : 0}%` }}></div>
+                                            <div className={clsx("h-full", stat.color)} style={{ width: `${assetStats.studio.total > 0 ? (stat.value / assetStats.studio.total) * 100 : 0}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 5.5 ASET CLIENT BOARD */}
+                    <div className="bg-white border border-gray-200 flex flex-col h-fit mt-1">
+                        <div className="h-1 bg-amber-500 w-full"></div>
+                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
+                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <Tag className="w-3.5 h-3.5 text-amber-500" />
+                                Aset Client
+                            </h3>
+                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">{assetStats.client.total}</span>
+                        </div>
+                        <div className="p-3 bg-white">
+                            <div className="space-y-3">
+                                {[
+                                    { label: "BAIK", value: assetStats.client.good, color: "bg-green-500", text: "text-green-600" },
+                                    { label: "RUSAK", value: assetStats.client.broken, color: "bg-amber-500", text: "text-amber-600" },
+                                    { label: "MATI", value: assetStats.client.dead, color: "bg-rose-500", text: "text-rose-600" },
+                                    { label: "HILANG", value: assetStats.client.lost, color: "bg-gray-400", text: "text-gray-400" }
+                                ].map((stat, i) => (
+                                    <div key={i} className="space-y-1">
+                                        <div className="flex items-end justify-between">
+                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tight">{stat.label}</span>
+                                            <span className={clsx("text-sm font-black tabular-nums leading-none", stat.text)}>{stat.value}</span>
+                                        </div>
+                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                                            <div className={clsx("h-full", stat.color)} style={{ width: `${assetStats.client.total > 0 ? (stat.value / assetStats.client.total) * 100 : 0}%` }}></div>
                                         </div>
                                     </div>
                                 ))}

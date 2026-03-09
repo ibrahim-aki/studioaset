@@ -10,7 +10,7 @@ import {
     Plus, Edit2, Trash2, Video, X, Loader2, Tag, Download,
     Upload, Clock, MapPin, Calendar, User, Search, Filter,
     History, CheckCircle2, AlertTriangle, AlertOctagon, XCircle, MoreVertical,
-    ChevronDown, ChevronUp, Box, Settings
+    ChevronDown, ChevronUp, Box, Settings, Lock
 } from "lucide-react";
 
 // Helper function to calculate asset age precisely
@@ -48,6 +48,15 @@ function AssetsContent() {
     const searchParams = useSearchParams();
     const initialSearch = searchParams.get("search") || "";
     const initialLocation = searchParams.get("location") || "ALL";
+    const { user } = useAuth();
+
+    // Helper untuk cek hak akses kelola (Edit/Hapus)
+    const canManageAsset = (assetCategory: string) => {
+        if (user?.role === "SUPER_ADMIN") return true;
+        if (user?.role === "ADMIN") return assetCategory !== "Client Asset";
+        if (user?.role === "CLIENT_ADMIN") return assetCategory === "Client Asset";
+        return false;
+    };
 
     const [assets, setAssets] = useState<Asset[]>([]);
     const [loading, setLoading] = useState(true);
@@ -92,7 +101,6 @@ function AssetsContent() {
         deleteCategory
     } = useLocalDb();
 
-    const { user } = useAuth();
     const adminName = user?.name || user?.email || "Admin";
 
     const uniqueNames = Array.from(new Set(rawAssets.map(a => a.name))).sort();
@@ -232,8 +240,8 @@ function AssetsContent() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            let category = formData.category;
-            if (isAddingCategory && newCategoryName.trim()) {
+            let category = user?.role === "CLIENT_ADMIN" ? "Client Asset" : formData.category;
+            if (user?.role !== "CLIENT_ADMIN" && isAddingCategory && newCategoryName.trim()) {
                 await addCategory(newCategoryName.trim());
                 category = newCategoryName.trim();
             }
@@ -536,7 +544,7 @@ function AssetsContent() {
                             locationId: finalLocationId,
                             assetCode: finalAssetCode,
                             name: finalName,
-                            category: String(category),
+                            category: user?.role === "CLIENT_ADMIN" ? "Client Asset" : String(category),
                             status: String(importedStatus).trim().toUpperCase(),
                             conditionNotes: String(importedNotes),
                             description: String(importedDesc),
@@ -901,8 +909,17 @@ function AssetsContent() {
                                                                     activeActionMenu === asset.id ? "opacity-100 scale-100 translate-x-0" : "opacity-0 scale-95 translate-x-2 pointer-events-none"
                                                                 )}>
                                                                     <button onClick={() => { openHistory(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Riwayat"><History className="w-3.5 h-3.5" /></button>
-                                                                    <button onClick={() => { openModal(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
-                                                                    <button onClick={() => { handleDeleteClick(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5" /></button>
+
+                                                                    {canManageAsset(asset.category) ? (
+                                                                        <>
+                                                                            <button onClick={() => { openModal(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                                            <button onClick={() => { handleDeleteClick(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="p-1.5 text-gray-300" title="Hanya Baca (Read-Only)">
+                                                                            <Lock className="w-3.5 h-3.5" />
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
                                                                 <button
@@ -944,8 +961,16 @@ function AssetsContent() {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <button onClick={() => openHistory(asset)} className="p-2 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-gray-50"><History className="w-5 h-5" /></button>
-                                                        <button onClick={() => openModal(asset)} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-50"><Edit2 className="w-5 h-5" /></button>
-                                                        <button onClick={() => handleDeleteClick(asset)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-50"><Trash2 className="w-5 h-5" /></button>
+                                                        {canManageAsset(asset.category) ? (
+                                                            <>
+                                                                <button onClick={() => openModal(asset)} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-50"><Edit2 className="w-5 h-5" /></button>
+                                                                <button onClick={() => handleDeleteClick(asset)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-50"><Trash2 className="w-5 h-5" /></button>
+                                                            </>
+                                                        ) : (
+                                                            <div className="p-2 text-gray-200" title="Read-Only">
+                                                                <Lock className="w-5 h-5" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -1075,15 +1100,22 @@ function AssetsContent() {
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
                                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kategori Alat</label>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsAddingCategory(!isAddingCategory)}
-                                                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter"
-                                            >
-                                                {isAddingCategory ? "Gunakan List" : "Tulis Baru"}
-                                            </button>
+                                            {user?.role !== "CLIENT_ADMIN" && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsAddingCategory(!isAddingCategory)}
+                                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter"
+                                                >
+                                                    {isAddingCategory ? "Gunakan List" : "Tulis Baru"}
+                                                </button>
+                                            )}
                                         </div>
-                                        {isAddingCategory ? (
+                                        {user?.role === "CLIENT_ADMIN" ? (
+                                            <div className="w-full px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm font-bold flex items-center gap-2">
+                                                <Tag className="w-4 h-4" />
+                                                Client Asset
+                                            </div>
+                                        ) : isAddingCategory ? (
                                             <input
                                                 required
                                                 type="text"

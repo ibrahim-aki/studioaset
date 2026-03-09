@@ -5,7 +5,7 @@ import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
-export type UserRole = "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | null;
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_ADMIN" | "CLIENT_OPERATOR" | null;
 
 interface AppUser {
     uid: string;

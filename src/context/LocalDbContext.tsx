@@ -302,7 +302,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         unsubs.push(unsubRooms);
 
         const unsubAssets = onSnapshot(getBaseQuery("assets"), (snap) => {
-            setAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterAsset)));
+            const allAssets = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterAsset));
+            setAssets(allAssets);
         });
         unsubs.push(unsubAssets);
 
@@ -312,7 +313,10 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         unsubs.push(unsubDeleted);
 
         const unsubRoomAssets = onSnapshot(getBaseQuery("roomAssets"), (snap) => {
-            setRoomAssets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoomAsset)));
+            const allRoomAssets = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoomAsset));
+            // Note: In real-time, assets might still be loading, but Firestore's cache and local-first 
+            // nature usually handles this. If assets is empty, roomAssets might temporarily be empty.
+            setRoomAssets(allRoomAssets);
         });
         unsubs.push(unsubRoomAssets);
 

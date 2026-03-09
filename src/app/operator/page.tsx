@@ -52,6 +52,42 @@ export default function OperatorPage() {
         }
     };
 
+    if (user?.role === "CLIENT_OPERATOR") {
+        return (
+            <div className="space-y-6">
+                <div className="bg-gradient-to-br from-indigo-900 to-purple-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+                    <div className="relative z-10">
+                        <h1 className="text-2xl font-black tracking-tight">Halo, {user?.name || "Client Operator"}</h1>
+                        <p className="opacity-80 mt-2 text-sm font-medium">Panel Khusus Pengecekan Barang Client</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest ml-4">Pilih Cabang</h2>
+                    <div className="grid grid-cols-1 gap-3">
+                        {locations.map(loc => (
+                            <button
+                                key={loc.id}
+                                onClick={() => router.push(`/operator/rooms?locationId=${loc.id}`)}
+                                className="bg-white border border-gray-100 rounded-[2rem] p-6 flex items-center justify-between hover:border-indigo-500 hover:shadow-xl transition-all group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                        <MapPin className="w-6 h-6" />
+                                    </div>
+                                    <span className="font-black text-gray-900 text-lg">{loc.name}</span>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
+                                    <DoorOpen className="w-5 h-5" />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="bg-gradient-to-br from-indigo-900 to-purple-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">

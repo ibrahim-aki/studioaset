@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <ProtectedRoute allowedRoles={["ADMIN"]}>
+        <ProtectedRoute allowedRoles={["ADMIN", "CLIENT_ADMIN"]}>
             <div className="min-h-screen bg-gray-50 flex">
                 <ChangePasswordModal
                     isOpen={isPasswordModalOpen}
@@ -98,31 +98,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     )}
 
                                     <ul role="list" className="-mx-2 space-y-2">
-                                        {navigation.map((item) => {
-                                            const isActive = pathname === item.href;
-                                            return (
-                                                <li key={item.name}>
-                                                    <Link
-                                                        href={item.href}
-                                                        className={clsx(
-                                                            isActive
-                                                                ? "bg-indigo-900/50 text-white"
-                                                                : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
-                                                            "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all"
-                                                        )}
-                                                    >
-                                                        <item.icon
+                                        {navigation
+                                            .filter(item => {
+                                                if (user?.role === "CLIENT_ADMIN") {
+                                                    // Restricted menus for client admin
+                                                    return !["Lokasi Cabang", "Rooms", "Log Admin"].includes(item.name);
+                                                }
+                                                return true;
+                                            })
+                                            .map((item) => {
+                                                const isActive = pathname === item.href;
+                                                return (
+                                                    <li key={item.name}>
+                                                        <Link
+                                                            href={item.href}
                                                             className={clsx(
-                                                                isActive ? "text-white" : "text-indigo-300 group-hover:text-white",
-                                                                "h-6 w-6 shrink-0"
+                                                                isActive
+                                                                    ? "bg-indigo-900/50 text-white"
+                                                                    : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
+                                                                "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all"
                                                             )}
-                                                            aria-hidden="true"
-                                                        />
-                                                        {item.name}
-                                                    </Link>
-                                                </li>
-                                            );
-                                        })}
+                                                        >
+                                                            <item.icon
+                                                                className={clsx(
+                                                                    isActive ? "text-white" : "text-indigo-300 group-hover:text-white",
+                                                                    "h-6 w-6 shrink-0"
+                                                                )}
+                                                                aria-hidden="true"
+                                                            />
+                                                            {item.name}
+                                                        </Link>
+                                                    </li>
+                                                );
+                                            })}
                                     </ul>
                                 </li>
 

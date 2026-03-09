@@ -27,11 +27,17 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
         const r = rawRooms.find(r => r.id === roomId);
         if (r) {
             setRoom(r);
-            // FILTER: Only show assets that belong to the SAME LOCATION as this room
-            // SORT: Alphabetically
-            const filtered = rawMasterAssets
-                .filter(a => a.locationId === r.locationId && (a.status === "BAIK" || a.status === "RUSAK"))
-                .sort((a, b) => a.name.localeCompare(b.name));
+            let filtered = rawMasterAssets
+                .filter(a => a.locationId === r.locationId && (a.status === "BAIK" || a.status === "RUSAK"));
+
+            // ROLE BASED FILTERING FOR ALLOCATION
+            if (user?.role === "ADMIN") {
+                filtered = filtered.filter(a => a.category !== "Client Asset");
+            } else if (user?.role === "CLIENT_ADMIN") {
+                filtered = filtered.filter(a => a.category === "Client Asset");
+            }
+
+            filtered.sort((a, b) => a.name.localeCompare(b.name));
             setMasterAssets(filtered);
         }
 
