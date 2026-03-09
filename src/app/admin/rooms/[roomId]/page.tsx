@@ -27,14 +27,23 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
         const r = rawRooms.find(r => r.id === roomId);
         if (r) {
             setRoom(r);
+            // LOAD ASSETS BASED ON ADMIN'S ASSIGNED LOCATION
             let filtered = rawMasterAssets
-                .filter(a => a.locationId === r.locationId && (a.status === "BAIK" || a.status === "RUSAK"));
+                .filter(a => a.status === "BAIK" || a.status === "RUSAK");
+
+            // Location Filter: Non-Super Admins only see assets from their branch
+            if (user?.role !== "SUPER_ADMIN" && user?.locationId && user.locationId !== "ALL") {
+                filtered = filtered.filter(a => a.locationId === user.locationId);
+            }
+
+            const userRole = user?.role?.toUpperCase();
 
             // ROLE BASED FILTERING FOR ALLOCATION
-            if (user?.role === "ADMIN") {
-                filtered = filtered.filter(a => a.category !== "Client Asset");
-            } else if (user?.role === "CLIENT_ADMIN") {
+            if (userRole === "CLIENT_ADMIN") {
                 filtered = filtered.filter(a => a.category === "Client Asset");
+            } else {
+                // Admin Studio & Super Admin see everything NOT marked as Client Asset
+                filtered = filtered.filter(a => a.category !== "Client Asset");
             }
 
             filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -43,7 +52,7 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
 
         setRoomAssets(rawRoomAssets.filter(ra => ra.roomId === roomId));
         setLoading(false);
-    }, [roomId, rawRooms, rawMasterAssets, rawRoomAssets]);
+    }, [roomId, rawRooms, rawMasterAssets, rawRoomAssets, user]);
 
     const filteredMasterAssets = masterAssets.filter(a =>
         a.name.toLowerCase().includes(assetSearchTerm.toLowerCase()) ||
