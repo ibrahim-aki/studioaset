@@ -1,25 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, memo, useMemo } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, User, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { useToast } from "@/context/ToastContext";
-import { useEffect } from "react";
 import { motion } from "framer-motion";
+
+// CSS for smooth twinkling and floating without taxing the main thread
+const starStyles = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0); opacity: 0.3; }
+    50% { transform: translateY(-15px); opacity: 0.8; }
+  }
+  .star-float {
+    animation: float var(--duration) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+`;
+
+const BackgroundStars = memo(() => {
+    const starData = useMemo(() => [...Array(40)].map((_, i) => ({
+        top: Math.random() * 80,
+        left: Math.random() * 100,
+        size: Math.random() * 2 + 1,
+        duration: 4 + Math.random() * 6 + "s",
+        delay: Math.random() * 5 + "s",
+    })), []);
+
+    return (
+        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+            <style>{starStyles}</style>
+            {starData.map((star, i) => (
+                <div
+                    key={i}
+                    className="absolute rounded-full bg-white/50 star-float"
+                    style={{
+                        width: `${star.size}px`,
+                        height: `${star.size}px`,
+                        top: `${star.top}%`,
+                        left: `${star.left}%`,
+                        // @ts-ignore
+                        "--duration": star.duration,
+                        "--delay": star.delay,
+                    }}
+                />
+            ))}
+        </div>
+    );
+});
+
+BackgroundStars.displayName = "BackgroundStars";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [displayMessage, setDisplayMessage] = useState<string | null>(null);
+    const [welcomeTitle, setWelcomeTitle] = useState("Welcome Back!");
+    const [welcomeDescription, setWelcomeDescription] = useState("Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
     const router = useRouter();
     const { addLog } = useLocalDb();
     const { showToast } = useToast();
+
+    // Listen to Dynamic Login Text from Firestore
+    useEffect(() => {
+        const unsub = onSnapshot(doc(db, "settings", "login-config"), (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.welcomeTitle) setWelcomeTitle(data.welcomeTitle);
+                if (data.welcomeDescription) setWelcomeDescription(data.welcomeDescription);
+            }
+        });
+        return () => unsub();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -92,22 +150,8 @@ export default function LoginPage() {
                 }}
             />
 
-            {/* ── Stars ── */}
-            <div className="absolute inset-0 -z-10 overflow-hidden">
-                {[...Array(60)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute rounded-full bg-white"
-                        style={{
-                            width: Math.random() * 2 + 1 + "px",
-                            height: Math.random() * 2 + 1 + "px",
-                            top: Math.random() * 60 + "%",
-                            left: Math.random() * 100 + "%",
-                            opacity: Math.random() * 0.7 + 0.2,
-                        }}
-                    />
-                ))}
-            </div>
+            {/* ── Background Elements (Memoized to prevent jitter during typing) ── */}
+            <BackgroundStars />
 
             {/* ── Moon ── */}
             <div
@@ -151,9 +195,9 @@ export default function LoginPage() {
             >
                 {/* LEFT SECTION */}
                 <div className="md:w-5/12 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-br from-blue-600/[0.005] to-purple-800/[0.005]">
-                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">Welcome Back!</h2>
+                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">{welcomeTitle}</h2>
                     <p className="text-sm font-medium text-white/70 leading-relaxed mb-8 max-w-[220px] mx-auto">
-                        Hubungkan kembali koneksi Anda untuk mengelola aset studio dengan cerdas.
+                        {welcomeDescription}
                     </p>
                     <div className="w-12 h-1 bg-white/30 mx-auto rounded-full" />
                 </div>

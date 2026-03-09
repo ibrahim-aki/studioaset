@@ -512,6 +512,9 @@ export default function UserManagementPage() {
     const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
     const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [loginTitle, setLoginTitle] = useState("Welcome Back!");
+    const [loginDesc, setLoginDesc] = useState("Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
+    const [savingSettings, setSavingSettings] = useState(false);
 
     const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, rooms, assets } = useLocalDb();
 
@@ -538,6 +541,23 @@ export default function UserManagementPage() {
             unsub();
         };
     }, [selectedCompany?.id]);
+
+    useEffect(() => {
+        // Load Global Login Config
+        const unsub = onSnapshot(doc(db, "settings", "login-config"), (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                setLoginTitle(data.welcomeTitle || "Welcome Back!");
+                setLoginDesc(data.welcomeDescription || "Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
+            }
+        }, (err) => {
+            console.error("SETTINGS SNAPSHOT ERROR:", err);
+            if (err.message.includes("permission-denied")) {
+                alert("Peringatan: Akses ke koleksi 'settings' ditolak oleh Firebase Rules. Pastikan Anda sudah mengatur rules untuk koleksi 'settings'.");
+            }
+        });
+        return () => unsub();
+    }, []);
 
     useEffect(() => {
         setChecklists(contextChecklists);
@@ -573,6 +593,23 @@ export default function UserManagementPage() {
             alert("Email reset terkirim!");
         } catch (error) {
             alert("Gagal mengirim reset password");
+        }
+    };
+
+    const handleSaveLoginConfig = async () => {
+        setSavingSettings(true);
+        try {
+            await setDoc(doc(db, "settings", "login-config"), {
+                welcomeTitle: loginTitle,
+                welcomeDescription: loginDesc,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+            alert("Konfigurasi Login berhasil diperbarui!");
+        } catch (err: any) {
+            console.error("SAVE ERROR:", err);
+            alert(`Gagal menyimpan konfigurasi: ${err.message || 'Error tidak diketahui'}`);
+        } finally {
+            setSavingSettings(false);
         }
     };
 
@@ -626,10 +663,9 @@ export default function UserManagementPage() {
                                 setActiveTab("settings");
                                 setSelectedCompany(null);
                             }}
-                            className="p-3 bg-white border border-gray-200 rounded-2xl text-gray-500 hover:text-indigo-600 transition-all shadow-sm flex items-center justify-center"
-                            title="Konfigurasi Global"
+                            className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
                         >
-                            <ShieldAlert className="w-5 h-5" />
+                            <Settings2 className="w-4 h-4" /> PENGATURAN LOGIN
                         </button>
                         <button
                             onClick={() => setIsAddCompanyOpen(true)}
@@ -1096,14 +1132,54 @@ export default function UserManagementPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                             {/* Global Configuration */}
                             {!selectedCompany && (
-                                <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
-                                        <Shield className="w-4 h-4 text-indigo-600" />
-                                        Konfigurasi Sistem Global
-                                    </h3>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
-                                        Seluruh data sistem dikelola sepenuhnya melalui Firebase Firestore secara real-time. Tidak ada mode penyimpanan lokal yang aktif.
-                                    </p>
+                                <div className="space-y-8">
+                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
+                                            <Shield className="w-4 h-4 text-indigo-600" />
+                                            Konfigurasi Sistem Global
+                                        </h3>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
+                                            Seluruh data sistem dikelola sepenuhnya melalui Firebase Firestore secara real-time. Tidak ada mode penyimpanan lokal yang aktif.
+                                        </p>
+                                    </div>
+
+                                    {/* Login Page Customization */}
+                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
+                                            <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+                                            Login Page Customization
+                                        </h3>
+                                        
+                                        <div className="space-y-6">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Welcome Title</label>
+                                                <input
+                                                    value={loginTitle}
+                                                    onChange={(e) => setLoginTitle(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold"
+                                                    placeholder="Welcome Back!"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Welcome Description</label>
+                                                <textarea
+                                                    value={loginDesc}
+                                                    onChange={(e) => setLoginDesc(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 min-h-[100px] leading-relaxed"
+                                                    placeholder="Deskripsi di bawah title..."
+                                                />
+                                            </div>
+
+                                            <button
+                                                onClick={handleSaveLoginConfig}
+                                                disabled={savingSettings}
+                                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-indigo-100"
+                                            >
+                                                {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PERUBAHAN LOGIN"}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
