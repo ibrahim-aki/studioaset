@@ -165,10 +165,10 @@ export default function AdminPage() {
                 ))}
             </div>
 
-            {/* Dashboard Workspace - Masonry Uniform Grid System */}
+            {/* Dashboard Workspace - 4-Column Flex Layout for Tight Packing */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 mb-10 items-start">
 
-                {/* COLUMN 1: LIVE + STATUS ALAT */}
+                {/* COLUMN 1: LIVE + ASET STUDIO */}
                 <div className="flex flex-col gap-1">
                     {/* 1. LIVE NOW BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
@@ -232,41 +232,9 @@ export default function AdminPage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* 5.5 ASET CLIENT BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit mt-1">
-                        <div className="h-1 bg-amber-500 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <Tag className="w-3.5 h-3.5 text-amber-500" />
-                                Aset Client
-                            </h3>
-                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">{assetStats.client.total}</span>
-                        </div>
-                        <div className="p-3 bg-white">
-                            <div className="space-y-3">
-                                {[
-                                    { label: "BAIK", value: assetStats.client.good, color: "bg-green-500", text: "text-green-600" },
-                                    { label: "RUSAK", value: assetStats.client.broken, color: "bg-amber-500", text: "text-amber-600" },
-                                    { label: "MATI", value: assetStats.client.dead, color: "bg-rose-500", text: "text-rose-600" },
-                                    { label: "HILANG", value: assetStats.client.lost, color: "bg-gray-400", text: "text-gray-400" }
-                                ].map((stat, i) => (
-                                    <div key={i} className="space-y-1">
-                                        <div className="flex items-end justify-between">
-                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tight">{stat.label}</span>
-                                            <span className={clsx("text-sm font-black tabular-nums leading-none", stat.text)}>{stat.value}</span>
-                                        </div>
-                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                                            <div className={clsx("h-full", stat.color)} style={{ width: `${assetStats.client.total > 0 ? (stat.value / assetStats.client.total) * 100 : 0}%` }}></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                {/* COLUMN 2: READY + CABANG */}
+                {/* COLUMN 2: STUDIO SIAP LIVE + ASET CLIENT */}
                 <div className="flex flex-col gap-1">
                     {/* 2. READY BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
@@ -299,7 +267,70 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    {/* 6. DAFTAR CABANG BOARD */}
+                    {/* 6. ASET CLIENT BOARD */}
+                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
+                        <div className="h-1 bg-amber-500 w-full"></div>
+                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
+                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <Tag className="w-3.5 h-3.5 text-amber-500" />
+                                Aset Client
+                            </h3>
+                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">{assetStats.client.total}</span>
+                        </div>
+                        <div className="p-3 bg-white">
+                            <div className="space-y-3">
+                                {[
+                                    { label: "BAIK", value: assetStats.client.good, color: "bg-green-500", text: "text-green-600" },
+                                    { label: "RUSAK", value: assetStats.client.broken, color: "bg-amber-500", text: "text-amber-600" },
+                                    { label: "MATI", value: assetStats.client.dead, color: "bg-rose-500", text: "text-rose-600" },
+                                    { label: "HILANG", value: assetStats.client.lost, color: "bg-gray-400", text: "text-gray-400" }
+                                ].map((stat, i) => (
+                                    <div key={i} className="space-y-1">
+                                        <div className="flex items-end justify-between">
+                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tight">{stat.label}</span>
+                                            <span className={clsx("text-sm font-black tabular-nums leading-none", stat.text)}>{stat.value}</span>
+                                        </div>
+                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                                            <div className={clsx("h-full", stat.color)} style={{ width: `${assetStats.client.total > 0 ? (stat.value / assetStats.client.total) * 100 : 0}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* COLUMN 3: STANDBY + DAFTAR CABANG */}
+                <div className="flex flex-col gap-1">
+                    {/* 3. STANDBY BOARD */}
+                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
+                        <div className="h-1 bg-slate-400 w-full"></div>
+                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
+                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                                Standby
+                            </h3>
+                            <span className="text-[9px] font-black bg-slate-100 text-slate-700 px-2 py-0.5 rounded-sm">{categorizedRooms.standby.length}</span>
+                        </div>
+                        <div className="p-1 space-y-0.5">
+                            {(expandedBoards.standby ? categorizedRooms.standby : categorizedRooms.standby.slice(0, 5)).map(r => (
+                                <div key={r.id} className="bg-white p-2 border border-gray-50 hover:border-slate-200 transition-all flex items-center gap-1.5">
+                                    <span className="flex items-center gap-0.5 text-[9px] font-black text-slate-500 bg-slate-50 px-1 rounded uppercase shrink-0">
+                                        <MapPin className="w-2.5 h-2.5" />
+                                        {locations.find(l => l.id === r.locationId)?.name}
+                                    </span>
+                                    <span className="text-[11px] font-black text-gray-600 truncate">{r.name}</span>
+                                </div>
+                            ))}
+                            {categorizedRooms.standby.length > 5 && (
+                                <button onClick={() => setExpandedBoards(prev => ({ ...prev, standby: !prev.standby }))} className="w-full py-1 text-[9px] font-black text-gray-400 hover:text-slate-600 uppercase tracking-widest border border-dashed border-gray-100 mt-1">
+                                    {expandedBoards.standby ? "Sembunyikan" : `+${categorizedRooms.standby.length - 5} Lainnya`}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 7. DAFTAR CABANG BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
                         <div className="h-1 bg-indigo-600 w-full"></div>
                         <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
@@ -340,38 +371,7 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                {/* COLUMN 3: STANDBY */}
-                <div className="flex flex-col gap-1">
-                    {/* 3. STANDBY BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-slate-400 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-                                Standby
-                            </h3>
-                            <span className="text-[9px] font-black bg-slate-100 text-slate-700 px-2 py-0.5 rounded-sm">{categorizedRooms.standby.length}</span>
-                        </div>
-                        <div className="p-1 space-y-0.5">
-                            {(expandedBoards.standby ? categorizedRooms.standby : categorizedRooms.standby.slice(0, 5)).map(r => (
-                                <div key={r.id} className="bg-white p-2 border border-gray-50 hover:border-slate-200 transition-all flex items-center gap-1.5">
-                                    <span className="flex items-center gap-0.5 text-[9px] font-black text-slate-500 bg-slate-50 px-1 rounded uppercase shrink-0">
-                                        <MapPin className="w-2.5 h-2.5" />
-                                        {locations.find(l => l.id === r.locationId)?.name}
-                                    </span>
-                                    <span className="text-[11px] font-black text-gray-600 truncate">{r.name}</span>
-                                </div>
-                            ))}
-                            {categorizedRooms.standby.length > 5 && (
-                                <button onClick={() => setExpandedBoards(prev => ({ ...prev, standby: !prev.standby }))} className="w-full py-1 text-[9px] font-black text-gray-400 hover:text-slate-600 uppercase tracking-widest border border-dashed border-gray-100 mt-1">
-                                    {expandedBoards.standby ? "Sembunyikan" : `+${categorizedRooms.standby.length - 5} Lainnya`}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* COLUMN 4: TROUBLE + OPERATOR AKTIF */}
+                {/* COLUMN 4: DALAM PERBAIKAN + OPERATOR AKTIF */}
                 <div className="flex flex-col gap-1">
                     {/* 4. TROUBLE BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
@@ -409,7 +409,7 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    {/* 7. OPERATOR AKTIF BOARD */}
+                    {/* 8. OPERATOR AKTIF BOARD */}
                     <div className="bg-white border border-gray-200 flex flex-col h-fit">
                         <div className="h-1 bg-amber-500 w-full"></div>
                         <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
@@ -481,8 +481,9 @@ export default function AdminPage() {
                 </div>
             </div>
 
+
             {/* Quick Actions Bar */}
-            <div className="bg-indigo-900 rounded-sm p-1 mt-10">
+            < div className="bg-indigo-900 rounded-sm p-1 mt-10" >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px">
                     <Link href="/admin/checklists" className="bg-indigo-800/50 hover:bg-white/10 p-3 text-center transition-all group">
                         <History className="w-4 h-4 text-indigo-200 mx-auto mb-1 group-hover:scale-110 transition-transform" />
@@ -501,7 +502,7 @@ export default function AdminPage() {
                         <span className="text-[9px] font-black text-white uppercase tracking-widest block">Cabang</span>
                     </Link>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

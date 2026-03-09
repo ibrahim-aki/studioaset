@@ -65,7 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                         // AUTO-SYNC COMPANY ID Logic
                         let finalCompanyId = data.companyId || "";
-                        if (!finalCompanyId && (data.role === "ADMIN" || data.role === "OPERATOR")) {
+                        const normalizedRole = data.role?.toUpperCase();
+                        const needsSync = ["ADMIN", "OPERATOR", "CLIENT_ADMIN", "CLIENT_OPERATOR"].includes(normalizedRole);
+
+                        if (!finalCompanyId && needsSync) {
                             const cachedId = localStorage.getItem("last_known_company_id");
                             if (cachedId) {
                                 finalCompanyId = cachedId;

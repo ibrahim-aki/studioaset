@@ -43,9 +43,9 @@ export default function LoginPage() {
 
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
-                const role = userData.role;
+                const role = userData.role?.toUpperCase();
 
-                if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR") {
+                if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR" || role === "CLIENT_ADMIN" || role === "CLIENT_OPERATOR") {
                     // SESSION MANAGEMENT: Generate and save new session ID on login
                     const newSessionId = Math.random().toString(36).substring(2, 15);
 
@@ -78,11 +78,11 @@ export default function LoginPage() {
                     if (role === "SUPER_ADMIN") {
                         addLog({ ...logData, toValue: "Login (Super Admin)" });
                         router.push("/super-admin");
-                    } else if (role === "ADMIN") {
-                        addLog({ ...logData, toValue: "Login (Admin)" });
+                    } else if (role === "ADMIN" || role === "CLIENT_ADMIN") {
+                        addLog({ ...logData, toValue: `Login (${role === "ADMIN" ? "Admin" : "Client Admin"})` });
                         router.push("/admin");
-                    } else if (role === "OPERATOR") {
-                        addLog({ ...logData, toValue: "Login (Operator)" });
+                    } else if (role === "OPERATOR" || role === "CLIENT_OPERATOR") {
+                        addLog({ ...logData, toValue: `Login (${role === "OPERATOR" ? "Operator" : "Client Operator"})` });
                         router.push("/operator");
                     }
                 } else {
