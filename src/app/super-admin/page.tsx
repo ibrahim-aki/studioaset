@@ -8,13 +8,14 @@ import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "fireb
 import clsx from "clsx";
 import { initializeApp, getApps, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, inMemoryPersistence } from "firebase/auth";
+import { UserRole } from "@/context/AuthContext";
 
 // Komponen Modal Tambah User
 function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; companyId?: string; companyName?: string }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
-    const [role, setRole] = useState<"SUPER_ADMIN" | "ADMIN" | "OPERATOR">("OPERATOR");
+    const [role, setRole] = useState<"SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_ADMIN" | "CLIENT_OPERATOR">("OPERATOR");
     const [locationId, setLocationId] = useState("HQ");
     const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
@@ -184,26 +185,26 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                         <div>
                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Pilih Peran (Role)</label>
                             <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setRole("ADMIN")}
-                                    className={clsx(
-                                        "py-3 rounded-2xl text-[10px] font-black tracking-widest border transition-all",
-                                        role === "ADMIN" ? "bg-indigo-600 border-indigo-600 text-white shadow-lg" : "bg-gray-50 border-gray-100 text-gray-400"
-                                    )}
-                                >
-                                    ADMIN
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setRole("OPERATOR")}
-                                    className={clsx(
-                                        "py-3 rounded-2xl text-[10px] font-black tracking-widest border transition-all",
-                                        role === "OPERATOR" ? "bg-emerald-500 border-emerald-500 text-white shadow-lg" : "bg-gray-50 border-gray-100 text-gray-400"
-                                    )}
-                                >
-                                    OPERATOR
-                                </button>
+                                {[
+                                    { id: "ADMIN", label: "ADMIN", color: "indigo" },
+                                    { id: "OPERATOR", label: "OPERATOR", color: "emerald" },
+                                    { id: "CLIENT_ADMIN", label: "CLIENT ADMIN", color: "amber" },
+                                    { id: "CLIENT_OPERATOR", label: "CLIENT OP", color: "rose" }
+                                ].map((r) => (
+                                    <button
+                                        key={r.id}
+                                        type="button"
+                                        onClick={() => setRole(r.id as any)}
+                                        className={clsx(
+                                            "py-3 rounded-2xl text-[10px] font-black tracking-widest border transition-all",
+                                            role === r.id
+                                                ? `bg-${r.color === 'indigo' ? 'indigo-600' : r.color === 'emerald' ? 'emerald-500' : r.color === 'amber' ? 'amber-500' : 'rose-500'} border-transparent text-white shadow-lg`
+                                                : "bg-gray-50 border-gray-100 text-gray-400"
+                                        )}
+                                    >
+                                        {r.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -242,7 +243,7 @@ interface UserData {
     id: string;
     uid: string;
     email: string;
-    role: "ADMIN" | "OPERATOR" | "SUPER_ADMIN";
+    role: "ADMIN" | "OPERATOR" | "SUPER_ADMIN" | "CLIENT_ADMIN" | "CLIENT_OPERATOR";
     name: string;
     companyId?: string;
     companyName?: string;
@@ -255,13 +256,18 @@ interface UserData {
 function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; user: UserData | null }) {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
+    const [role, setRole] = useState<UserRole>("OPERATOR");
+    const [locationId, setLocationId] = useState("HQ");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const { locations } = useLocalDb();
 
     useEffect(() => {
         if (user) {
             setName(user.name || "");
             setPhone(user.phone || "");
+            setRole(user.role as UserRole);
+            setLocationId(user.locationId || "HQ");
         }
     }, [user]);
 
@@ -273,9 +279,15 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
         setError("");
 
         try {
+            const selectedLoc = locations.find(l => l.id === locationId);
+            const locationName = selectedLoc ? selectedLoc.name : (locationId === "HQ" ? "Kantor Pusat (HQ)" : "-");
+
             await updateDoc(doc(db, "users", user.id), {
                 name,
                 phone,
+                role,
+                locationId,
+                locationName,
                 updatedAt: new Date().toISOString()
             });
 
@@ -329,6 +341,47 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                             onChange={(e) => setPhone(e.target.value)}
                             className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Hak Akses (Role)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {[
+                                { id: "ADMIN", label: "ADMIN", color: "indigo" },
+                                { id: "OPERATOR", label: "OPERATOR", color: "emerald" },
+                                { id: "CLIENT_ADMIN", label: "CLIENT ADMIN", color: "amber" },
+                                { id: "CLIENT_OPERATOR", label: "CLIENT OP", color: "rose" }
+                            ].map((r) => (
+                                <button
+                                    key={r.id}
+                                    type="button"
+                                    onClick={() => setRole(r.id as any)}
+                                    className={clsx(
+                                        "py-2.5 rounded-xl text-[9px] font-black tracking-widest border transition-all",
+                                        role === r.id
+                                            ? `bg-${r.color === 'indigo' ? 'indigo-600' : r.color === 'emerald' ? 'emerald-500' : r.color === 'amber' ? 'amber-500' : 'rose-500'} border-transparent text-white shadow-lg`
+                                            : "bg-gray-50 border-gray-100 text-gray-400"
+                                    )}
+                                >
+                                    {r.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Penempatan Cabang</label>
+                        <select
+                            required
+                            value={locationId}
+                            onChange={(e) => setLocationId(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 appearance-none font-bold"
+                        >
+                            <option value="HQ">Kantor Pusat (HQ)</option>
+                            {locations.map(loc => (
+                                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <button
@@ -473,7 +526,7 @@ export default function UserManagementPage() {
                 list = list.filter(u => u.companyId === selectedCompany.id);
             }
 
-            const roleOrder = { "SUPER_ADMIN": 1, "ADMIN": 2, "OPERATOR": 3 };
+            const roleOrder = { "SUPER_ADMIN": 1, "ADMIN": 2, "OPERATOR": 3, "CLIENT_ADMIN": 4, "CLIENT_OPERATOR": 5 };
             const sortedList = list.sort((a, b) => (roleOrder[a.role] || 4) - (roleOrder[b.role] || 4));
             setUsers(sortedList);
             setLoading(false);
