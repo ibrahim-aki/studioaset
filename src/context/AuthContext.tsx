@@ -16,7 +16,6 @@ interface AppUser {
     companyName?: string;
     locationId?: string;
     locationName?: string;
-    isDemo?: boolean;
     phone?: string;
     lastSessionId?: string;
 }
@@ -24,7 +23,6 @@ interface AppUser {
 interface AuthContextType {
     user: AppUser | null;
     loading: boolean;
-    triggerDemoLogin?: (role: UserRole) => void;
     logout: () => void;
 }
 
@@ -57,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 uid: firebaseUser.uid,
                                 email: firebaseUser.email,
                                 role: null,
-                                isDemo: false,
                             });
                             setLoading(false);
                             return;
@@ -65,8 +62,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                         // AUTO-SYNC COMPANY ID Logic
                         let finalCompanyId = data.companyId || "";
-                        const normalizedRole = data.role?.toUpperCase();
-                        const needsSync = ["ADMIN", "OPERATOR", "CLIENT_ADMIN", "CLIENT_OPERATOR"].includes(normalizedRole);
+
+                        // Normalisasi role secara konsisten
+                        const rawRole = data.role?.toUpperCase() || "";
+                        let normalizedRole: UserRole = null;
+
+                        if (rawRole.includes("SUPER") && rawRole.includes("ADMIN")) normalizedRole = "SUPER_ADMIN";
+                        else if (rawRole === "ADMIN STUDIO" || rawRole === "ADMIN" || rawRole === "STUDIO ADMIN") normalizedRole = "ADMIN";
+                        else if (rawRole.includes("CLIENT") && rawRole.includes("ADMIN")) normalizedRole = "CLIENT_ADMIN";
+                        else if (rawRole.includes("CLIENT") && rawRole.includes("OPERATOR")) normalizedRole = "CLIENT_OPERATOR";
+                        else if (rawRole === "OPERATOR") normalizedRole = "OPERATOR";
+                        else normalizedRole = rawRole.replace(/\s+/g, '_') as UserRole;
+
+                        const needsSync = ["ADMIN", "OPERATOR", "CLIENT_ADMIN", "CLIENT_OPERATOR"].includes(normalizedRole || "");
 
                         if (!finalCompanyId && needsSync) {
                             const cachedId = localStorage.getItem("last_known_company_id");
@@ -80,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         setUser({
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
-                            role: data.role as UserRole,
+                            role: normalizedRole,
                             name: data.name || "",
                             companyId: finalCompanyId,
                             companyName: data.companyName || "",
@@ -88,14 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             locationName: data.locationName || "",
                             phone: data.phone || "",
                             lastSessionId: data.lastSessionId || "",
-                            isDemo: false,
                         });
                     } else {
                         setUser({
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
                             role: null,
-                            isDemo: false,
                         });
                     }
                     setLoading(false);
@@ -117,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Monitor session mismatch
     useEffect(() => {
-        if (user && !user.isDemo && user.role) {
+        if (user && user.role) {
             const userDocRef = doc(db, "users", user.uid);
 
             const unsub = onSnapshot(userDocRef, (snap) => {
@@ -157,19 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid, user?.role]);
 
-    // Fungsi khusus untuk Demo
-    const triggerDemoLogin = (role: UserRole) => {
-        setUser({
-            uid: "demo-user-123",
-            email: `demo-${role?.toLowerCase()}@studio.com`,
-            role: role,
-            name: `Demo ${role}`,
-            locationName: "Demo Branch",
-            phone: "08123456789",
-            isDemo: true,
-        });
-    };
-
     const logout = async () => {
         try {
             setUser(null);
@@ -181,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, triggerDemoLogin, logout }}>
+        <AuthContext.Provider value={{ user, loading, logout }}>
             {children}
         </AuthContext.Provider>
     );

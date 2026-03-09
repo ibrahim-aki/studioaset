@@ -511,7 +511,6 @@ export default function UserManagementPage() {
     const [isEditUserOpen, setIsEditUserOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
     const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
-    const [trialMode, setTrialMode] = useState<boolean | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
     const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, rooms, assets } = useLocalDb();
@@ -535,17 +534,8 @@ export default function UserManagementPage() {
             setLoading(false);
         });
 
-        const unsubSettings = onSnapshot(doc(db, "settings", "system-config"), (snap) => {
-            if (snap.exists()) {
-                setTrialMode(snap.data().trialModeEnabled);
-            } else {
-                setTrialMode(false);
-            }
-        });
-
         return () => {
             unsub();
-            unsubSettings();
         };
     }, [selectedCompany?.id]);
 
@@ -575,14 +565,6 @@ export default function UserManagementPage() {
         }
     };
 
-    const toggleTrialMode = async () => {
-        if (trialMode === null) return;
-        try {
-            await updateDoc(doc(db, "settings", "system-config"), { trialModeEnabled: !trialMode });
-        } catch (error) {
-            alert("Gagal mengubah mode uji coba");
-        }
-    };
 
     const handleResetPassword = async (email: string) => {
         if (!confirm(`Kirim reset password ke ${email}?`)) return;
@@ -594,19 +576,6 @@ export default function UserManagementPage() {
         }
     };
 
-    const resetTrialData = () => {
-        if (!confirm("Hapus semua data dalam Mode Uji Coba (Local Storage)?\nTindakan ini tidak bisa dibatalkan.")) return;
-
-        const keys = [
-            "studioaset_locations", "studioaset_rooms", "studioaset_assets",
-            "studioaset_room_assets", "studioaset_checklists", "studioaset_asset_logs",
-            "studioaset_categories", "studioaset_changelogs", "studioaset_companies"
-        ];
-
-        keys.forEach(key => localStorage.removeItem(key));
-        alert("Data Mode Uji Coba telah dibersihkan.");
-        window.location.reload();
-    };
 
     if (loading) {
         return (
@@ -1132,38 +1101,9 @@ export default function UserManagementPage() {
                                         <Shield className="w-4 h-4 text-indigo-600" />
                                         Konfigurasi Sistem Global
                                     </h3>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                                                    <ShieldAlert className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-black text-indigo-900 uppercase tracking-tight">Mode Uji Coba (Demo)</p>
-                                                    <p className="text-[10px] text-indigo-600 font-bold uppercase py-0.5">Status: {trialMode ? 'AKTIF' : 'NON-AKTIF'}</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => toggleTrialMode()}
-                                                className={clsx(
-                                                    "w-12 h-6 rounded-full transition-all relative flex items-center px-1 shadow-inner",
-                                                    trialMode ? "bg-emerald-500" : "bg-gray-300"
-                                                )}
-                                            >
-                                                <div className={clsx("w-4 h-4 bg-white rounded-full transition-all shadow-md", trialMode ? "translate-x-6" : "translate-x-0")}></div>
-                                            </button>
-                                        </div>
-
-                                        {trialMode && (
-                                            <button
-                                                onClick={resetTrialData}
-                                                className="w-full py-3 px-4 bg-white border border-rose-100 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" /> Bersihkan Data Dummy
-                                            </button>
-                                        )}
-                                    </div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
+                                        Seluruh data sistem dikelola sepenuhnya melalui Firebase Firestore secara real-time. Tidak ada mode penyimpanan lokal yang aktif.
+                                    </p>
                                 </div>
                             )}
 

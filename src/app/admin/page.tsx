@@ -40,8 +40,14 @@ export default function AdminPage() {
 
     // Calculate asset condition breakdown for Studio and Client
     const assetStats = useMemo(() => {
-        const studioAssets = assets.filter(a => a.category !== "Client Asset");
-        const clientAssets = assets.filter(a => a.category === "Client Asset");
+        const studioAssets = assets.filter(a =>
+            !a.category?.toLowerCase().includes("client asset") &&
+            !a.category?.toLowerCase().includes("client aset")
+        );
+        const clientAssets = assets.filter(a =>
+            a.category?.toLowerCase().includes("client asset") ||
+            a.category?.toLowerCase().includes("client aset")
+        );
 
         const getStats = (list: any[]) => {
             const total = list.length;

@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { DoorOpen, Clock, MapPin, X, Loader2, ClipboardCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
@@ -16,12 +16,21 @@ export default function OperatorPage() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [stHour, setStHour] = useState("");
-    const [stMin, setStMin] = useState("00");
+    const [stMin, setStMin] = useState("");
     const [edHour, setEdHour] = useState("");
     const [edMin, setEdMin] = useState("00");
     const [locationId, setLocationId] = useState("");
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // Update start time to current device time when modal opens
+    useEffect(() => {
+        if (isModalOpen) {
+            const now = new Date();
+            setStHour(now.getHours().toString().padStart(2, '0'));
+            setStMin(now.getMinutes().toString().padStart(2, '0'));
+        }
+    }, [isModalOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -198,10 +207,9 @@ export default function OperatorPage() {
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <select
-                                            required
+                                            disabled
                                             value={stHour}
-                                            onChange={(e) => setStHour(e.target.value)}
-                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold appearance-none text-center"
+                                            className="flex-1 px-3 py-3 bg-gray-100 border border-gray-100 rounded-2xl text-sm outline-none font-bold appearance-none text-center text-gray-400"
                                         >
                                             <option value="">HH</option>
                                             {Array.from({ length: 24 }).map((_, i) => (
@@ -210,10 +218,9 @@ export default function OperatorPage() {
                                         </select>
                                         <span className="font-black text-gray-300">:</span>
                                         <select
-                                            required
+                                            disabled
                                             value={stMin}
-                                            onChange={(e) => setStMin(e.target.value)}
-                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold appearance-none text-center"
+                                            className="flex-1 px-3 py-3 bg-gray-100 border border-gray-100 rounded-2xl text-sm outline-none font-bold appearance-none text-center text-gray-400"
                                         >
                                             {Array.from({ length: 60 }).map((_, i) => (
                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>

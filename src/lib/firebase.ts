@@ -32,7 +32,7 @@ if (isValidConfig) {
         projectId: firebaseConfig.projectId,
         apiKeyPrefix: firebaseConfig.apiKey?.substring(0, 5) + "..."
     });
-    // Provide fallback for build time / demo mode
+    // Provide fallback for build time / missing config
     auth = { onAuthStateChanged: () => (() => { }) } as any;
     db = {} as any;
 }

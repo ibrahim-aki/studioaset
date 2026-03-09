@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useLocalDb, Location } from "@/context/LocalDbContext";
-import { Plus, Edit2, Trash2, MapPin, X, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, MapPin, X, Loader2, Lock } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LocationsPage() {
+    const { user } = useAuth();
     const [locations, setLocations] = useState<Location[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,6 +14,10 @@ export default function LocationsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { locations: rawLocations, addLocation, updateLocation, deleteLocation, rooms } = useLocalDb();
+
+    const canManageInfrastructure = () => {
+        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+    };
 
     useEffect(() => {
         const locationsData = [...rawLocations];
@@ -37,6 +43,10 @@ export default function LocationsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!canManageInfrastructure()) {
+            alert("Anda tidak memiliki hak akses untuk memodifikasi lokasi.");
+            return;
+        }
         setIsSubmitting(true);
         try {
             if (formData.id) {
@@ -61,6 +71,10 @@ export default function LocationsPage() {
     };
 
     const handleDelete = async (id: string, name: string) => {
+        if (!canManageInfrastructure()) {
+            alert("Anda tidak memiliki hak akses untuk menghapus lokasi.");
+            return;
+        }
         const hasRooms = rooms.some(r => r.locationId === id);
         if (hasRooms) {
             alert(`Tidak dapat menghapus lokasi "${name}" karena masih ada ruangan yang terdaftar di lokasi ini. Hapus atau pindahkan ruangan tersebut terlebih dahulu.`);
@@ -90,13 +104,15 @@ export default function LocationsPage() {
                     </p>
                 </div>
                 <div className="mt-4 sm:mt-0">
-                    <button
-                        onClick={() => openModal()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Tambah Lokasi Baru
-                    </button>
+                    {canManageInfrastructure() && (
+                        <button
+                            onClick={() => openModal()}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Tambah Lokasi Baru
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -152,20 +168,26 @@ export default function LocationsPage() {
                                                 </td>
                                                 <td className="relative whitespace-nowrap py-4 px-4 text-right text-sm rounded-r-lg border-y border-r border-gray-100">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => openModal(loc)}
-                                                            className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(loc.id, loc.name)}
-                                                            className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
-                                                            title="Hapus"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        {canManageInfrastructure() ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => openModal(loc)}
+                                                                    className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                                    title="Edit"
+                                                                >
+                                                                    <Edit2 className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDelete(loc.id, loc.name)}
+                                                                    className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
+                                                                    title="Hapus"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <Lock className="w-4 h-4 text-gray-200" />
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

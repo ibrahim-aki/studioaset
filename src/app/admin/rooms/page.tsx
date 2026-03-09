@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useLocalDb, Room } from "@/context/LocalDbContext";
-import { Plus, Edit2, Trash2, DoorOpen, X, Loader2, Video, MapPin, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { Plus, Edit2, Trash2, DoorOpen, X, Loader2, Video, MapPin, ChevronDown, ChevronUp, Filter, Lock } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RoomsPage() {
+    const { user } = useAuth();
     const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,6 +18,10 @@ export default function RoomsPage() {
     const filterRef = useRef<HTMLDivElement>(null);
 
     const { rooms: rawRooms, locations: rawLocations, roomAssets, checklists, addRoom, updateRoom, deleteRoom } = useLocalDb();
+
+    const canManageInfrastructure = () => {
+        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+    };
 
     useEffect(() => {
         const roomsData = [...rawRooms];
@@ -62,6 +68,10 @@ export default function RoomsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!canManageInfrastructure()) {
+            alert("Anda tidak memiliki hak akses untuk memodifikasi infrastruktur ruangan.");
+            return;
+        }
         setIsSubmitting(true);
         try {
             if (formData.id) {
@@ -88,6 +98,10 @@ export default function RoomsPage() {
     };
 
     const handleDelete = async (id: string, name: string) => {
+        if (!canManageInfrastructure()) {
+            alert("Anda tidak memiliki hak akses untuk menghapus ruangan.");
+            return;
+        }
         if (confirm(`Apakah Anda yakin ingin menghapus ruangan "${name}"?`)) {
             try {
                 await deleteRoom(id);
@@ -155,13 +169,15 @@ export default function RoomsPage() {
                     </div>
 
                     {/* Add Room Icon Button */}
-                    <button
-                        onClick={() => openModal()}
-                        className="p-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm flex items-center justify-center"
-                        title="Tambah Ruangan"
-                    >
-                        <Plus className="w-5 h-5" />
-                    </button>
+                    {canManageInfrastructure() && (
+                        <button
+                            onClick={() => openModal()}
+                            className="p-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm flex items-center justify-center"
+                            title="Tambah Ruangan"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -262,20 +278,26 @@ export default function RoomsPage() {
                                                         >
                                                             <Video className="w-4 h-4" />
                                                         </Link>
-                                                        <button
-                                                            onClick={() => openModal(room)}
-                                                            className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(room.id, room.name)}
-                                                            className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
-                                                            title="Hapus"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        {canManageInfrastructure() ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => openModal(room)}
+                                                                    className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                                    title="Edit"
+                                                                >
+                                                                    <Edit2 className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDelete(room.id, room.name)}
+                                                                    className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
+                                                                    title="Hapus"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <Lock className="w-4 h-4 text-gray-200" />
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

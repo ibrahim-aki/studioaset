@@ -128,9 +128,17 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
         e.preventDefault();
 
         // Validasi
-        const uncompleted = checklist.find(c => c.status === "");
+        const uncompleted = checklist.find(c => {
+            const master = rawAssets.find(ma => ma.id === c.assetId);
+            const isClientAsset = master?.category?.toLowerCase().includes("client asset") ||
+                master?.category?.toLowerCase().includes("client aset");
+
+            // Jika bukan client asset, wajib isi status
+            return !isClientAsset && c.status === "";
+        });
+
         if (uncompleted) {
-            alert("Mohon isi status kondisi untuk semua alat sebelum submit.");
+            alert("Mohon isi status kondisi untuk semua alat studio sebelum submit.");
             return;
         }
 
@@ -158,7 +166,7 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                 locationName,
                 roomId,
                 roomName,
-                operatorId: user?.uid || "demo",
+                operatorId: user?.uid || "",
                 operatorName: user?.name || "Unknown Operator",
                 timestamp: new Date().toISOString(),
                 overallNotes,
@@ -400,7 +408,16 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                                             <div className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center font-black text-xs group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
                                                 {idx + 1}
                                             </div>
-                                            <h3 className="font-black text-gray-900 text-base tracking-tight">{item.assetName}</h3>
+                                            <div>
+                                                <h3 className="font-black text-gray-900 text-base tracking-tight">{item.assetName}</h3>
+                                                {(() => {
+                                                    const master = rawAssets.find(ma => ma.id === item.assetId);
+                                                    const isClientAsset = master?.category?.toLowerCase().includes("client asset") ||
+                                                        master?.category?.toLowerCase().includes("client aset");
+                                                    if (isClientAsset) return <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">(Opsional)</span>;
+                                                    return null;
+                                                })()}
+                                            </div>
                                         </div>
                                         {!assets.some(a => a.assetId === item.assetId) && (
                                             <span className="text-[8px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-widest">Baru dari Gudang</span>

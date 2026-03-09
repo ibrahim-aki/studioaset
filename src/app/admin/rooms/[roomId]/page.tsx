@@ -27,23 +27,26 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
         const r = rawRooms.find(r => r.id === roomId);
         if (r) {
             setRoom(r);
-            // LOAD ASSETS BASED ON ADMIN'S ASSIGNED LOCATION
+            // Filter aset berdasarkan status BAIK/RUSAK
             let filtered = rawMasterAssets
                 .filter(a => a.status === "BAIK" || a.status === "RUSAK");
 
-            // Location Filter: Non-Super Admins only see assets from their branch
-            if (user?.role !== "SUPER_ADMIN" && user?.locationId && user.locationId !== "ALL") {
+            // ADMIN STUDIO: filter berdasarkan lokasi cabang mereka
+            if (user?.role === "ADMIN" && user?.locationId && user.locationId !== "ALL") {
                 filtered = filtered.filter(a => a.locationId === user.locationId);
             }
 
-            const userRole = user?.role?.toUpperCase();
-
-            // ROLE BASED FILTERING FOR ALLOCATION
-            if (userRole === "CLIENT_ADMIN") {
-                filtered = filtered.filter(a => a.category === "Client Asset");
-            } else {
-                // Admin Studio & Super Admin see everything NOT marked as Client Asset
-                filtered = filtered.filter(a => a.category !== "Client Asset");
+            // ── FILTER UTAMA: Tampilkan HANYA aset yang bisa dikelola role ini ──
+            // ADMIN STUDIO → hanya aset BUKAN Client Aset
+            // CLIENT ADMIN → hanya aset Client Aset
+            // SUPER_ADMIN  → semua aset
+            if (user?.role === "ADMIN" || user?.role === "CLIENT_ADMIN") {
+                filtered = filtered.filter(a => {
+                    const isClientAsset =
+                        a.category?.toLowerCase().includes("client asset") ||
+                        a.category?.toLowerCase().includes("client aset");
+                    return user?.role === "ADMIN" ? !isClientAsset : isClientAsset;
+                });
             }
 
             filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -54,6 +57,15 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
         setLoading(false);
     }, [roomId, rawRooms, rawMasterAssets, rawRoomAssets, user]);
 
+    const canManageAsset = (assetCategory: string) => {
+        if (user?.role === "SUPER_ADMIN") return true;
+        const isClientAsset = assetCategory?.toLowerCase().includes("client asset") ||
+            assetCategory?.toLowerCase().includes("client aset");
+        if (user?.role === "ADMIN") return !isClientAsset;
+        if (user?.role === "CLIENT_ADMIN") return isClientAsset;
+        return false;
+    };
+
     const filteredMasterAssets = masterAssets.filter(a =>
         a.name.toLowerCase().includes(assetSearchTerm.toLowerCase()) ||
         (a.assetCode && a.assetCode.toLowerCase().includes(assetSearchTerm.toLowerCase()))
@@ -63,12 +75,17 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
         e.preventDefault();
         if (!selectedAssetId) return;
 
+        const masterAsset = rawMasterAssets.find(a => a.id === selectedAssetId);
+        if (!masterAsset) return;
+
+        if (!canManageAsset(masterAsset.category)) {
+            alert(`Anda tidak memiliki hak akses untuk mengelola aset kategori "${masterAsset.category}".`);
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const existingRoom = rawRoomAssets.find(a => a.assetId === selectedAssetId);
-            const masterAsset = masterAssets.find(a => a.id === selectedAssetId);
-
-            if (!masterAsset) throw new Error("Aset master tidak ditemukan");
 
             if (existingRoom) {
                 if (existingRoom.roomId === roomId) {
@@ -103,7 +120,12 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
         }
     };
 
-    const handleRemoveAsset = async (id: string, name: string) => {
+    const handleRemoveAsset = async (id: string, name: string, assetCategory?: string) => {
+        // Validasi role sebelum menghapus alokasi
+        if (assetCategory && !canManageAsset(assetCategory)) {
+            alert(`Anda tidak memiliki hak akses untuk mengelola aset kategori "${assetCategory}".`);
+            return;
+        }
         if (confirm(`Hapus ${name} dari ruangan ini?`)) {
             try {
                 await deleteRoomAsset(id, user?.name || user?.email || undefined);
@@ -336,13 +358,25 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</span>
                                                 <span className="text-xs font-black text-indigo-600">Unit</span>
                                             </div>
-                                            <button
-                                                onClick={() => handleRemoveAsset(asset.id, asset.assetName)}
-                                                className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-xl transition-colors"
-                                                title="Hapus dari ruangan"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
+                                            {(() => {
+                                                const masterAsset = rawMasterAssets.find(a => a.id === asset.assetId);
+                                                // Jika masterAsset tidak ditemukan (yatim/orphaned),
+                                                // izinkan admin mana pun untuk membersihkannya
+                                                const canRemove = !masterAsset || canManageAsset(masterAsset.category);
+                                                return canRemove ? (
+                                                    <button
+                                                        onClick={() => handleRemoveAsset(asset.id, asset.assetName, masterAsset?.category)}
+                                                        className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-xl transition-colors"
+                                                        title={masterAsset ? "Hapus dari ruangan" : "Hapus alokasi yatim"}
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                ) : (
+                                                    <div className="p-2 text-gray-200" title="Akses Terbatas">
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </li>
                                 ))}

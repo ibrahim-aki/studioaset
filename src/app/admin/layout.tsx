@@ -99,13 +99,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                                     <ul role="list" className="-mx-2 space-y-2">
                                         {navigation
-                                            .filter(item => {
-                                                if (user?.role === "CLIENT_ADMIN") {
-                                                    // Restricted menus for client admin
-                                                    return !["Lokasi Cabang", "Rooms", "Log Admin"].includes(item.name);
-                                                }
-                                                return true;
-                                            })
                                             .map((item) => {
                                                 const isActive = pathname === item.href;
                                                 return (

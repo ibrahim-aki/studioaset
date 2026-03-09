@@ -1,5 +1,7 @@
 "use client";
 
+import { v4 as uuidv4 } from "uuid";
+
 import { useState, useEffect, Suspense } from "react";
 import { useLocalDb, MasterAsset as Asset } from "@/context/LocalDbContext";
 import { useSearchParams } from "next/navigation";
@@ -53,8 +55,18 @@ function AssetsContent() {
     // Helper untuk cek hak akses kelola (Edit/Hapus)
     const canManageAsset = (assetCategory: string) => {
         if (user?.role === "SUPER_ADMIN") return true;
-        if (user?.role === "ADMIN") return assetCategory !== "Client Asset";
-        if (user?.role === "CLIENT_ADMIN") return assetCategory === "Client Asset";
+
+        const isClientAsset = assetCategory?.toLowerCase().includes("client asset") ||
+            assetCategory?.toLowerCase().includes("client aset");
+
+        if (user?.role === "ADMIN") {
+            // Admin Studio: Kelola semua KECUALI Client Asset
+            return !isClientAsset;
+        }
+        if (user?.role === "CLIENT_ADMIN") {
+            // Client Admin: HANYA kelola Client Asset
+            return isClientAsset;
+        }
         return false;
     };
 
@@ -102,6 +114,10 @@ function AssetsContent() {
     } = useLocalDb();
 
     const adminName = user?.name || user?.email || "Admin";
+
+    const canManageInfrastructure = () => {
+        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+    };
 
     const uniqueNames = Array.from(new Set(rawAssets.map(a => a.name))).sort();
     const uniquePositions = Array.from(new Set(rawAssets.filter(a => a.position).map(a => a.position))).sort();
@@ -306,24 +322,48 @@ function AssetsContent() {
         }
 
         setIsVerifyingPassword(true);
-        try {
-            if (!user?.isDemo) {
-                const { signInWithEmailAndPassword } = await import("firebase/auth");
-                const { auth } = await import("@/lib/firebase");
-                await signInWithEmailAndPassword(auth, user?.email || "", deletePassword);
-            } else {
-                if (deletePassword !== "admin123") {
-                    throw new Error("Kata sandi salah (Demo: admin123)");
-                }
-            }
 
+        // ── LANGKAH 1: Verifikasi Password ──────────────────────────────
+        try {
+            const { reauthenticateWithCredential, EmailAuthProvider } = await import("firebase/auth");
+            const { auth } = await import("@/lib/firebase");
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                alert("Sesi tidak ditemukan. Silakan login ulang.");
+                setIsVerifyingPassword(false);
+                return;
+            }
+            const credential = EmailAuthProvider.credential(currentUser.email || "", deletePassword);
+            await reauthenticateWithCredential(currentUser, credential);
+            // Paksa refresh token agar Firestore pakai token terbaru
+            await currentUser.getIdToken(true);
+        } catch (authError: any) {
+            console.error("[DELETE] Password verification failed:", authError);
+            setIsVerifyingPassword(false);
+            alert("Password salah. Silakan masukkan password login Anda yang benar.");
+            return; // Berhenti di sini jika password salah
+        }
+
+        // ── LANGKAH 2: Hapus Aset (setelah password terkonfirmasi) ──────
+        try {
             await deleteAsset(assetToDelete.id, deleteReason);
             setIsDeleteModalOpen(false);
             setAssetToDelete(null);
             alert("Aset berhasil dihapus.");
-        } catch (error: any) {
-            console.error("Verification failed:", error);
-            alert("Verifikasi gagal: " + (error.message || "Pastikan kata sandi benar."));
+        } catch (deleteError: any) {
+            console.error("[DELETE] Firestore deletion failed:", deleteError);
+            // Tampilkan error spesifik: bisa permission-denied atau lainnya
+            const code = (deleteError.code || "").toString();
+            if (code.includes("permission-denied")) {
+                alert(
+                    `Gagal: Firebase menolak permintaan penghapusan.\n\n` +
+                    `Role Anda: ${user?.role}\n` +
+                    `Kategori aset: ${assetToDelete?.category}\n\n` +
+                    `Pastikan Firebase Rules sudah dipublish dengan versi terbaru.`
+                );
+            } else {
+                alert("Gagal menghapus aset: " + (deleteError.message || "Terjadi kesalahan sistem."));
+            }
         } finally {
             setIsVerifyingPassword(false);
         }
@@ -560,10 +600,7 @@ function AssetsContent() {
                         // For sequential logic in import, we need to wait
                         await addAsset(newAsset);
 
-                        // To handle room mapping, we need to find the newly added asset's ID from the state update
-                        // or just look it up if we are in Demo mode.
-                        // However, to keep it simple, we use the name+code matching for immediate room allocation
-                        const assetSnap = { ...newAsset, id: Math.random().toString(36).substr(2, 9) }; // Placeholder for local loop logic
+                        // To handle room mapping, we use the name+code matching for immediate room allocation
 
                         // ROOM ALLOCATION if column exists
                         if (importedRuangan) {
@@ -580,7 +617,7 @@ function AssetsContent() {
                             }
                         }
 
-                        currentAssetsList.push(assetSnap as Asset);
+                        currentAssetsList.push({ ...newAsset, id: uuidv4() } as any);
                         importedCount++;
                     }
                 }
@@ -730,13 +767,15 @@ function AssetsContent() {
                                         </>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => setIsCategoryModalOpen(true)}
-                                    className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-white transition-all"
-                                    title="Kelola Kategori"
-                                >
-                                    <Tag className="w-4 h-4" />
-                                </button>
+                                {canManageInfrastructure() && (
+                                    <button
+                                        onClick={() => setIsCategoryModalOpen(true)}
+                                        className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-white transition-all"
+                                        title="Kelola Kategori"
+                                    >
+                                        <Tag className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
 
                             {/* Utility Buttons: Export & Import */}
@@ -1132,7 +1171,17 @@ function AssetsContent() {
                                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm"
                                             >
-                                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                                {categories
+                                                    // ADMIN STUDIO tidak dapat menggunakan kategori Client Asset/Aset
+                                                    .filter(c => {
+                                                        if (user?.role === "ADMIN") {
+                                                            const lower = c.toLowerCase();
+                                                            return !lower.includes("client asset") && !lower.includes("client aset");
+                                                        }
+                                                        return true;
+                                                    })
+                                                    .map(c => <option key={c} value={c}>{c}</option>)
+                                                }
                                             </select>
                                         )}
                                     </div>
@@ -1382,7 +1431,6 @@ function AssetsContent() {
                                         className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm shadow-sm"
                                         disabled={isVerifyingPassword}
                                     />
-                                    {user?.isDemo && <p className="text-[9px] text-indigo-500 mt-1 italic font-medium">Demo Mode: Gunakan password "admin123"</p>}
                                 </div>
                             </div>
 
