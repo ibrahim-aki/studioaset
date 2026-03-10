@@ -1,7 +1,7 @@
 "use client";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -17,7 +17,12 @@ import {
     MapPin,
     Shield,
     History as HistoryIcon,
-    ShieldCheck
+    ShieldCheck,
+    ChevronLeft,
+    ChevronRight,
+    User,
+    KeyRound,
+    ChevronDown
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -35,6 +40,8 @@ import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isProfileExpanded, setIsProfileExpanded] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const pathname = usePathname();
     const { user, logout } = useAuth();
@@ -54,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <ProtectedRoute allowedRoles={["ADMIN", "CLIENT_ADMIN"]}>
-            <div className="min-h-screen bg-gray-50 flex">
+            <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
                 <ChangePasswordModal
                     isOpen={isPasswordModalOpen}
                     onClose={() => setIsPasswordModalOpen(false)}
@@ -63,102 +70,179 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {/* Mobile sidebar backdrop */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 z-40 bg-gray-900/80 backdrop-blur-sm lg:hidden"
+                        className="fixed inset-0 z-40 bg-gray-900/80 backdrop-blur-sm lg:hidden transition-opacity duration-300"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
 
                 {/* Sidebar */}
-                <div className={clsx(
-                    "fixed inset-y-0 left-0 z-50 w-72 bg-indigo-950 text-white transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:w-72 lg:flex-col",
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                <aside className={clsx(
+                    "fixed inset-y-0 left-0 z-50 bg-indigo-950 text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:flex lg:flex-col shadow-2xl",
+                    isCollapsed ? "lg:w-20" : "lg:w-72",
+                    sidebarOpen ? "translate-x-0 w-72" : "max-lg:-translate-x-full w-72 lg:translate-x-0"
                 )}>
-                    <div className="flex grow flex-col gap-y-5 overflow-y-auto px-6 pb-4">
-                        <div className="flex h-16 shrink-0 items-center justify-between">
-                            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                                Live Studio Admin
-                            </span>
+                    {/* Toggle Button for Desktop */}
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="hidden lg:flex absolute -right-3 top-8 h-6 w-6 bg-indigo-600 rounded-full items-center justify-center text-white border-2 border-indigo-950 hover:bg-indigo-500 transition-all z-[61] shadow-lg hover:scale-110 active:scale-95"
+                    >
+                        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+                    </button>
+
+                    <div className="flex grow flex-col gap-y-5 overflow-y-auto overflow-x-hidden px-6 pb-4 scrollbar-hide">
+                        <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5">
+                            {!isCollapsed ? (
+                                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 truncate">
+                                    Live Studio Admin
+                                </span>
+                            ) : (
+                                <Shield className="h-8 w-8 text-blue-400 mx-auto" />
+                            )}
                             <button className="lg:hidden text-gray-400 hover:text-white" onClick={() => setSidebarOpen(false)}>
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
 
                         {/* Nav links */}
-                        <nav className="flex flex-1 flex-col">
-                            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                        <nav className="flex flex-1 flex-col pt-4">
+                            <ul role="list" className="flex flex-1 flex-col gap-y-1">
                                 <li>
                                     {user?.role === "SUPER_ADMIN" && (
                                         <Link
                                             href="/super-admin"
-                                            className="group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-bold text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all border border-amber-500/30 mb-4"
+                                            className={clsx(
+                                                "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-bold text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all border border-amber-500/30 mb-6 shadow-sm",
+                                                isCollapsed && "justify-center border-none bg-amber-500/10 px-0"
+                                            )}
+                                            title={isCollapsed ? "Manajemen Sistem" : ""}
                                         >
-                                            <Shield className="h-6 w-6 shrink-0 text-amber-400" />
-                                            Manajemen Sistem
+                                            <Shield className="h-6 w-6 shrink-0 text-amber-400 group-hover:rotate-12 transition-transform" />
+                                            {!isCollapsed && <span>Manajemen Sistem</span>}
                                         </Link>
                                     )}
 
-                                    <ul role="list" className="-mx-2 space-y-2">
-                                        {navigation
-                                            .map((item) => {
-                                                const isActive = pathname === item.href;
-                                                return (
-                                                    <li key={item.name}>
-                                                        <Link
-                                                            href={item.href}
+                                    <ul role="list" className="-mx-2 space-y-1">
+                                        {navigation.map((item) => {
+                                            const isActive = pathname === item.href;
+                                            return (
+                                                <li key={item.name}>
+                                                    <Link
+                                                        href={item.href}
+                                                        className={clsx(
+                                                            isActive
+                                                                ? "bg-indigo-900/50 text-white shadow-inner"
+                                                                : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
+                                                            "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all",
+                                                            isCollapsed && "justify-center"
+                                                        )}
+                                                        title={isCollapsed ? item.name : ""}
+                                                    >
+                                                        <item.icon
                                                             className={clsx(
-                                                                isActive
-                                                                    ? "bg-indigo-900/50 text-white"
-                                                                    : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
-                                                                "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all"
+                                                                isActive ? "text-white scale-110" : "text-indigo-300 group-hover:text-white group-hover:scale-110",
+                                                                "h-6 w-6 shrink-0 transition-all duration-300"
                                                             )}
-                                                        >
-                                                            <item.icon
-                                                                className={clsx(
-                                                                    isActive ? "text-white" : "text-indigo-300 group-hover:text-white",
-                                                                    "h-6 w-6 shrink-0"
-                                                                )}
-                                                                aria-hidden="true"
-                                                            />
-                                                            {item.name}
-                                                        </Link>
-                                                    </li>
-                                                );
-                                            })}
-                                    </ul>
-                                </li>
+                                                            aria-hidden="true"
+                                                        />
+                                                        {!isCollapsed && <span className="truncate">{item.name}</span>}
+                                                        {isActive && !isCollapsed && (
+                                                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                                                        )}
+                                                    </Link>
+                                                </li>
+                                            );
+                                        })}
 
-                                <li className="mt-auto -mx-2">
-                                    <button
-                                        onClick={() => setIsPasswordModalOpen(true)}
-                                        className="w-full text-left bg-white/5 rounded-2xl p-4 mb-4 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-all group"
-                                    >
-                                        <p className="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition-colors">
-                                            {user?.name || "Admin"}
-                                            {user?.locationName && <span className="ml-1 opacity-60 text-[10px]">({user.locationName})</span>}
-                                        </p>
-                                        <p className="text-[10px] text-indigo-300 truncate tracking-wide flex items-center gap-1 mt-0.5">
-                                            Ubah Password <span className="text-[8px] opacity-50">→</span>
-                                        </p>
-                                    </button>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold text-rose-300 hover:text-white hover:bg-rose-500/20 transition-all"
-                                    >
-                                        <LogOut className="h-6 w-6 shrink-0" />
-                                        Keluar Sistem
-                                    </button>
+                                        {/* Profil Section - Now under Changelog */}
+                                        <li className="pt-2">
+                                            <button
+                                                onClick={() => setIsProfileExpanded(!isProfileExpanded)}
+                                                className={clsx(
+                                                    "w-full group flex items-center gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all",
+                                                    isProfileExpanded ? "bg-indigo-900/30 text-white" : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
+                                                    isCollapsed && "justify-center"
+                                                )}
+                                                title={isCollapsed ? "Profil Saya" : ""}
+                                            >
+                                                <User className={clsx(
+                                                    "h-6 w-6 shrink-0 transition-all duration-300",
+                                                    isProfileExpanded ? "text-white scale-110" : "text-indigo-300 group-hover:text-white"
+                                                )} />
+                                                {!isCollapsed && (
+                                                    <>
+                                                        <span className="truncate flex-1 text-left">Profil Saya</span>
+                                                        <ChevronDown className={clsx(
+                                                            "h-4 w-4 transition-transform duration-300",
+                                                            isProfileExpanded && "rotate-180"
+                                                        )} />
+                                                    </>
+                                                )}
+                                            </button>
+
+                                            {/* Profile Expanded Content */}
+                                            <div className={clsx(
+                                                "overflow-hidden transition-all duration-300 ease-in-out px-2",
+                                                isProfileExpanded ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"
+                                            )}>
+                                                <div className="bg-indigo-900/20 rounded-xl p-2 space-y-1 border border-white/5">
+                                                    {!isCollapsed && (
+                                                        <div className="px-2 py-2 mb-1 border-b border-white/5">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                                                                <span className="text-white text-xs truncate font-bold">{user?.name || "Admin"}</span>
+                                                            </div>
+                                                            {user?.locationName && (
+                                                                <span className="text-[10px] text-indigo-400 truncate block pl-3.5 italic">
+                                                                    {user.locationName}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => setIsPasswordModalOpen(true)}
+                                                        className="w-full text-left group flex items-center gap-x-3 rounded-lg p-2 text-xs font-medium text-indigo-200 hover:text-white hover:bg-white/10 transition-all"
+                                                    >
+                                                        <KeyRound className="h-4 w-4 shrink-0 text-indigo-400 group-hover:text-white" />
+                                                        {!isCollapsed && <span>Ubah Password</span>}
+                                                    </button>
+
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="w-full text-left group flex items-center gap-x-3 rounded-lg p-2 text-xs font-medium text-rose-300 hover:text-white hover:bg-rose-500/20 transition-all"
+                                                    >
+                                                        <LogOut className="h-4 w-4 shrink-0 text-rose-400 group-hover:text-white" />
+                                                        {!isCollapsed && <span>Keluar Aplikasi</span>}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
                                 </li>
                             </ul>
                         </nav>
-                    </div>
-                </div>
 
-                {/* Main content */}
-                <div className="flex flex-col flex-1 w-full lg:pl-0">
-                    <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 lg:hidden lg:px-8">
+                        {/* Footer / App Version could go here */}
+                        {!isCollapsed && (
+                            <div className="mt-auto px-2 py-4 border-t border-white/5">
+                                <p className="text-[10px] text-center text-indigo-500 font-medium uppercase tracking-widest opacity-50">
+                                    Studio Aset v2.0
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </aside>
+
+                {/* Main content area */}
+                <div className={clsx(
+                    "flex flex-col flex-1 w-full transition-all duration-300 min-w-0",
+                    isCollapsed ? "lg:pl-20" : "lg:pl-72"
+                )}>
+                    {/* Mobile Header */}
+                    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 lg:hidden lg:px-8">
                         <button
                             type="button"
-                            className="-m-2.5 p-2.5 text-gray-700"
+                            className="-m-2.5 p-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                             onClick={() => setSidebarOpen(true)}
                         >
                             <Menu className="h-6 w-6" aria-hidden="true" />
@@ -166,7 +250,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
                             {pathname === "/super-admin" ? "Sistem Manajemen" : "Admin Dashboard"}
                         </div>
-                    </div>
+                    </header>
 
                     <main className="flex-1 pb-10">
                         <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-7xl mx-auto">
