@@ -95,6 +95,7 @@ function AssetsContent() {
     const [deletePassword, setDeletePassword] = useState("");
     const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
 
     const {
         assets: rawAssets,
@@ -672,139 +673,144 @@ function AssetsContent() {
 
             {activeTab === "MASTER" ? (
                 <>
-                    <div className="mb-6 flex flex-col md:flex-row items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
-                        {/* Search Bar - Flexible width */}
-                        <div className="relative flex-1 w-full md:w-auto">
-                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                                <Search className="h-4 w-4" />
+                    {/* Sticky Search and Controls Header for Mobile & Desktop */}
+                    <div className="sticky top-16 md:top-0 z-40 -mx-4 px-4 py-3 mb-6 bg-gray-50 border-b border-gray-100 md:relative md:top-auto md:mx-0 md:px-0 md:py-0 md:border-none md:bg-transparent transition-all duration-300">
+                        <div className="flex flex-col md:flex-row items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+                            {/* Search Bar - Flexible width */}
+                            <div className="relative flex-1 w-full md:w-auto">
+                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                                    <Search className="h-4 w-4" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Cari Nama, Kode, atau Posisi..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="block w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50/30 text-xs focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-all outline-none"
+                                />
                             </div>
-                            <input
-                                type="text"
-                                placeholder="Cari Nama, Kode, atau Posisi..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="block w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50/30 text-xs focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-all outline-none"
-                            />
-                        </div>
 
-                        {/* Action Group: Filters & Buttons */}
-                        <div className="flex items-center gap-2 shrink-0">
-                            {/* Filter & Tag (Category Management) */}
-                            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-                                        className={clsx(
-                                            "flex items-center justify-center p-2 rounded-lg transition-all",
-                                            isFilterMenuOpen || locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL"
-                                                ? "bg-brand-purple text-white shadow-sm"
-                                                : "text-gray-500 hover:text-brand-purple hover:bg-white"
-                                        )}
-                                        title="Filter Data"
-                                    >
-                                        <Filter className="w-4 h-4" />
-                                        {(locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL") && (
-                                            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-bold bg-rose-500 text-white rounded-full border border-white">
-                                                {(locationFilter !== "ALL" ? 1 : 0) + (categoryFilter !== "ALL" ? 1 : 0) + (statusFilter !== "ALL" ? 1 : 0)}
-                                            </span>
-                                        )}
-                                    </button>
+                            {/* Action Group: Filters & Buttons */}
+                            <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-between md:justify-end">
+                                {/* Filter & Tag (Category Management) */}
+                                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+                                            className={clsx(
+                                                "flex items-center justify-center p-2 rounded-lg transition-all",
+                                                isFilterMenuOpen || locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL"
+                                                    ? "bg-brand-purple text-white shadow-sm"
+                                                    : "text-gray-500 hover:text-brand-purple hover:bg-white"
+                                            )}
+                                            title="Filter Data"
+                                        >
+                                            <Filter className="w-4 h-4" />
+                                            {(locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL") && (
+                                                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-bold bg-rose-500 text-white rounded-full border border-white">
+                                                    {(locationFilter !== "ALL" ? 1 : 0) + (categoryFilter !== "ALL" ? 1 : 0) + (statusFilter !== "ALL" ? 1 : 0)}
+                                                </span>
+                                            )}
+                                        </button>
 
-                                    {isFilterMenuOpen && (
-                                        <>
-                                            {/* Backdrop: Darker on mobile for focus, transparent on desktop */}
-                                            <div className="fixed inset-0 z-[90] bg-gray-900/20 md:bg-transparent" onClick={() => setIsFilterMenuOpen(false)}></div>
+                                        {isFilterMenuOpen && (
+                                            <>
+                                                {/* Backdrop: Darker on mobile for focus, transparent on desktop */}
+                                                <div className="fixed inset-0 z-[90] bg-gray-900/40 md:bg-transparent" onClick={() => setIsFilterMenuOpen(false)}></div>
 
-                                            {/* Menu: Fixed center on mobile, Absolute dropdown on desktop */}
-                                            <div className="fixed inset-x-4 top-[15%] md:absolute md:inset-auto md:right-0 md:top-full mt-2 w-auto md:w-72 bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 z-[100] p-6 animate-in fade-in zoom-in-95 duration-200">
-                                                <div className="space-y-4">
-                                                    <h3 className="text-sm font-bold text-gray-900">Saring Aset</h3>
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Lokasi Cabang</label>
-                                                        <select
-                                                            value={locationFilter}
-                                                            onChange={(e) => setLocationFilter(e.target.value)}
-                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
-                                                        >
-                                                            <option value="ALL">Semua Cabang</option>
-                                                            {rawLocations.map(loc => (
-                                                                <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Kategori Aset</label>
-                                                        <select
-                                                            value={categoryFilter}
-                                                            onChange={(e) => setCategoryFilter(e.target.value)}
-                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
-                                                        >
-                                                            <option value="ALL">Semua Kategori</option>
-                                                            {categories.map(cat => (
-                                                                <option key={cat} value={cat}>{cat}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Status Aset</label>
-                                                        <select
-                                                            value={statusFilter}
-                                                            onChange={(e) => setStatusFilter(e.target.value)}
-                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
-                                                        >
-                                                            <option value="ALL">Semua Kondisi</option>
-                                                            <option value="BAIK">Baik</option>
-                                                            <option value="RUSAK">Rusak</option>
-                                                            <option value="MATI">Mati</option>
-                                                            <option value="SERVIS">Servis</option>
-                                                            <option value="JUAL">Jual</option>
-                                                            <option value="HILANG">Hilang</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="pt-2 flex gap-2">
-                                                        <button onClick={() => { setLocationFilter("ALL"); setCategoryFilter("ALL"); setStatusFilter("ALL"); }} className="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-50 rounded-lg">Reset</button>
-                                                        <button onClick={() => setIsFilterMenuOpen(false)} className="flex-1 py-2 bg-brand-purple text-white text-xs font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-all">Terapkan</button>
+                                                {/* Menu: Fixed center on mobile, Absolute dropdown on desktop */}
+                                                <div className="fixed inset-x-4 top-[20%] md:absolute md:inset-auto md:right-0 md:top-full mt-2 w-auto md:w-72 bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 z-[100] p-6 animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="space-y-4">
+                                                        <h3 className="text-sm font-bold text-gray-900">Saring Aset</h3>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Lokasi Cabang</label>
+                                                            <select
+                                                                value={locationFilter}
+                                                                onChange={(e) => setLocationFilter(e.target.value)}
+                                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
+                                                            >
+                                                                <option value="ALL">Semua Cabang</option>
+                                                                {rawLocations.map(loc => (
+                                                                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Kategori Aset</label>
+                                                            <select
+                                                                value={categoryFilter}
+                                                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
+                                                            >
+                                                                <option value="ALL">Semua Kategori</option>
+                                                                {categories.map(cat => (
+                                                                    <option key={cat} value={cat}>{cat}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Status Aset</label>
+                                                            <select
+                                                                value={statusFilter}
+                                                                onChange={(e) => setStatusFilter(e.target.value)}
+                                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
+                                                            >
+                                                                <option value="ALL">Semua Kondisi</option>
+                                                                <option value="BAIK">Baik</option>
+                                                                <option value="RUSAK">Rusak</option>
+                                                                <option value="MATI">Mati</option>
+                                                                <option value="SERVIS">Servis</option>
+                                                                <option value="JUAL">Jual</option>
+                                                                <option value="HILANG">Hilang</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="pt-2 flex gap-2">
+                                                            <button onClick={() => { setLocationFilter("ALL"); setCategoryFilter("ALL"); setStatusFilter("ALL"); }} className="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-50 rounded-lg transition-colors">Reset</button>
+                                                            <button onClick={() => setIsFilterMenuOpen(false)} className="flex-1 py-2 bg-brand-purple text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow-sm transition-all">Terapkan</button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </>
+                                            </>
+                                        )}
+                                    </div>
+                                    {canManageInfrastructure() && (
+                                        <button
+                                            onClick={() => setIsCategoryModalOpen(true)}
+                                            className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-purple hover:bg-white transition-all"
+                                            title="Kelola Kategori"
+                                        >
+                                            <Tag className="w-4 h-4" />
+                                        </button>
                                     )}
                                 </div>
-                                {canManageInfrastructure() && (
+
+                                <div className="flex items-center gap-1.5">
+                                    {/* Utility Buttons: Export & Import */}
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={handleExport}
+                                            className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all"
+                                            title="Ekspor ke Excel"
+                                        >
+                                            <Download className="w-5 h-5" />
+                                        </button>
+                                        <label className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all cursor-pointer" title="Impor Data Excel">
+                                            <Upload className="w-5 h-5" />
+                                            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImport} />
+                                        </label>
+                                    </div>
+
+                                    {/* Add Button - Highlighted */}
                                     <button
-                                        onClick={() => setIsCategoryModalOpen(true)}
-                                        className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-purple hover:bg-white transition-all"
-                                        title="Kelola Kategori"
+                                        onClick={() => openModal()}
+                                        className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-brand-purple/20 uppercase tracking-widest whitespace-nowrap"
+                                        title="Tambah Aset Baru"
                                     >
-                                        <Tag className="w-4 h-4" />
+                                        <Plus className="w-4 h-4" />
+                                        <span>Tambah</span>
                                     </button>
-                                )}
+                                </div>
                             </div>
-
-                            {/* Utility Buttons: Export & Import */}
-                            <div className="flex items-center gap-1">
-                                <button
-                                    onClick={handleExport}
-                                    className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all"
-                                    title="Ekspor ke Excel"
-                                >
-                                    <Download className="w-5 h-5" />
-                                </button>
-                                <label className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all cursor-pointer" title="Impor Data Excel">
-                                    <Upload className="w-5 h-5" />
-                                    <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImport} />
-                                </label>
-                            </div>
-
-                            {/* Add Button - Highlighted */}
-                            <button
-                                onClick={() => openModal()}
-                                className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-brand-purple/20 uppercase tracking-widest"
-                                title="Tambah Aset Baru"
-                            >
-                                <Plus className="w-4 h-4" />
-                                <span className="hidden sm:inline">Tambah</span>
-                            </button>
                         </div>
                     </div>
 
@@ -990,52 +996,134 @@ function AssetsContent() {
                                         const roomAsset = rawRoomAssets.find(ra => ra.assetId === asset.id);
                                         const currentRoom = rawRooms.find(r => r.id === roomAsset?.roomId);
                                         const isInRoom = !!roomAsset;
+                                        const isExpanded = expandedAssetId === asset.id;
 
                                         return (
-                                            <div key={asset.id} className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-4">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-medium text-gray-500 mb-1">{asset.assetCode || "NO CODE"}</span>
-                                                        <h3 className="text-lg font-semibold text-gray-900 leading-tight">{asset.name}</h3>
-                                                        <span className="text-sm text-gray-500 mt-1">
-                                                            {rawLocations.find(l => l.id === asset.locationId)?.name || "-"}
-                                                        </span>
+                                            <div
+                                                key={asset.id}
+                                                className={clsx(
+                                                    "bg-white rounded-2xl border transition-all duration-300 overflow-hidden",
+                                                    isExpanded ? "border-brand-purple shadow-lg ring-1 ring-brand-purple/20" : "border-gray-100 shadow-sm"
+                                                )}
+                                            >
+                                                {/* Collapsed State Header / Always Visible Area */}
+                                                <div
+                                                    onClick={() => setExpandedAssetId(isExpanded ? null : asset.id)}
+                                                    className="p-4 flex items-center justify-between cursor-pointer active:bg-gray-50 transition-colors"
+                                                >
+                                                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                                        {/* Row 1: Category & Code */}
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] text-gray-400 font-bold truncate uppercase tracking-tight">
+                                                                {asset.category}
+                                                            </span>
+                                                            <span className="text-[9px] font-mono font-bold text-brand-purple bg-brand-purple/5 px-1.5 py-0.5 rounded uppercase shrink-0">
+                                                                {asset.assetCode || "NO CODE"}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Row 2: Name & Location */}
+                                                        <div className="flex items-baseline gap-2">
+                                                            <h3 className={clsx(
+                                                                "text-xs font-bold text-gray-900 leading-tight truncate",
+                                                                isExpanded ? "whitespace-normal break-words" : "truncate"
+                                                            )}>
+                                                                {asset.name}
+                                                            </h3>
+                                                            <span className="text-[10px] text-gray-500 font-medium shrink-0">
+                                                                @{rawLocations.find(l => l.id === asset.locationId)?.name || "-"}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <button onClick={() => openHistory(asset)} className="p-2 text-gray-400 hover:text-brand-purple rounded-lg hover:bg-gray-50"><History className="w-5 h-5" /></button>
-                                                        {canManageAsset(asset.category) ? (
-                                                            <>
-                                                                <button onClick={() => openModal(asset)} className="p-2 text-gray-400 hover:text-brand-teal rounded-lg hover:bg-gray-50"><Edit2 className="w-5 h-5" /></button>
-                                                                <button onClick={() => handleDeleteClick(asset)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-50"><Trash2 className="w-5 h-5" /></button>
-                                                            </>
-                                                        ) : (
-                                                            <div className="p-2 text-gray-200" title="Read-Only">
-                                                                <Lock className="w-5 h-5" />
-                                                            </div>
-                                                        )}
+                                                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                                                        {/* Status Badge in Collapsed View */}
+                                                        <span className={clsx(
+                                                            "w-2 h-2 rounded-full",
+                                                            asset.status === 'BAIK' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
+                                                                asset.status === 'RUSAK' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
+                                                                    asset.status === 'MATI' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-gray-400'
+                                                        )}></span>
+                                                        <div className={clsx(
+                                                            "p-2 rounded-full bg-gray-50 text-gray-400 transition-transform duration-300",
+                                                            isExpanded && "rotate-180 bg-brand-purple/10 text-brand-purple"
+                                                        )}>
+                                                            <ChevronDown className="w-4 h-4" />
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="h-px bg-gray-100"></div>
+                                                {/* Expanded Details Area */}
+                                                <div className={clsx(
+                                                    "transition-all duration-300 ease-in-out px-4",
+                                                    isExpanded ? "max-h-[500px] opacity-100 pb-5 pt-1 border-t border-gray-50" : "max-h-0 opacity-0 pointer-events-none"
+                                                )}>
+                                                    <div className="space-y-4 pt-2">
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kategori</p>
+                                                                <p className="text-xs font-semibold text-gray-700">{asset.category}</p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ruangan</p>
+                                                                <p className="text-xs font-semibold text-gray-700">
+                                                                    {isInRoom ? (currentRoom?.name || "-") : "Gudang"}
+                                                                </p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Umur Aset</p>
+                                                                <p className="text-xs font-semibold text-gray-700">{calculateAssetAge(asset.entryDate)}</p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</p>
+                                                                <span className={clsx(
+                                                                    "inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter",
+                                                                    asset.status === 'BAIK' ? 'bg-green-50 text-green-700' :
+                                                                        asset.status === 'RUSAK' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+                                                                )}>
+                                                                    {asset.status || 'BAIK'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
 
-                                                <div className="flex flex-wrap gap-2 items-center">
-                                                    <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md text-xs font-medium border border-gray-200">{asset.category}</span>
-                                                    {isInRoom ? (
-                                                        <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-medium border border-blue-100">
-                                                            {currentRoom?.name || "STUDIO ROOM"}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md text-xs font-medium border border-orange-100">
-                                                            Gudang
-                                                        </span>
-                                                    )}
-                                                    <span className={clsx(
-                                                        "px-2.5 py-1 rounded-md text-xs font-medium border ml-auto",
-                                                        asset.status === 'BAIK' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                            asset.status === 'RUSAK' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-100 text-gray-700 border-gray-300'
-                                                    )}>
-                                                        {asset.status || 'BAIK'}
-                                                    </span>
+                                                        {asset.conditionNotes && (
+                                                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Catatan</p>
+                                                                <p className="text-xs text-gray-600 italic">"{asset.conditionNotes}"</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex gap-2 pt-2">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); openHistory(asset); }}
+                                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-100 hover:bg-gray-100 active:scale-95 transition-all"
+                                                            >
+                                                                <History className="w-4 h-4" />
+                                                                Riwayat
+                                                            </button>
+                                                            {canManageAsset(asset.category) ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); openModal(asset); }}
+                                                                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-brand-purple/10 text-brand-purple rounded-xl text-xs font-bold border border-brand-purple/10 hover:bg-brand-purple/20 active:scale-95 transition-all"
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4" />
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(asset); }}
+                                                                        className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 hover:bg-rose-100 active:scale-95 transition-all"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 text-gray-400 rounded-xl text-xs font-bold italic">
+                                                                    <Lock className="w-3.5 h-3.5" />
+                                                                    Hanya Baca
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
