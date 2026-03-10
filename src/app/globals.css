@@ -6,6 +6,12 @@
 }
 
 @theme inline {
+  --color-brand-purple: #7C4DFF;
+  --color-brand-orange: #FFB246;
+  --color-brand-teal: #4DB6AC;
+  --color-brand-pink: #FF4081;
+  --color-brand-blue: #3ABEF9;
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);

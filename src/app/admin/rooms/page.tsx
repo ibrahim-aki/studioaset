@@ -117,7 +117,7 @@ export default function RoomsPage() {
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <DoorOpen className="w-6 h-6 text-indigo-600" />
+                        <DoorOpen className="w-6 h-6 text-brand-purple" />
                         Manajemen Ruangan
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
@@ -130,7 +130,7 @@ export default function RoomsPage() {
                         <button
                             onClick={() => setFilterDropdownOpen(prev => !prev)}
                             className={`p-2.5 rounded-lg border transition-all flex items-center justify-center ${locationFilter !== "ALL"
-                                ? "border-indigo-600 bg-indigo-50 text-indigo-600"
+                                ? "border-brand-purple bg-brand-purple/10 text-brand-purple"
                                 : "border-gray-300 bg-white text-gray-500 hover:border-gray-400 hover:text-gray-700"
                                 }`}
                             title="Filter Lokasi"
@@ -144,7 +144,7 @@ export default function RoomsPage() {
                                 <button
                                     onClick={() => { setLocationFilter("ALL"); setFilterDropdownOpen(false); }}
                                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${locationFilter === "ALL"
-                                        ? "bg-indigo-50 text-indigo-700 font-semibold"
+                                        ? "bg-brand-purple/10 text-indigo-700 font-semibold"
                                         : "text-gray-700 hover:bg-gray-50"
                                         }`}
                                 >
@@ -156,7 +156,7 @@ export default function RoomsPage() {
                                         key={loc.id}
                                         onClick={() => { setLocationFilter(loc.id); setFilterDropdownOpen(false); }}
                                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${locationFilter === loc.id
-                                            ? "bg-indigo-50 text-indigo-700 font-semibold"
+                                            ? "bg-brand-purple/10 text-indigo-700 font-semibold"
                                             : "text-gray-700 hover:bg-gray-50"
                                             }`}
                                     >
@@ -172,7 +172,7 @@ export default function RoomsPage() {
                     {canManageInfrastructure() && (
                         <button
                             onClick={() => openModal()}
-                            className="p-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm flex items-center justify-center"
+                            className="p-2.5 bg-brand-purple text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm flex items-center justify-center"
                             title="Tambah Ruangan"
                         >
                             <Plus className="w-5 h-5" />
@@ -185,7 +185,7 @@ export default function RoomsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {loading ? (
                     <div className="p-20 flex flex-col items-center justify-center gap-4">
-                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                        <Loader2 className="w-8 h-8 text-brand-purple animate-spin" />
                         <span className="text-sm font-medium text-gray-500">Memuat data ruangan...</span>
                     </div>
                 ) : filteredRooms.length === 0 ? (
@@ -195,7 +195,7 @@ export default function RoomsPage() {
                         </div>
                         <h3 className="text-lg font-bold text-gray-900">Tidak Ditemukan</h3>
                         <p className="text-gray-500 mt-1 mb-6">Belum ada data ruangan untuk kriteria yang Anda pilih.</p>
-                        <button onClick={() => setLocationFilter("ALL")} className="text-blue-600 font-bold hover:underline text-sm uppercase tracking-widest">Tampilkan Semua</button>
+                        <button onClick={() => setLocationFilter("ALL")} className="text-brand-teal font-bold hover:underline text-sm uppercase tracking-widest">Tampilkan Semua</button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -218,7 +218,7 @@ export default function RoomsPage() {
                                             <tr key={room.id} className="group bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm border border-gray-100 rounded-lg">
                                                 <td className="py-4 px-4 rounded-l-lg border-y border-l border-gray-100">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                        <div className="w-2 h-2 rounded-full bg-brand-blue"></div>
                                                         <div className="flex flex-col">
                                                             <span className="text-sm font-semibold text-gray-900">{room.name}</span>
                                                             <span className="text-[10px] text-gray-400 uppercase tracking-tighter">#{room.id.substring(0, 8)}</span>
@@ -240,8 +240,8 @@ export default function RoomsPage() {
                                                             </span>
                                                         );
                                                         if (status === "READY_FOR_LIVE" || status === "STANDBY" || status === "FINISHED_LIVE") return (
-                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 ring-1 ring-blue-600/20">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5"></span>
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 ring-1 ring-brand-teal/20">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-brand-teal mr-1.5"></span>
                                                                 STANDBY
                                                             </span>
                                                         );
@@ -260,7 +260,7 @@ export default function RoomsPage() {
                                                 </td>
                                                 <td className="py-4 px-4 text-sm border-y border-gray-100">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs ring-1 ring-indigo-200">
+                                                        <span className="px-2 py-0.5 rounded-full bg-brand-purple/10 text-indigo-700 font-bold text-xs ring-1 ring-brand-purple/30">
                                                             {roomAssets.filter(ra => ra.roomId === room.id).length}
                                                         </span>
                                                         <span className="text-gray-400 text-[10px] font-medium uppercase tracking-tight">Perangkat</span>
@@ -273,7 +273,7 @@ export default function RoomsPage() {
                                                     <div className="flex items-center justify-end gap-1">
                                                         <Link
                                                             href={`/admin/rooms/${room.id}`}
-                                                            className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                            className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors"
                                                             title="Aset Ruangan"
                                                         >
                                                             <Video className="w-4 h-4" />
@@ -282,7 +282,7 @@ export default function RoomsPage() {
                                                             <>
                                                                 <button
                                                                     onClick={() => openModal(room)}
-                                                                    className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                                    className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors"
                                                                     title="Edit"
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function RoomsPage() {
                                     required
                                     value={formData.locationId}
                                     onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm"
                                 >
                                     <option value="" disabled>Pilih Lokasi Cabang</option>
                                     {rawLocations.map(loc => (
@@ -350,7 +350,7 @@ export default function RoomsPage() {
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="Contoh: Studio Video A"
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -360,7 +360,7 @@ export default function RoomsPage() {
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     rows={3}
                                     placeholder="Catatan tambahan tentang fasilitas ruangan..."
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm resize-none"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm resize-none"
                                 />
                             </div>
                             <div className="pt-4 flex justify-end gap-3">

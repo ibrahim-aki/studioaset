@@ -50,12 +50,12 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                         onClick={() => setIsPasswordModalOpen(true)}
                         className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded-xl transition-colors text-left"
                     >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-blue to-brand-purple flex items-center justify-center text-white font-bold shrink-0">
                             {user?.name?.charAt(0).toUpperCase() || "O"}
                         </div>
                         <div className="truncate">
                             <p className="text-sm font-bold text-gray-900 leading-tight">Studio Ops</p>
-                            <p className="text-[10px] text-indigo-500 font-bold leading-tight truncate max-w-[120px] flex items-center gap-1">
+                            <p className="text-[10px] text-brand-purple font-bold leading-tight truncate max-w-[120px] flex items-center gap-1">
                                 {user?.name || "Operator"}
                                 {user?.locationName && <span className="opacity-70 font-normal">({user.locationName})</span>}
                                 <Key className="w-2.5 h-2.5" />

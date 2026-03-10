@@ -2,10 +2,12 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { DoorOpen, Box, CheckCircle2, AlertTriangle, AlertOctagon, Video, MapPin, Users, History, Bell, DoorClosed, XCircle, Clock, ChevronDown, ChevronUp, ClipboardCheck, Tag } from "lucide-react";
+import { DoorOpen, Box, CheckCircle2, AlertTriangle, AlertOctagon, Video, MapPin, Users, History, Bell, DoorClosed, XCircle, Clock, ChevronDown, ChevronUp, ClipboardCheck, Tag, KeyRound, LogOut } from "lucide-react";
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import clsx from "clsx";
+import { useRouter } from "next/navigation";
+import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function AdminPage() {
     const { user } = useAuth();
@@ -16,6 +18,34 @@ export default function AdminPage() {
         standby: false,
         trouble: false
     });
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const { logout } = useAuth();
+    const { addLog } = useLocalDb();
+    const router = useRouter();
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsProfileMenuOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleLogout = () => {
+        addLog({
+            type: "AUTH",
+            toValue: "Logout",
+            operatorName: user?.name || user?.email || "Unknown",
+            notes: "Role: ADMIN"
+        });
+        logout();
+        router.push("/login");
+    };
 
     // Calculate room status based on latest checklist for each room
     const roomStats = useMemo(() => {
@@ -115,92 +145,147 @@ export default function AdminPage() {
 
     return (
         <div className="animate-in fade-in duration-500 pb-10">
-            {/* Header Area */}
-            <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 pb-6">
-                <div>
-                    <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                        <div className="w-1.5 h-6 bg-purple-600"></div>
-                        ADMIN DASHBOARD
+            <ChangePasswordModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+            />
+            {/* Header Area - Refined Redesign */}
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-gray-100">
+                <div className="relative">
+                    <div className="absolute -left-4 top-1 bottom-1 w-1 bg-gradient-to-b from-brand-purple via-brand-pink to-brand-orange rounded-full shadow-[0_0_15px_rgba(124,77,255,0.3)]"></div>
+                    <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">
+                        Dashboard <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-blue">Overview</span>
                     </h1>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                        Sistem Manajemen Studio • {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse"></span>
+                        {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                 </div>
-                <div className="flex items-center gap-4 bg-white border border-gray-200 p-2 rounded-sm shrink-0">
-                    <div className="text-right">
-                        <p className="text-[9px] font-black text-gray-400 uppercase leading-none">User</p>
-                        <p className="text-xs font-black text-purple-600">{user?.name || "Admin"}</p>
+                <div className="flex items-center gap-4 group relative" ref={menuRef}>
+                    <div className="text-right hidden sm:block">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Authenticated as</p>
+                        <p className="text-sm font-black text-gray-900 group-hover:text-brand-purple transition-colors">{user?.name || "Administrator"}</p>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-black text-xs border border-purple-200">
-                        {(user?.name || "A").charAt(0).toUpperCase()}
+                    <button
+                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                        className="relative focus:outline-none"
+                    >
+                        <div className="absolute inset-0 bg-brand-purple blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <div className={clsx(
+                            "relative w-12 h-12 rounded-lg bg-white border shadow-xl flex items-center justify-center text-brand-purple font-black text-lg transition-all duration-300",
+                            isProfileMenuOpen ? "border-brand-purple translate-y-[-2px] ring-2 ring-brand-purple/20" : "border-gray-100 group-hover:translate-y-[-2px]"
+                        )}>
+                            {(user?.name || "A").charAt(0).toUpperCase()}
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+                        </div>
+                    </button>
+
+                    {/* Profile Dropdown Menu */}
+                    <div className={clsx(
+                        "absolute right-0 top-full mt-3 w-56 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-50 transition-all duration-300 origin-top-right",
+                        isProfileMenuOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                    )}>
+                        <div className="p-4 border-b border-gray-50 flex items-center gap-3 bg-gray-50/30">
+                            <div className="w-10 h-10 rounded-lg bg-brand-purple/10 flex items-center justify-center text-brand-purple font-bold">
+                                {(user?.name || "A").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="truncate">
+                                <p className="text-xs font-black text-gray-900 truncate">{user?.name || "Administrator"}</p>
+                                <p className="text-[10px] text-gray-400 font-bold truncate">{user?.role || "ADMIN"}</p>
+                            </div>
+                        </div>
+
+                        <div className="p-1.5">
+                            <button
+                                onClick={() => {
+                                    setIsPasswordModalOpen(true);
+                                    setIsProfileMenuOpen(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-gray-600 hover:text-brand-purple hover:bg-brand-purple/5 rounded-lg transition-colors group/item"
+                            >
+                                <KeyRound className="w-4 h-4 text-gray-400 group-hover/item:text-brand-purple" />
+                                <span>Ubah Password</span>
+                            </button>
+
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors group/item"
+                            >
+                                <LogOut className="w-4 h-4 text-rose-400" />
+                                <span>Keluar Aplikasi</span>
+                            </button>
+                        </div>
+
+                        <div className="p-2 bg-gray-50/50 border-t border-gray-50 text-center">
+                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">
+                                Studio Aset v2.0
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Top Metrics Row - System Style */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 border-t border-l border-gray-200 mb-8">
+            {/* Top Metrics - Elevated Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
                 {[
-                    { label: "Laporan Belum Dibaca", value: checklists.filter(c => c.isRead === false).length, icon: Bell, color: "bg-rose-600", href: "/admin/checklists" },
-                    { label: "Total Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "bg-blue-600", href: "/admin/rooms" },
-                    { label: "Inventaris Aset", value: assetStats.totalAll, icon: Box, color: "bg-purple-600", href: "/admin/assets" },
-                    { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "bg-amber-600", href: "/admin/checklists" }
+                    { label: "Laporan Baru", value: checklists.filter(c => c.isRead === false).length, icon: Bell, color: "from-rose-500 to-pink-500", href: "/admin/checklists" },
+                    { label: "Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "from-brand-teal to-blue-500", href: "/admin/rooms" },
+                    { label: "Total Aset", value: assetStats.totalAll, icon: Box, color: "from-brand-purple to-purple-400", href: "/admin/assets" },
+                    { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "from-brand-orange to-amber-400", href: "/admin/checklists" }
                 ].map((stat, i) => (
                     <Link
                         key={i}
                         href={stat.href}
-                        className={clsx(
-                            "p-4 border-r border-b border-gray-200 group hover:bg-gray-50 transition-colors relative block cursor-pointer",
-                            stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "bg-rose-50/30" : "bg-white"
-                        )}
+                        className="group relative overflow-hidden bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
                     >
-                        {stat.label === "Laporan Belum Dibaca" && stat.value > 0 && (
-                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 animate-ping"></div>
-                        )}
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">{stat.label}</p>
-                        <div className="flex items-end justify-between">
-                            <span className={clsx(
-                                "text-3xl font-black tabular-nums",
-                                stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "text-rose-600" : "text-gray-900"
-                            )}>{stat.value}</span>
-                            <stat.icon className={clsx(
-                                "w-5 h-5 transition-transform group-hover:scale-110",
-                                stat.label === "Laporan Belum Dibaca" && stat.value > 0 ? "text-rose-500 opacity-20" : "opacity-10"
-                            )} />
+                        <div className={`absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity`}>
+                            <stat.icon className="w-12 h-12" />
+                        </div>
+                        <div className="relative z-10">
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-3 shadow-md`}>
+                                <stat.icon className="w-4 h-4" />
+                            </div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter">{stat.value}</span>
+                                {stat.label === "Laporan Baru" && stat.value > 0 && (
+                                    <span className="text-[8px] font-black text-rose-500 animate-pulse tracking-tighter">ALERT</span>
+                                )}
+                            </div>
                         </div>
                     </Link>
                 ))}
             </div>
 
-            {/* Dashboard Workspace - 4-Column Flex Layout for Tight Packing */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 mb-10 items-start">
+            {/* Dashboard Workspace - Refined Grid Scaling */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 items-start">
 
                 {/* COLUMN 1: LIVE + ASET STUDIO */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-4">
                     {/* 1. LIVE NOW BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-emerald-500 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-brand-teal animate-pulse shadow-[0_0_10px_rgba(77,182,172,0.6)]"></span>
                                 Live Sekarang
                             </h3>
-                            <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-sm">{categorizedRooms.liveNow.length}</span>
+                            <span className="text-[10px] font-black bg-brand-teal/10 text-brand-teal px-3 py-1 rounded-full">{categorizedRooms.liveNow.length}</span>
                         </div>
                         <div className="p-1 space-y-0.5">
                             {(expandedBoards.liveNow ? categorizedRooms.liveNow : categorizedRooms.liveNow.slice(0, 5)).map(r => (
                                 <div key={r.id} className="bg-white p-2 border border-gray-50 hover:border-emerald-200 transition-all flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-1.5 truncate">
-                                        <span className="flex items-center gap-0.5 text-[9px] font-black text-emerald-600 bg-emerald-50/50 px-1 rounded uppercase shrink-0">
+                                        <span className="flex items-center gap-0.5 text-[9px] font-black text-brand-teal bg-brand-teal/5/50 px-1 rounded uppercase shrink-0">
                                             <MapPin className="w-2.5 h-2.5" />
                                             {locations.find(l => l.id === r.locationId)?.name}
                                         </span>
                                         <span className="text-[11px] font-black text-gray-800 truncate">{r.name}</span>
                                     </div>
-                                    <div className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0">Live</div>
+                                    <div className="text-[8px] font-black text-brand-teal bg-brand-teal/5 px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0">Live</div>
                                 </div>
                             ))}
                             {categorizedRooms.liveNow.length > 5 && (
-                                <button onClick={() => setExpandedBoards(prev => ({ ...prev, liveNow: !prev.liveNow }))} className="w-full py-1 text-[9px] font-black text-gray-400 hover:text-emerald-600 uppercase tracking-widest border border-dashed border-gray-100 mt-1">
+                                <button onClick={() => setExpandedBoards(prev => ({ ...prev, liveNow: !prev.liveNow }))} className="w-full py-1 text-[9px] font-black text-gray-400 hover:text-brand-teal uppercase tracking-widest border border-dashed border-gray-100 mt-1">
                                     {expandedBoards.liveNow ? "Sembunyikan" : `+${categorizedRooms.liveNow.length - 5} Lainnya`}
                                 </button>
                             )}
@@ -208,20 +293,19 @@ export default function AdminPage() {
                     </div>
 
                     {/* 5. ASET STUDIO BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-purple-600 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <Box className="w-3.5 h-3.5 text-purple-600" />
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <Box className="w-4 h-4 text-brand-purple" />
                                 Aset Studio
                             </h3>
-                            <span className="text-[9px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded-sm">{assetStats.studio.total}</span>
+                            <span className="text-[10px] font-black bg-brand-purple/10 text-brand-purple px-3 py-1 rounded-full">{assetStats.studio.total}</span>
                         </div>
                         <div className="p-3 bg-white">
                             <div className="space-y-3">
                                 {[
                                     { label: "BAIK", value: assetStats.studio.good, color: "bg-green-500", text: "text-green-600" },
-                                    { label: "RUSAK", value: assetStats.studio.broken, color: "bg-amber-500", text: "text-amber-600" },
+                                    { label: "RUSAK", value: assetStats.studio.broken, color: "bg-brand-orange", text: "text-brand-orange" },
                                     { label: "MATI", value: assetStats.studio.dead, color: "bg-rose-500", text: "text-rose-600" },
                                     { label: "HILANG", value: assetStats.studio.lost, color: "bg-gray-400", text: "text-gray-400" }
                                 ].map((stat, i) => (
@@ -241,16 +325,15 @@ export default function AdminPage() {
                 </div>
 
                 {/* COLUMN 2: STUDIO SIAP LIVE + ASET CLIENT */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-4">
                     {/* 2. READY BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-yellow-400 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
                                 Studio Siap Live
                             </h3>
-                            <span className="text-[9px] font-black bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-sm">{categorizedRooms.ready.length}</span>
+                            <span className="text-[10px] font-black bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">{categorizedRooms.ready.length}</span>
                         </div>
                         <div className="p-1 space-y-0.5">
                             {(expandedBoards.ready ? categorizedRooms.ready : categorizedRooms.ready.slice(0, 5)).map(r => (
@@ -274,20 +357,19 @@ export default function AdminPage() {
                     </div>
 
                     {/* 6. ASET CLIENT BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-amber-500 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <Tag className="w-3.5 h-3.5 text-amber-500" />
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <Tag className="w-4 h-4 text-brand-orange" />
                                 Aset Client
                             </h3>
-                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">{assetStats.client.total}</span>
+                            <span className="text-[10px] font-black bg-brand-orange/10 text-brand-orange px-3 py-1 rounded-full">{assetStats.client.total}</span>
                         </div>
                         <div className="p-3 bg-white">
                             <div className="space-y-3">
                                 {[
                                     { label: "BAIK", value: assetStats.client.good, color: "bg-green-500", text: "text-green-600" },
-                                    { label: "RUSAK", value: assetStats.client.broken, color: "bg-amber-500", text: "text-amber-600" },
+                                    { label: "RUSAK", value: assetStats.client.broken, color: "bg-brand-orange", text: "text-brand-orange" },
                                     { label: "MATI", value: assetStats.client.dead, color: "bg-rose-500", text: "text-rose-600" },
                                     { label: "HILANG", value: assetStats.client.lost, color: "bg-gray-400", text: "text-gray-400" }
                                 ].map((stat, i) => (
@@ -307,16 +389,15 @@ export default function AdminPage() {
                 </div>
 
                 {/* COLUMN 3: STANDBY + DAFTAR CABANG */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-4">
                     {/* 3. STANDBY BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-slate-400 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
                                 Standby
                             </h3>
-                            <span className="text-[9px] font-black bg-slate-100 text-slate-700 px-2 py-0.5 rounded-sm">{categorizedRooms.standby.length}</span>
+                            <span className="text-[10px] font-black bg-slate-100 text-slate-700 px-3 py-1 rounded-full">{categorizedRooms.standby.length}</span>
                         </div>
                         <div className="p-1 space-y-0.5">
                             {(expandedBoards.standby ? categorizedRooms.standby : categorizedRooms.standby.slice(0, 5)).map(r => (
@@ -337,14 +418,13 @@ export default function AdminPage() {
                     </div>
 
                     {/* 7. DAFTAR CABANG BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-indigo-600 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-brand-purple" />
                                 Daftar Cabang
                             </h3>
-                            <span className="text-[9px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-sm">{locations.length}</span>
+                            <span className="text-[10px] font-black bg-brand-purple/10 text-brand-purple px-3 py-1 rounded-full">{locations.length}</span>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -359,7 +439,7 @@ export default function AdminPage() {
                                     {locationSummaries.map(loc => (
                                         <tr key={loc.id} className="group hover:bg-gray-50 transition-colors">
                                             <td className="px-3 py-1.5 text-[10px] font-black text-gray-700 tracking-tight flex items-center gap-1.5">
-                                                <div className="w-1 h-1 rounded-full bg-indigo-300"></div>
+                                                <div className="w-1 h-1 rounded-full bg-brand-purple"></div>
                                                 {loc.name}
                                             </td>
                                             <td className="px-3 py-1.5 text-right text-[10px] font-bold text-gray-400 tabular-nums">{loc.totalRooms}</td>
@@ -378,16 +458,15 @@ export default function AdminPage() {
                 </div>
 
                 {/* COLUMN 4: DALAM PERBAIKAN + OPERATOR AKTIF */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-4">
                     {/* 4. TROUBLE BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-rose-500 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <XCircle className="w-3 h-3 text-rose-500" />
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <XCircle className="w-4 h-4 text-rose-500" />
                                 Dalam Perbaikan
                             </h3>
-                            <span className="text-[9px] font-black bg-rose-100 text-rose-700 px-2 py-0.5 rounded-sm">{categorizedRooms.trouble.length}</span>
+                            <span className="text-[10px] font-black bg-rose-100 text-rose-700 px-3 py-1 rounded-full">{categorizedRooms.trouble.length}</span>
                         </div>
                         <div className="p-1 space-y-0.5">
                             {(expandedBoards.trouble ? categorizedRooms.trouble : categorizedRooms.trouble.slice(0, 5)).map(r => (
@@ -416,11 +495,10 @@ export default function AdminPage() {
                     </div>
 
                     {/* 8. OPERATOR AKTIF BOARD */}
-                    <div className="bg-white border border-gray-200 flex flex-col h-fit">
-                        <div className="h-1 bg-amber-500 w-full"></div>
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                <Users className="w-3.5 h-3.5 text-amber-500" />
+                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col h-fit overflow-hidden hover:shadow-xl transition-all duration-500">
+                        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
+                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                <Users className="w-4 h-4 text-brand-orange" />
                                 Operator Aktif
                             </h3>
                             {(() => {
@@ -433,7 +511,7 @@ export default function AdminPage() {
                                 });
                                 const count = Object.keys(uniqueShiftsMap).length;
                                 return count > 0 && (
-                                    <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm">
+                                    <span className="text-[9px] font-black bg-brand-orange/10 text-amber-700 px-2 py-0.5 rounded-sm">
                                         {count}
                                     </span>
                                 );
@@ -461,19 +539,19 @@ export default function AdminPage() {
                                     <div key={shift.id} className="bg-white p-3 border border-gray-50 hover:border-amber-200 transition-all flex flex-col gap-1.5 shadow-sm">
                                         <div className="flex items-center justify-between">
                                             <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">{shift.operatorName}</p>
-                                            <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded uppercase tracking-tighter">On Duty</span>
+                                            <span className="text-[8px] font-black text-brand-orange bg-brand-orange/5 px-1.5 py-0.5 rounded uppercase tracking-tighter">On Duty</span>
                                         </div>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-500">
-                                                <MapPin className="w-3 h-3 text-indigo-400" />
+                                                <MapPin className="w-3 h-3 text-brand-purple" />
                                                 <span className="uppercase">{shift.locationName}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-500 lowercase">
-                                                <History className="w-3 h-3 text-indigo-400" />
+                                                <History className="w-3 h-3 text-brand-purple" />
                                                 <span>{shift.startTime} - {shift.endTime}</span>
                                             </div>
                                             {shift.operatorPhone && (
-                                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-indigo-600">
+                                                <div className="flex items-center gap-1.5 text-[9px] font-bold text-brand-purple">
                                                     <Bell className="w-3 h-3" />
                                                     <span>{shift.operatorPhone}</span>
                                                 </div>
@@ -488,27 +566,6 @@ export default function AdminPage() {
             </div>
 
 
-            {/* Quick Actions Bar */}
-            < div className="bg-indigo-900 rounded-sm p-1 mt-10" >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-px">
-                    <Link href="/admin/checklists" className="bg-indigo-800/50 hover:bg-white/10 p-3 text-center transition-all group">
-                        <History className="w-4 h-4 text-indigo-200 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black text-white uppercase tracking-widest block">Laporan</span>
-                    </Link>
-                    <Link href="/admin/assets" className="bg-indigo-800/50 hover:bg-white/10 p-3 text-center transition-all group border-l md:border-l-0 border-indigo-700/50">
-                        <Box className="w-4 h-4 text-indigo-200 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black text-white uppercase tracking-widest block">Aset</span>
-                    </Link>
-                    <Link href="/admin/rooms" className="bg-indigo-800/50 hover:bg-white/10 p-3 text-center transition-all group border-t md:border-t-0 border-indigo-700/50">
-                        <DoorOpen className="w-4 h-4 text-indigo-200 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black text-white uppercase tracking-widest block">Ruangan</span>
-                    </Link>
-                    <Link href="/admin/locations" className="bg-indigo-800/50 hover:bg-white/10 p-3 text-center transition-all group border-t md:border-t-0 border-l md:border-l-0 border-indigo-700/50">
-                        <MapPin className="w-4 h-4 text-indigo-200 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black text-white uppercase tracking-widest block">Cabang</span>
-                    </Link>
-                </div>
-            </div >
         </div >
     );
 }

@@ -103,14 +103,14 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-purple/10/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                        <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                             <UserPlus className="w-5 h-5" />
                         </div>
                         <div>
                             <h3 className="font-extrabold text-gray-900 tracking-tight">Tambah Pengguna</h3>
-                            <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest">Akses Baru</p>
+                            <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest">Akses Baru</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-colors text-gray-400">
@@ -132,7 +132,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                 placeholder="Contoh: Budi Santoso"
                             />
                         </div>
@@ -144,7 +144,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                 placeholder="email@perusahaan.id"
                             />
                         </div>
@@ -156,7 +156,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                 required
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                 placeholder="0812xxxx"
                             />
                         </div>
@@ -169,7 +169,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                    className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                     placeholder="Min. 6 karakter"
                                 />
                                 <button
@@ -198,7 +198,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                         className={clsx(
                                             "py-3 rounded-2xl text-[10px] font-black tracking-widest border transition-all",
                                             role === r.id
-                                                ? `bg-${r.color === 'indigo' ? 'indigo-600' : r.color === 'emerald' ? 'emerald-500' : r.color === 'amber' ? 'amber-500' : 'rose-500'} border-transparent text-white shadow-lg`
+                                                ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : 'rose-500'} border-transparent text-white shadow-lg`
                                                 : "bg-gray-50 border-gray-100 text-gray-400"
                                         )}
                                     >
@@ -214,7 +214,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                 required
                                 value={locationId}
                                 onChange={(e) => setLocationId(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                             >
                                 <option value="HQ">Kantor Pusat (HQ)</option>
                                 {locations.map(loc => (
@@ -304,14 +304,14 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-purple/10/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
+                        <div className="w-10 h-10 bg-brand-orange rounded-xl flex items-center justify-center text-white">
                             <User className="w-5 h-5" />
                         </div>
                         <div>
                             <h3 className="text-lg font-black text-gray-900 leading-none">Edit Profil User</h3>
-                            <p className="text-[10px] text-amber-600 font-bold uppercase tracking-widest mt-1">ID: {user.id.slice(0, 8)}</p>
+                            <p className="text-[10px] text-brand-orange font-bold uppercase tracking-widest mt-1">ID: {user.id.slice(0, 8)}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-colors">
@@ -328,7 +328,7 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                             required
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                         />
                     </div>
 
@@ -339,7 +339,7 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                             required
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                         />
                     </div>
 
@@ -359,7 +359,7 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                                     className={clsx(
                                         "py-2.5 rounded-xl text-[9px] font-black tracking-widest border transition-all",
                                         role === r.id
-                                            ? `bg-${r.color === 'indigo' ? 'indigo-600' : r.color === 'emerald' ? 'emerald-500' : r.color === 'amber' ? 'amber-500' : 'rose-500'} border-transparent text-white shadow-lg`
+                                            ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : 'rose-500'} border-transparent text-white shadow-lg`
                                             : "bg-gray-50 border-gray-100 text-gray-400"
                                     )}
                                 >
@@ -375,7 +375,7 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                             required
                             value={locationId}
                             onChange={(e) => setLocationId(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 appearance-none font-bold"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple appearance-none font-bold"
                         >
                             <option value="HQ">Kantor Pusat (HQ)</option>
                             {locations.map(loc => (
@@ -387,7 +387,7 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full mt-4 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-amber-100"
+                        className="w-full mt-4 py-4 bg-brand-orange hover:bg-brand-orange text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-brand-orange/10"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PERUBAHAN"}
                     </button>
@@ -427,14 +427,14 @@ function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-purple/10/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                        <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                             <Building2 className="w-5 h-5" />
                         </div>
                         <div>
                             <h3 className="font-extrabold text-gray-900 tracking-tight">Daftarkan Perusahaan</h3>
-                            <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest">Klien Baru</p>
+                            <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest">Klien Baru</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-colors text-gray-400">
@@ -449,7 +449,7 @@ function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
                             required
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                             placeholder="Contoh: PT. Studio Kreatif Jaya"
                         />
                     </div>
@@ -462,7 +462,7 @@ function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
                                 type="tel"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                 placeholder="0812xxxx"
                             />
                         </div>
@@ -472,7 +472,7 @@ function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                 placeholder="kantor@pt.id"
                             />
                         </div>
@@ -483,7 +483,7 @@ function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
                         <textarea
                             value={desc}
                             onChange={(e) => setDesc(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 min-h-[80px]"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple min-h-[80px]"
                             placeholder="Keterangan perusahaan..."
                         />
                     </div>
@@ -680,20 +680,20 @@ export default function UserManagementPage() {
                 <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                            <Shield className="w-6 h-6 text-indigo-600" /> Super Admin Portal
+                            <Shield className="w-6 h-6 text-brand-purple" /> Super Admin Portal
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">Global management and company orchestration.</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <div className="relative group/search">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/search:text-indigo-600 transition-colors" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/search:text-brand-purple transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Cari klien..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 transition-all w-40 sm:w-64"
+                                className="pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs outline-none focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 transition-all w-40 sm:w-64"
                             />
                         </div>
                         <button
@@ -708,14 +708,14 @@ export default function UserManagementPage() {
                         </button>
                         <button
                             onClick={() => setIsAddCompanyOpen(true)}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 whitespace-nowrap"
+                            className="bg-brand-purple text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-brand-purple transition-all flex items-center gap-2 shadow-lg shadow-brand-purple/20 whitespace-nowrap"
                         >
                             <Plus className="w-4 h-4" /> TAMBAH KLIEN
                         </button>
                     </div>
                 </header>
 
-                <div className="bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-sm">
+                <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                     {companies.length === 0 ? (
                         <div className="py-20 flex flex-col items-center justify-center text-gray-400">
                             <Building2 className="w-12 h-12 mb-4 opacity-20" />
@@ -762,18 +762,18 @@ export default function UserManagementPage() {
                                                     setView("management");
                                                     setActiveTab("dashboard");
                                                 }}
-                                                className="hover:bg-indigo-50/30 transition-colors cursor-pointer group"
+                                                className="hover:bg-brand-purple/10/30 transition-colors cursor-pointer group"
                                             >
                                                 <td className="px-6 py-4 text-[10px] font-bold text-gray-400 text-center">
                                                     {index + 1}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                        <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
                                                             <Building2 className="w-4 h-4" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight group-hover:text-indigo-600 transition-colors">
+                                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight group-hover:text-brand-purple transition-colors">
                                                                 {company.name}
                                                             </p>
                                                             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
@@ -786,12 +786,12 @@ export default function UserManagementPage() {
                                                     <div className="space-y-1">
                                                         {company.phone && (
                                                             <div className="flex items-center gap-1.5 text-[9px] text-gray-500 font-bold uppercase">
-                                                                <Tag className="w-2.5 h-2.5 text-indigo-400" /> {company.phone}
+                                                                <Tag className="w-2.5 h-2.5 text-brand-purple/50" /> {company.phone}
                                                             </div>
                                                         )}
                                                         {company.email && (
                                                             <div className="flex items-center gap-1.5 text-[9px] text-gray-500 font-bold lowercase">
-                                                                <Mail className="w-2.5 h-2.5 text-indigo-400" /> {company.email}
+                                                                <Mail className="w-2.5 h-2.5 text-brand-purple/50" /> {company.email}
                                                             </div>
                                                         )}
                                                         {!company.phone && !company.email && (
@@ -801,7 +801,7 @@ export default function UserManagementPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">{ageStr}</span>
+                                                        <span className="text-[10px] font-black text-brand-purple uppercase tracking-tighter">{ageStr}</span>
                                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none">Berlangganan</span>
                                                     </div>
                                                 </td>
@@ -811,7 +811,7 @@ export default function UserManagementPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <div className="inline-flex items-center gap-1 text-[9px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-100 bg-indigo-50/50 px-3 py-1.5 rounded-full group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                    <div className="inline-flex items-center gap-1 text-[9px] font-black text-brand-purple uppercase tracking-widest border border-brand-purple/20 bg-brand-purple/10/50 px-3 py-1.5 rounded-full group-hover:bg-brand-purple group-hover:text-white transition-all">
                                                         Kelola
                                                         <ArrowLeft className="w-2.5 h-2.5 rotate-180" />
                                                     </div>
@@ -845,14 +845,14 @@ export default function UserManagementPage() {
                         setView("companies");
                         setSelectedCompany(null);
                     }}
-                    className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:gap-3 transition-all"
+                    className="flex items-center gap-2 text-[10px] font-black text-brand-purple uppercase tracking-widest hover:gap-3 transition-all"
                 >
                     <ArrowLeft className="w-3 h-3" /> Kembali ke Portal
                 </button>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
+                        <div className="w-12 h-12 bg-brand-purple/20 rounded-2xl flex items-center justify-center text-brand-purple">
                             <Building2 className="w-6 h-6" />
                         </div>
                         <div>
@@ -876,7 +876,7 @@ export default function UserManagementPage() {
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={clsx(
                                     "px-4 py-2 text-[10px] font-black rounded-xl transition-all uppercase flex items-center gap-2 tracking-widest",
-                                    activeTab === tab.id ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                    activeTab === tab.id ? "bg-white text-brand-purple shadow-sm" : "text-gray-400 hover:text-gray-600"
                                 )}
                             >
                                 <tab.icon className="w-3.5 h-3.5" />
@@ -897,25 +897,25 @@ export default function UserManagementPage() {
                                     label: "Total Unit Studio",
                                     value: rooms.filter(r => r.companyId === selectedCompany.id).length,
                                     icon: Building2,
-                                    color: "bg-indigo-50 text-indigo-600"
+                                    color: "bg-brand-purple/10 text-brand-purple"
                                 },
                                 {
                                     label: "Total Inventaris",
                                     value: assets.filter(a => a.companyId === selectedCompany.id).length,
                                     icon: Box,
-                                    color: "bg-purple-50 text-purple-600"
+                                    color: "bg-purple-50 text-brand-purple"
                                 },
                                 {
                                     label: "Aktivitas Terkini",
                                     value: assetLogs.filter(l => l.companyId === selectedCompany.id).length,
                                     icon: History,
-                                    color: "bg-blue-50 text-blue-600"
+                                    color: "bg-blue-50 text-brand-teal"
                                 },
                                 {
                                     label: "Tim Terdaftar",
                                     value: users.length, // already filtered by company in effect
                                     icon: Users,
-                                    color: "bg-emerald-50 text-emerald-600"
+                                    color: "bg-emerald-50 text-brand-teal"
                                 }
                             ].map((m, i) => (
                                 <div key={i} className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow">
@@ -934,8 +934,8 @@ export default function UserManagementPage() {
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Distribusi Aset Klien</h3>
                                 <div className="space-y-4">
                                     {[
-                                        { label: "Kondisi Baik", color: "bg-emerald-500", key: "BAIK" },
-                                        { label: "Dalam Perbaikan", color: "bg-amber-500", key: "RUSAK" },
+                                        { label: "Kondisi Baik", color: "bg-brand-teal", key: "BAIK" },
+                                        { label: "Dalam Perbaikan", color: "bg-brand-orange", key: "RUSAK" },
                                         { label: "Rusak Total", color: "bg-rose-500", key: "MATI" }
                                     ].map((cat, i) => {
                                         const companyAssets = assets.filter(a => a.companyId === selectedCompany.id);
@@ -956,10 +956,10 @@ export default function UserManagementPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-indigo-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
+                            <div className="bg-brand-purple rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
                                 <div className="relative z-10">
                                     <h3 className="text-lg font-black mb-4">Integrasi Multi-Tenant</h3>
-                                    <p className="text-xs text-indigo-100 leading-relaxed opacity-80 mb-6">
+                                    <p className="text-xs text-brand-purple/20 leading-relaxed opacity-80 mb-6">
                                         Data perusahaan ini diisolasi secara digital. Admin dan Operator yang terdaftar hanya dapat mengakses inventaris di atas. Seluruh perubahan tercatat dalam sistem audit log perusahaan ini.
                                     </p>
                                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full border border-white/10 text-[9px] font-black uppercase tracking-widest">
@@ -974,14 +974,14 @@ export default function UserManagementPage() {
 
                 {activeTab === "users" && (
                     <>
-                        <div className="bg-indigo-900 rounded-3xl p-8 text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="bg-brand-purple rounded-3xl p-8 text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
                             <div>
                                 <h3 className="text-xl font-black mb-2 flex items-center gap-2">
-                                    <UserPlus className="w-6 h-6 text-indigo-300" /> Akses Karyawan
+                                    <UserPlus className="w-6 h-6 text-brand-purple/40" /> Akses Karyawan
                                 </h3>
-                                <p className="text-sm text-indigo-100/80">Kelola Admin dan Operator untuk {selectedCompany?.name || 'perusahaan terpilih'}.</p>
+                                <p className="text-sm text-brand-purple/20/80">Kelola Admin dan Operator untuk {selectedCompany?.name || 'perusahaan terpilih'}.</p>
                             </div>
-                            <button onClick={() => setIsAddUserOpen(true)} className="bg-white text-indigo-900 px-8 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all shadow-xl">
+                            <button onClick={() => setIsAddUserOpen(true)} className="bg-white text-brand-purple px-8 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all shadow-xl">
                                 + TAMBAH USER
                             </button>
                         </div>
@@ -1025,7 +1025,7 @@ export default function UserManagementPage() {
                                                                 <div className="flex flex-col mt-0.5">
                                                                     <span className="text-[10px] text-gray-400 font-medium">{u.email}</span>
                                                                     {u.phone && (
-                                                                        <span className="text-[10px] text-indigo-500 font-bold flex items-center gap-1">
+                                                                        <span className="text-[10px] text-brand-purple font-bold flex items-center gap-1">
                                                                             <Tag className="w-2.5 h-2.5" /> {u.phone}
                                                                         </span>
                                                                     )}
@@ -1036,8 +1036,8 @@ export default function UserManagementPage() {
                                                     <td className="px-6 py-4">
                                                         <span className={clsx(
                                                             "px-3 py-1 rounded-lg text-[10px] font-black uppercase border tracking-tighter",
-                                                            u.role === "SUPER_ADMIN" ? "bg-purple-50 text-purple-600 border-purple-100" :
-                                                                u.role === "ADMIN" ? "bg-indigo-50 text-indigo-600 border-indigo-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                            u.role === "SUPER_ADMIN" ? "bg-purple-50 text-brand-purple border-purple-100" :
+                                                                u.role === "ADMIN" ? "bg-brand-purple/10 text-brand-purple border-brand-purple/20" : "bg-emerald-50 text-brand-teal border-emerald-100"
                                                         )}>
                                                             {u.role}
                                                         </span>
@@ -1049,7 +1049,7 @@ export default function UserManagementPage() {
                                                             <select
                                                                 value={u.locationId || ""}
                                                                 onChange={(e) => handleLocationChange(u.id, e.target.value)}
-                                                                className="bg-transparent text-[10px] font-bold text-gray-600 outline-none focus:text-indigo-600 cursor-pointer border-b border-dashed border-gray-200 pb-0.5"
+                                                                className="bg-transparent text-[10px] font-bold text-gray-600 outline-none focus:text-brand-purple cursor-pointer border-b border-dashed border-gray-200 pb-0.5"
                                                             >
                                                                 <option value="">Belum Set</option>
                                                                 <option value="HQ">Kantor Pusat (HQ)</option>
@@ -1067,12 +1067,12 @@ export default function UserManagementPage() {
                                                                         setSelectedUser(u);
                                                                         setIsEditUserOpen(true);
                                                                     }}
-                                                                    className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                                    className="p-2.5 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all"
                                                                     title="Edit Profil"
                                                                 >
                                                                     <Pencil className="w-4 h-4" />
                                                                 </button>
-                                                                <button onClick={() => handleResetPassword(u.email)} className="p-2.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all" title="Reset Password"><KeyRound className="w-4 h-4" /></button>
+                                                                <button onClick={() => handleResetPassword(u.email)} className="p-2.5 text-gray-400 hover:text-brand-orange hover:bg-amber-50 rounded-xl transition-all" title="Reset Password"><KeyRound className="w-4 h-4" /></button>
                                                                 <button onClick={async () => {
                                                                     if (confirm("Hapus user?")) await deleteDoc(doc(db, "users", u.id));
                                                                 }} className="p-2.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Hapus Akun"><Trash2 className="w-4 h-4" /></button>
@@ -1136,10 +1136,10 @@ export default function UserManagementPage() {
                                                     <div className="flex items-center gap-2">
                                                         <span className={clsx(
                                                             "text-[9px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0",
-                                                            log.type === "MOVEMENT" ? "text-blue-600 border-blue-100 bg-blue-50" :
-                                                                log.type === "STATUS" ? "text-amber-600 border-amber-100 bg-amber-50" :
-                                                                    log.type === "AUTH" ? "text-purple-600 border-purple-100 bg-purple-50" :
-                                                                        log.type === "ROOM" ? "text-emerald-500 border-emerald-100 bg-emerald-50" : "text-gray-400 border-gray-100 bg-gray-50"
+                                                            log.type === "MOVEMENT" ? "text-brand-teal border-blue-100 bg-blue-50" :
+                                                                log.type === "STATUS" ? "text-brand-orange border-amber-100 bg-amber-50" :
+                                                                    log.type === "AUTH" ? "text-brand-purple border-purple-100 bg-purple-50" :
+                                                                        log.type === "ROOM" ? "text-brand-teal border-emerald-100 bg-emerald-50" : "text-gray-400 border-gray-100 bg-gray-50"
                                                         )}>
                                                             {log.type}
                                                         </span>
@@ -1170,20 +1170,20 @@ export default function UserManagementPage() {
                 {activeTab === "cloud" && !selectedCompany && (
                     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
                         {/* Summary Header */}
-                        <div className="bg-indigo-950 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/5">
+                        <div className="bg-brand-purple rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/5">
                             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-full border border-blue-500/30 text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-6">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-blue/20 rounded-full border border-brand-blue/30 text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-6">
                                         <Activity className="w-3 h-3 animate-pulse" /> Global System Infrastructure
                                     </div>
-                                    <h3 className="text-4xl font-black mb-4 tracking-tighter leading-none">Cloud Resource <br /><span className="text-blue-400">Inventory Monitoring</span></h3>
-                                    <p className="text-sm text-indigo-200/70 leading-relaxed max-w-md">
+                                    <h3 className="text-4xl font-black mb-4 tracking-tighter leading-none">Cloud Resource <br /><span className="text-brand-blue">Inventory Monitoring</span></h3>
+                                    <p className="text-sm text-brand-purple/30/70 leading-relaxed max-w-md">
                                         Memantau konsumsi database secara real-time. Firebase Spark Plan memiliki batas limit, pastikan data seperti log tetap terjaga.
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10">
-                                        <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Total Users</p>
+                                        <p className="text-[10px] font-black text-brand-purple/40 uppercase tracking-widest mb-1">Total Users</p>
                                         <p className="text-3xl font-black">{cloudStats.users}</p>
                                     </div>
                                     <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10">
@@ -1196,7 +1196,7 @@ export default function UserManagementPage() {
                                             <span className="text-[9px] font-bold text-gray-400">{cloudStats.assets + cloudStats.logs} Docs</span>
                                         </div>
                                         <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${Math.min(((cloudStats.assets + cloudStats.logs) / 50000) * 100, 100)}%` }}></div>
+                                            <div className="h-full bg-gradient-to-r from-brand-blue to-brand-purple" style={{ width: `${Math.min(((cloudStats.assets + cloudStats.logs) / 50000) * 100, 100)}%` }}></div>
                                         </div>
                                     </div>
                                 </div>
@@ -1209,10 +1209,10 @@ export default function UserManagementPage() {
                             {/* Read Quota Card */}
                             <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm relative group overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform">
-                                    <Gauge className="w-16 h-16 text-indigo-600" />
+                                    <Gauge className="w-16 h-16 text-brand-purple" />
                                 </div>
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                    <Zap className="w-3 h-3 text-amber-500" /> Read Threshold
+                                    <Zap className="w-3 h-3 text-brand-orange" /> Read Threshold
                                 </h4>
                                 <div className="flex items-baseline gap-2 mb-2">
                                     <span className="text-3xl font-black text-gray-900">50,000</span>
@@ -1258,7 +1258,7 @@ export default function UserManagementPage() {
                             {/* Database Size Card */}
                             <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                    <Box className="w-3 h-3 text-indigo-500" /> Database Cap
+                                    <Box className="w-3 h-3 text-brand-purple" /> Database Cap
                                 </h4>
                                 <div className="flex items-baseline gap-2 mb-2">
                                     <span className="text-3xl font-black text-gray-900">1.0</span>
@@ -1297,12 +1297,12 @@ export default function UserManagementPage() {
 
                         {!statsLoading && cloudStats.logs <= 10000 && (
                             <div className="bg-emerald-50 border border-emerald-100 rounded-[2.5rem] p-8 flex items-center gap-6">
-                                <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shrink-0">
+                                <div className="w-12 h-12 bg-brand-teal rounded-2xl flex items-center justify-center text-white shrink-0">
                                     <CheckCircle2 className="w-6 h-6" />
                                 </div>
                                 <div>
                                     <h5 className="text-sm font-black text-emerald-900 uppercase tracking-widest leading-none mb-1">System is healthy</h5>
-                                    <p className="text-[10px] text-emerald-600 font-medium">Resources are being used efficiently within the Free Tier limits.</p>
+                                    <p className="text-[10px] text-brand-teal font-medium">Resources are being used efficiently within the Free Tier limits.</p>
                                 </div>
                             </div>
                         )}
@@ -1310,7 +1310,7 @@ export default function UserManagementPage() {
                         {/* Quota Reference Center */}
                         <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm">
                             <div className="flex items-center gap-3 mb-8">
-                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                                     <Info className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -1322,7 +1322,7 @@ export default function UserManagementPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                                 {/* Firestore Details */}
                                 <div className="space-y-4">
-                                    <h6 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                    <h6 className="text-[10px] font-black text-brand-purple uppercase tracking-widest flex items-center gap-2">
                                         <Database className="w-3 h-3" /> Firestore DB
                                     </h6>
                                     <div className="space-y-4">
@@ -1341,7 +1341,7 @@ export default function UserManagementPage() {
                                                         <div
                                                             className={clsx(
                                                                 "h-full transition-all duration-500",
-                                                                percent >= 80 ? "bg-amber-500" : percent >= 95 ? "bg-rose-600" : "bg-indigo-500"
+                                                                percent >= 80 ? "bg-brand-orange" : percent >= 95 ? "bg-rose-600" : "bg-brand-purple"
                                                             )}
                                                             style={{ width: `${Math.min(percent, 100)}%` }}
                                                         ></div>
@@ -1365,7 +1365,7 @@ export default function UserManagementPage() {
 
                                 {/* Auth Details */}
                                 <div className="space-y-4">
-                                    <h6 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                    <h6 className="text-[10px] font-black text-brand-teal uppercase tracking-widest flex items-center gap-2">
                                         <Users className="w-3 h-3" /> Authentication
                                     </h6>
                                     <div className="space-y-4">
@@ -1378,7 +1378,7 @@ export default function UserManagementPage() {
                                                 <div
                                                     className={clsx(
                                                         "h-full transition-all duration-500",
-                                                        (usageMetrics.monthlyActiveUsers / 50000) * 100 >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                                                        (usageMetrics.monthlyActiveUsers / 50000) * 100 >= 80 ? "bg-brand-orange" : "bg-brand-teal"
                                                     )}
                                                     style={{ width: `${Math.min((usageMetrics.monthlyActiveUsers / 50000) * 100, 100)}%` }}
                                                 ></div>
@@ -1400,7 +1400,7 @@ export default function UserManagementPage() {
 
                                 {/* Storage Details */}
                                 <div className="space-y-4">
-                                    <h6 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                                    <h6 className="text-[10px] font-black text-brand-teal uppercase tracking-widest flex items-center gap-2">
                                         <Cloud className="w-3 h-3" /> Cloud Storage
                                     </h6>
                                     <div className="space-y-2">
@@ -1421,7 +1421,7 @@ export default function UserManagementPage() {
 
                                 {/* Hosting Details */}
                                 <div className="space-y-4">
-                                    <h6 className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                                    <h6 className="text-[10px] font-black text-brand-orange uppercase tracking-widest flex items-center gap-2">
                                         <LayoutGrid className="w-3 h-3" /> Hosting
                                     </h6>
                                     <div className="space-y-2">
@@ -1452,7 +1452,7 @@ export default function UserManagementPage() {
                                 <div className="space-y-8">
                                     <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
                                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
-                                            <Shield className="w-4 h-4 text-indigo-600" />
+                                            <Shield className="w-4 h-4 text-brand-purple" />
                                             Konfigurasi Sistem Global
                                         </h3>
                                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
@@ -1463,7 +1463,7 @@ export default function UserManagementPage() {
                                     {/* Login Page Customization */}
                                     <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
                                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
-                                            <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+                                            <LayoutDashboard className="w-4 h-4 text-brand-purple" />
                                             Login Page Customization
                                         </h3>
 
@@ -1473,7 +1473,7 @@ export default function UserManagementPage() {
                                                 <input
                                                     value={loginTitle}
                                                     onChange={(e) => setLoginTitle(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold"
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold"
                                                     placeholder="Welcome Back!"
                                                 />
                                             </div>
@@ -1483,7 +1483,7 @@ export default function UserManagementPage() {
                                                 <textarea
                                                     value={loginDesc}
                                                     onChange={(e) => setLoginDesc(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 min-h-[100px] leading-relaxed"
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple min-h-[100px] leading-relaxed"
                                                     placeholder="Deskripsi di bawah title..."
                                                 />
                                             </div>
@@ -1491,7 +1491,7 @@ export default function UserManagementPage() {
                                             <button
                                                 onClick={handleSaveLoginConfig}
                                                 disabled={savingSettings}
-                                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-indigo-100"
+                                                className="w-full py-4 bg-brand-purple hover:bg-brand-purple text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-brand-purple/20"
                                             >
                                                 {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PERUBAHAN LOGIN"}
                                             </button>

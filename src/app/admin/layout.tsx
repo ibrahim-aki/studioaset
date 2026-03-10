@@ -77,14 +77,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 {/* Sidebar */}
                 <aside className={clsx(
-                    "fixed inset-y-0 left-0 z-50 bg-indigo-950 text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:flex lg:flex-col shadow-2xl",
+                    "fixed inset-y-0 left-0 z-50 bg-[#1A0D3C] text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:flex lg:flex-col shadow-2xl",
                     isCollapsed ? "lg:w-20" : "lg:w-72",
                     sidebarOpen ? "translate-x-0 w-72" : "max-lg:-translate-x-full w-72 lg:translate-x-0"
                 )}>
                     {/* Toggle Button for Desktop */}
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="hidden lg:flex absolute -right-3 top-8 h-6 w-6 bg-indigo-600 rounded-full items-center justify-center text-white border-2 border-indigo-950 hover:bg-indigo-500 transition-all z-[61] shadow-lg hover:scale-110 active:scale-95"
+                        className="hidden lg:flex absolute -right-3 top-8 h-6 w-6 bg-brand-purple rounded-full items-center justify-center text-white border-2 border-[#1A0D3C] hover:bg-brand-purple/80 transition-all z-[61] shadow-lg hover:scale-110 active:scale-95"
                     >
                         {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
                     </button>
@@ -92,11 +92,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <div className="flex grow flex-col gap-y-5 overflow-y-auto overflow-x-hidden px-6 pb-4 scrollbar-hide">
                         <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5">
                             {!isCollapsed ? (
-                                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 truncate">
+                                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple truncate">
                                     Live Studio Admin
                                 </span>
                             ) : (
-                                <Shield className="h-8 w-8 text-blue-400 mx-auto" />
+                                <Shield className="h-8 w-8 text-brand-blue mx-auto" />
                             )}
                             <button className="lg:hidden text-gray-400 hover:text-white" onClick={() => setSidebarOpen(false)}>
                                 <X className="h-6 w-6" />
@@ -111,12 +111,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         <Link
                                             href="/super-admin"
                                             className={clsx(
-                                                "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-bold text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all border border-amber-500/30 mb-6 shadow-sm",
-                                                isCollapsed && "justify-center border-none bg-amber-500/10 px-0"
+                                                "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-bold text-brand-orange hover:text-white hover:bg-brand-orange/20 transition-all border border-brand-orange/30 mb-6 shadow-sm",
+                                                isCollapsed && "justify-center border-none bg-brand-orange/10 px-0"
                                             )}
                                             title={isCollapsed ? "Manajemen Sistem" : ""}
                                         >
-                                            <Shield className="h-6 w-6 shrink-0 text-amber-400 group-hover:rotate-12 transition-transform" />
+                                            <Shield className="h-6 w-6 shrink-0 text-brand-orange group-hover:rotate-12 transition-transform" />
                                             {!isCollapsed && <span>Manajemen Sistem</span>}
                                         </Link>
                                     )}
@@ -130,8 +130,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                         href={item.href}
                                                         className={clsx(
                                                             isActive
-                                                                ? "bg-indigo-900/50 text-white shadow-inner"
-                                                                : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
+                                                                ? "bg-white/15 text-white shadow-inner"
+                                                                : "text-white/60 hover:text-white hover:bg-white/10",
                                                             "group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all",
                                                             isCollapsed && "justify-center"
                                                         )}
@@ -139,14 +139,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                     >
                                                         <item.icon
                                                             className={clsx(
-                                                                isActive ? "text-white scale-110" : "text-indigo-300 group-hover:text-white group-hover:scale-110",
+                                                                isActive ? "text-white scale-110" : "text-white/50 group-hover:text-white group-hover:scale-110",
                                                                 "h-6 w-6 shrink-0 transition-all duration-300"
                                                             )}
                                                             aria-hidden="true"
                                                         />
                                                         {!isCollapsed && <span className="truncate">{item.name}</span>}
                                                         {isActive && !isCollapsed && (
-                                                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                                                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-blue shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
                                                         )}
                                                     </Link>
                                                 </li>
@@ -159,14 +159,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                 onClick={() => setIsProfileExpanded(!isProfileExpanded)}
                                                 className={clsx(
                                                     "w-full group flex items-center gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all",
-                                                    isProfileExpanded ? "bg-indigo-900/30 text-white" : "text-indigo-200 hover:text-white hover:bg-indigo-900/30",
+                                                    isProfileExpanded ? "bg-white/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5",
                                                     isCollapsed && "justify-center"
                                                 )}
                                                 title={isCollapsed ? "Profil Saya" : ""}
                                             >
                                                 <User className={clsx(
                                                     "h-6 w-6 shrink-0 transition-all duration-300",
-                                                    isProfileExpanded ? "text-white scale-110" : "text-indigo-300 group-hover:text-white"
+                                                    isProfileExpanded ? "text-white scale-110" : "text-white/50 group-hover:text-white"
                                                 )} />
                                                 {!isCollapsed && (
                                                     <>
@@ -181,10 +181,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                                             {/* Profile Expanded Content */}
                                             <div className={clsx(
-                                                "overflow-hidden transition-all duration-300 ease-in-out px-2",
+                                                "overflow-hidden transition-all duration-300 ease-in-out px-1.5",
                                                 isProfileExpanded ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"
                                             )}>
-                                                <div className="bg-indigo-900/20 rounded-xl p-2 space-y-1 border border-white/5">
+                                                <div className="bg-brand-purple/20 rounded-xl p-2 space-y-1 border border-white/5">
                                                     {!isCollapsed && (
                                                         <div className="px-2 py-2 mb-1 border-b border-white/5">
                                                             <div className="flex items-center gap-2 mb-1">
@@ -192,7 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                                 <span className="text-white text-xs truncate font-bold">{user?.name || "Admin"}</span>
                                                             </div>
                                                             {user?.locationName && (
-                                                                <span className="text-[10px] text-indigo-400 truncate block pl-3.5 italic">
+                                                                <span className="text-[10px] text-brand-orange truncate block pl-3.5 italic">
                                                                     {user.locationName}
                                                                 </span>
                                                             )}
@@ -201,15 +201,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                                                     <button
                                                         onClick={() => setIsPasswordModalOpen(true)}
-                                                        className="w-full text-left group flex items-center gap-x-3 rounded-lg p-2 text-xs font-medium text-indigo-200 hover:text-white hover:bg-white/10 transition-all"
+                                                        className={clsx(
+                                                            "w-full group flex items-center rounded-lg p-2 text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all",
+                                                            isCollapsed ? "justify-center" : "gap-x-3 text-left"
+                                                        )}
                                                     >
-                                                        <KeyRound className="h-4 w-4 shrink-0 text-indigo-400 group-hover:text-white" />
+                                                        <KeyRound className="h-4 w-4 shrink-0 text-white/40 group-hover:text-white" />
                                                         {!isCollapsed && <span>Ubah Password</span>}
                                                     </button>
 
                                                     <button
                                                         onClick={handleLogout}
-                                                        className="w-full text-left group flex items-center gap-x-3 rounded-lg p-2 text-xs font-medium text-rose-300 hover:text-white hover:bg-rose-500/20 transition-all"
+                                                        className={clsx(
+                                                            "w-full group flex items-center rounded-lg p-2 text-xs font-medium text-rose-300 hover:text-white hover:bg-rose-500/20 transition-all",
+                                                            isCollapsed ? "justify-center" : "gap-x-3 text-left"
+                                                        )}
                                                     >
                                                         <LogOut className="h-4 w-4 shrink-0 text-rose-400 group-hover:text-white" />
                                                         {!isCollapsed && <span>Keluar Aplikasi</span>}
@@ -225,7 +231,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {/* Footer / App Version could go here */}
                         {!isCollapsed && (
                             <div className="mt-auto px-2 py-4 border-t border-white/5">
-                                <p className="text-[10px] text-center text-indigo-500 font-medium uppercase tracking-widest opacity-50">
+                                <p className="text-[10px] text-center text-white/40 font-medium uppercase tracking-widest opacity-50">
                                     Studio Aset v2.0
                                 </p>
                             </div>

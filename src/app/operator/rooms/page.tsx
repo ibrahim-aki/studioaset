@@ -86,12 +86,12 @@ export default function OperatorRoomSelection() {
                 {/* Selector Lokasi: Dikunci jika ada shift aktif */}
                 {activeShift ? (
                     // Tampilkan badge lokasi yang dikunci (tidak bisa diubah)
-                    <div className="w-full bg-indigo-50 border border-indigo-200 rounded-2xl py-4 px-5 mb-4 flex items-center justify-between">
+                    <div className="w-full bg-brand-purple/10 border border-brand-purple/30 rounded-2xl py-4 px-5 mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-indigo-500" />
-                            <span className="text-sm font-bold text-indigo-800">{activeLocationName}</span>
+                            <MapPin className="w-4 h-4 text-brand-purple" />
+                            <span className="text-sm font-bold text-brand-purple">{activeLocationName}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-brand-purple/50 uppercase tracking-widest">
                             <Lock className="w-3 h-3" />
                             Lokasi Shift
                         </div>
@@ -102,7 +102,7 @@ export default function OperatorRoomSelection() {
                         <select
                             value={selectedLocationId}
                             onChange={(e) => setSelectedLocationId(e.target.value)}
-                            className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-5 pr-12 text-sm text-gray-900 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none"
+                            className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-5 pr-12 text-sm text-gray-900 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-purple transition-all appearance-none"
                         >
                             <option value="" disabled>-- Pilih Lokasi Cabang --</option>
                             {locations.map(loc => (
@@ -118,14 +118,14 @@ export default function OperatorRoomSelection() {
                         placeholder="Cari ruangan..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-5 pr-12 text-sm text-gray-900 font-medium placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                        className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-5 pr-12 text-sm text-gray-900 font-medium placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-purple transition-all"
                     />
                 </div>
             </div>
 
             <div className="space-y-4">
                 {loading ? (
-                    <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-purple-600" /></div>
+                    <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-brand-purple" /></div>
                 ) : filteredRooms.length === 0 ? (
                     <div className="text-center p-8 border-2 border-dashed border-gray-200 rounded-2xl">
                         <p className="text-gray-500 font-medium">Ruangan tidak ditemukan.</p>
@@ -138,7 +138,7 @@ export default function OperatorRoomSelection() {
                             className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-purple-200 group transition-all transform active:scale-[0.98]"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-100 to-blue-100 text-purple-600 group-hover:from-purple-500 group-hover:to-blue-500 group-hover:text-white transition-colors shadow-inner">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-100 to-blue-100 text-brand-purple group-hover:from-brand-purple group-hover:to-brand-blue group-hover:text-white transition-colors shadow-inner">
                                     <Video className="w-6 h-6" />
                                 </div>
                                 <div>
@@ -147,7 +147,7 @@ export default function OperatorRoomSelection() {
 
                                     {getRoomLastCheck(room.id) ? (
                                         <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-tight">
-                                            <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                                            <span className="flex items-center gap-1 text-brand-purple bg-purple-50 px-1.5 py-0.5 rounded">
                                                 <User className="w-2.5 h-2.5" />
                                                 {getRoomLastCheck(room.id)?.operatorName}
                                             </span>
@@ -161,7 +161,7 @@ export default function OperatorRoomSelection() {
                                     )}
                                 </div>
                             </div>
-                            <div className="text-gray-300 group-hover:text-purple-600 transition-colors">
+                            <div className="text-gray-300 group-hover:text-brand-purple transition-colors">
                                 <ArrowRight className="w-6 h-6" />
                             </div>
                         </Link>

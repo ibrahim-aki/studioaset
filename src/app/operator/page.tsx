@@ -64,7 +64,7 @@ export default function OperatorPage() {
     if (user?.role === "CLIENT_OPERATOR") {
         return (
             <div className="space-y-6">
-                <div className="bg-gradient-to-br from-indigo-900 to-purple-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+                <div className="bg-gradient-to-br from-[#1A0D3C] to-brand-purple rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
                     <div className="relative z-10">
                         <h1 className="text-2xl font-black tracking-tight">Halo, {user?.name || "Client Operator"}</h1>
                         <p className="opacity-80 mt-2 text-sm font-medium">Panel Khusus Pengecekan Barang Client</p>
@@ -78,15 +78,15 @@ export default function OperatorPage() {
                             <button
                                 key={loc.id}
                                 onClick={() => router.push(`/operator/rooms?locationId=${loc.id}`)}
-                                className="bg-white border border-gray-100 rounded-[2rem] p-6 flex items-center justify-between hover:border-indigo-500 hover:shadow-xl transition-all group"
+                                className="bg-white border border-gray-100 rounded-[2rem] p-6 flex items-center justify-between hover:border-brand-purple hover:shadow-xl transition-all group"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                    <div className="p-4 bg-brand-purple/10 rounded-2xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
                                         <MapPin className="w-6 h-6" />
                                     </div>
                                     <span className="font-black text-gray-900 text-lg">{loc.name}</span>
                                 </div>
-                                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
+                                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-brand-purple group-hover:bg-brand-purple/10 transition-all">
                                     <DoorOpen className="w-5 h-5" />
                                 </div>
                             </button>
@@ -99,7 +99,7 @@ export default function OperatorPage() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-gradient-to-br from-indigo-900 to-purple-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="bg-gradient-to-br from-brand-purple to-brand-purple rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
                 <div className="relative z-10">
                     <h1 className="text-2xl font-black tracking-tight">Halo, {user?.name || "Operator"}</h1>
                     <p className="opacity-80 mt-2 text-sm font-medium">Siap untuk melakukan pengecekan aset hari ini?</p>
@@ -110,10 +110,10 @@ export default function OperatorPage() {
             {!activeShift ? (
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full text-left bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all active:scale-[0.98] transform group"
+                    className="w-full text-left bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl hover:border-brand-purple transition-all active:scale-[0.98] transform group"
                 >
                     <div className="flex items-center space-x-6">
-                        <div className="bg-indigo-50 p-6 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner">
+                        <div className="bg-brand-purple/10 p-6 rounded-2xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all shadow-inner">
                             <DoorOpen className="w-10 h-10" />
                         </div>
                         <div>
@@ -124,22 +124,22 @@ export default function OperatorPage() {
                 </button>
             ) : (
                 <div className="space-y-4">
-                    <div className="bg-white border-2 border-indigo-100 rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
+                    <div className="bg-white border-2 border-brand-purple rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4">
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full border border-emerald-100 animate-pulse">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-teal/5 text-brand-teal text-[10px] font-black uppercase rounded-full border border-brand-teal/10 animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-teal"></span>
                                 Sedang Bertugas
                             </span>
                         </div>
 
                         <div className="flex flex-col gap-6">
                             <div className="flex items-center gap-6">
-                                <div className="bg-indigo-600 p-6 rounded-2xl text-white shadow-lg shadow-indigo-100">
+                                <div className="bg-brand-purple p-6 rounded-2xl text-white shadow-lg shadow-brand-purple">
                                     <Clock className="w-10 h-10" />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Sesi Aktif</h2>
-                                    <p className="text-sm text-indigo-600 font-bold uppercase tracking-widest mt-1">{activeShift.locationName}</p>
+                                    <p className="text-sm text-brand-purple font-bold uppercase tracking-widest mt-1">{activeShift.locationName}</p>
                                 </div>
                             </div>
 
@@ -157,7 +157,7 @@ export default function OperatorPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => router.push(`/operator/rooms?locationId=${activeShift.locationId}`)}
-                                    className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-100 text-sm uppercase tracking-widest"
+                                    className="flex-1 py-4 bg-brand-purple hover:bg-brand-purple text-white font-black rounded-2xl transition-all shadow-lg shadow-brand-purple text-sm uppercase tracking-widest"
                                 >
                                     Lanjut Checklist
                                 </button>
@@ -184,14 +184,14 @@ export default function OperatorPage() {
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-purple/5">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                                     <ClipboardCheck className="w-5 h-5" />
                                 </div>
                                 <div>
                                     <h3 className="font-extrabold text-gray-900 tracking-tight">Inisiasi Tugas</h3>
-                                    <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest">Detail Shift</p>
+                                    <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest">Detail Shift</p>
                                 </div>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white rounded-xl transition-colors text-gray-400">
@@ -237,7 +237,7 @@ export default function OperatorPage() {
                                             required
                                             value={edHour}
                                             onChange={(e) => setEdHour(e.target.value)}
-                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold appearance-none text-center"
+                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold appearance-none text-center"
                                         >
                                             <option value="">HH</option>
                                             {Array.from({ length: 24 }).map((_, i) => (
@@ -249,7 +249,7 @@ export default function OperatorPage() {
                                             required
                                             value={edMin}
                                             onChange={(e) => setEdMin(e.target.value)}
-                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold appearance-none text-center"
+                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold appearance-none text-center"
                                         >
                                             {Array.from({ length: 60 }).map((_, i) => (
                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
@@ -267,7 +267,7 @@ export default function OperatorPage() {
                                     required
                                     value={locationId}
                                     onChange={(e) => setLocationId(e.target.value)}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 font-bold appearance-none"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold appearance-none"
                                 >
                                     <option value="">-- Pilih Cabang --</option>
                                     {locations.map(loc => (
@@ -281,7 +281,7 @@ export default function OperatorPage() {
                                 <textarea
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-indigo-500 min-h-[100px]"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple min-h-[100px]"
                                     placeholder="Contoh: Bertugas menggantikan shift pagi..."
                                 />
                             </div>

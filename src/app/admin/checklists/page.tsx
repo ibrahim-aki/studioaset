@@ -75,7 +75,7 @@ export default function ChecklistHistoryPage() {
 
     const StatusIcon = ({ status }: { status: string }) => {
         if (status === "BAIK") return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-        if (status === "SERVIS") return <Clock className="w-5 h-5 text-blue-500" />;
+        if (status === "SERVIS") return <Clock className="w-5 h-5 text-brand-blue" />;
         return <AlertOctagon className="w-5 h-5 text-rose-500" />;
     };
 
@@ -120,7 +120,7 @@ export default function ChecklistHistoryPage() {
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <ClipboardList className="w-6 h-6 text-indigo-600" />
+                        <ClipboardList className="w-6 h-6 text-brand-purple" />
                         Riwayat Inspeksi & Laporan
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
@@ -130,7 +130,7 @@ export default function ChecklistHistoryPage() {
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-20"><Loader2 className="animate-spin w-8 h-8 text-blue-500" /></div>
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin w-8 h-8 text-brand-blue" /></div>
             ) : checklists.length === 0 ? (
                 <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
                     <ClipboardList className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -142,7 +142,7 @@ export default function ChecklistHistoryPage() {
                     {checklists.map((report) => (
                         <div key={report.id} className={clsx(
                             "bg-white rounded-lg shadow-sm border transition-all hover:border-gray-300 overflow-hidden",
-                            report.isRead === false ? "border-indigo-100 ring-1 ring-indigo-50" : "border-gray-100"
+                            report.isRead === false ? "border-brand-purple/20 ring-1 ring-brand-purple/10" : "border-gray-100"
                         )}>
                             {/* Header Card (Clickable) */}
                             <div
@@ -152,7 +152,7 @@ export default function ChecklistHistoryPage() {
                                 <div className="flex items-center gap-4">
                                     <div className={clsx(
                                         "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm",
-                                        report.isRead === false ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "bg-gray-50 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors"
+                                        report.isRead === false ? "bg-brand-purple text-white shadow-md shadow-brand-purple/30" : "bg-gray-50 text-gray-400 group-hover:bg-brand-purple/10 group-hover:text-brand-purple transition-colors"
                                     )}>
                                         {report.roomName.charAt(0)}
                                     </div>
@@ -162,14 +162,14 @@ export default function ChecklistHistoryPage() {
                                                 {report.roomName}
                                             </h3>
                                             {report.isRead === false && (
-                                                <span className="bg-indigo-600 text-[8px] font-black px-1.5 py-0.5 rounded text-white uppercase tracking-widest">Baru</span>
+                                                <span className="bg-brand-purple text-[8px] font-black px-1.5 py-0.5 rounded text-white uppercase tracking-widest">Baru</span>
                                             )}
                                             {getStatusSummary(report.items || [])}
                                             <RoomStatusBadge status={report.roomStatus || ""} />
                                         </div>
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
                                             <span className="flex items-center gap-1 leading-none"><Calendar className="w-2.5 h-2.5" /> {formatDate(report.timestamp)}</span>
-                                            <span className="flex items-center gap-1 leading-none text-indigo-400"><User className="w-2.5 h-2.5" /> {report.operatorName}</span>
+                                            <span className="flex items-center gap-1 leading-none text-brand-purple/50"><User className="w-2.5 h-2.5" /> {report.operatorName}</span>
                                             {report.locationName && (
                                                 <span className="flex items-center gap-1 leading-none text-gray-300"><MapPin className="w-2.5 h-2.5" /> {report.locationName}</span>
                                             )}
@@ -197,7 +197,7 @@ export default function ChecklistHistoryPage() {
                                                         <StatusIcon status={item.status} />
                                                         <Link
                                                             href={`/admin/assets?search=${encodeURIComponent(item.assetName)}&location=${report.locationId}`}
-                                                            className="font-bold text-gray-900 hover:text-blue-600 hover:underline transition-colors decoration-blue-400 decoration-2 underline-offset-4"
+                                                            className="font-bold text-gray-900 hover:text-brand-teal hover:underline transition-colors decoration-brand-blue decoration-2 underline-offset-4"
                                                         >
                                                             {item.assetName}
                                                         </Link>
@@ -208,7 +208,7 @@ export default function ChecklistHistoryPage() {
                                                         const targetLoc = targetRoom ? rawLocations.find(l => l.id === targetRoom.locationId) : null;
 
                                                         return (
-                                                            <span className="inline-flex items-center gap-1 mt-1 ml-8 rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 ring-1 ring-inset ring-purple-600/20">
+                                                            <span className="inline-flex items-center gap-1 mt-1 ml-8 rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 ring-1 ring-inset ring-brand-purple/20">
                                                                 <MapPin className="w-3 h-3" /> Dipindah ke: {isWarehouse ? "Gudang" : (targetRoom?.name || "Ruangan Lain")} {targetLoc ? `(${targetLoc.name})` : ""}
                                                             </span>
                                                         );

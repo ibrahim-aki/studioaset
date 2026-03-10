@@ -96,7 +96,7 @@ export default function LocationsPage() {
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <MapPin className="w-6 h-6 text-indigo-600" />
+                        <MapPin className="w-6 h-6 text-brand-purple" />
                         Lokasi Cabang Studio
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
@@ -120,7 +120,7 @@ export default function LocationsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {loading ? (
                     <div className="p-20 flex flex-col items-center justify-center gap-4">
-                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                        <Loader2 className="w-8 h-8 text-brand-purple animate-spin" />
                         <span className="text-sm font-medium text-gray-500">Memuat data lokasi...</span>
                     </div>
                 ) : locations.length === 0 ? (
@@ -130,7 +130,7 @@ export default function LocationsPage() {
                         </div>
                         <h3 className="text-lg font-bold text-gray-900">Data Kosong</h3>
                         <p className="text-gray-500 mt-1 mb-6">Belum ada data lokasi studio cabang yang terdaftar.</p>
-                        <button onClick={() => openModal()} className="text-purple-600 font-bold hover:underline text-sm uppercase tracking-widest">Tambah Sekarang</button>
+                        <button onClick={() => openModal()} className="text-brand-purple font-bold hover:underline text-sm uppercase tracking-widest">Tambah Sekarang</button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -172,7 +172,7 @@ export default function LocationsPage() {
                                                             <>
                                                                 <button
                                                                     onClick={() => openModal(loc)}
-                                                                    className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                                    className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors"
                                                                     title="Edit"
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />
@@ -226,7 +226,7 @@ export default function LocationsPage() {
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="Contoh: Jakarta Selatan"
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -236,7 +236,7 @@ export default function LocationsPage() {
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                     rows={4}
                                     placeholder="Jl. Nama Jalan No. 123, Kota..."
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm resize-none"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm resize-none"
                                 />
                             </div>
                             <div className="pt-4 flex justify-end gap-3">

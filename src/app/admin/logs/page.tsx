@@ -42,10 +42,10 @@ export default function AdminLogsPage() {
 
     const getLogIcon = (type: string) => {
         switch (type) {
-            case "AUTH": return <LogIn className="w-4 h-4 text-emerald-500" />;
-            case "MOVEMENT": return <Activity className="w-4 h-4 text-amber-500" />;
-            case "STATUS": return <ShieldCheck className="w-4 h-4 text-blue-500" />;
-            case "SYSTEM": return <Tag className="w-4 h-4 text-purple-500" />;
+            case "AUTH": return <LogIn className="w-4 h-4 text-brand-teal" />;
+            case "MOVEMENT": return <Activity className="w-4 h-4 text-brand-orange" />;
+            case "STATUS": return <ShieldCheck className="w-4 h-4 text-brand-blue" />;
+            case "SYSTEM": return <Tag className="w-4 h-4 text-brand-purple" />;
             default: return <Info className="w-4 h-4 text-gray-500" />;
         }
     };
@@ -66,15 +66,15 @@ export default function AdminLogsPage() {
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <History className="w-6 h-6 text-indigo-600" />
+                        <History className="w-6 h-6 text-brand-purple" />
                         Log Aktivitas Admin
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
                         Audit trail seluruh aktivitas manajemen sistem dan inventaris.
                     </p>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-brand-teal rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                    <span className="w-2 h-2 bg-brand-teal rounded-full animate-ping" />
                     Real-time Audit Active
                 </div>
             </div>
@@ -88,7 +88,7 @@ export default function AdminLogsPage() {
                         placeholder="Cari admin, kejadian, atau keterangan..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-purple outline-none transition-all shadow-sm"
                     />
                 </div>
                 <div className="relative">
@@ -96,7 +96,7 @@ export default function AdminLogsPage() {
                     <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm appearance-none"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-purple outline-none transition-all shadow-sm appearance-none"
                     >
                         <option value="ALL">Semua Tipe Aktivitas</option>
                         <option value="SYSTEM">Sistem & Master</option>
@@ -143,17 +143,17 @@ export default function AdminLogsPage() {
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <span className={clsx(
                                                     "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none shrink-0 tracking-tighter",
-                                                    log.type === "MOVEMENT" ? "text-amber-600 border-amber-100 bg-amber-50" :
-                                                        log.type === "STATUS" ? "text-blue-600 border-blue-100 bg-blue-50" :
-                                                            log.type === "AUTH" ? "text-emerald-600 border-emerald-100 bg-emerald-50" :
-                                                                log.type === "SYSTEM" ? "text-purple-600 border-purple-100 bg-purple-50" : "text-gray-400 border-gray-100 bg-gray-50"
+                                                    log.type === "MOVEMENT" ? "text-brand-orange border-amber-100 bg-amber-50" :
+                                                        log.type === "STATUS" ? "text-brand-teal border-blue-100 bg-blue-50" :
+                                                            log.type === "AUTH" ? "text-brand-teal border-emerald-100 bg-emerald-50" :
+                                                                log.type === "SYSTEM" ? "text-brand-purple border-purple-100 bg-purple-50" : "text-gray-400 border-gray-100 bg-gray-50"
                                                 )}>
                                                     {log.type}
                                                 </span>
                                                 <div className="flex items-center gap-2 truncate group-hover:whitespace-normal transition-all duration-300">
-                                                    <span className="font-bold text-gray-700 truncate group-hover:text-indigo-600 transition-colors" title={log.toValue}>{log.toValue}</span>
+                                                    <span className="font-bold text-gray-700 truncate group-hover:text-brand-purple transition-colors" title={log.toValue}>{log.toValue}</span>
                                                     {log.assetName && (
-                                                        <span className="text-indigo-400/70 font-bold uppercase flex items-center gap-1 shrink-0 italic">
+                                                        <span className="text-brand-purple/50/70 font-bold uppercase flex items-center gap-1 shrink-0 italic">
                                                             • {log.assetName}
                                                         </span>
                                                     )}
@@ -161,7 +161,7 @@ export default function AdminLogsPage() {
                                             </div>
                                         </td>
                                         <td className="px-2 py-1 text-center whitespace-nowrap">
-                                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md border border-gray-100 group-hover:bg-white group-hover:border-indigo-100 transition-all">
+                                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md border border-gray-100 group-hover:bg-white group-hover:border-brand-purple/20 transition-all">
                                                 <User className="w-2.5 h-2.5 text-gray-400" />
                                                 <span className="font-bold text-gray-600 uppercase tracking-tighter">
                                                     {log.operatorName.split(' ')[0]}
@@ -174,7 +174,7 @@ export default function AdminLogsPage() {
                                                 onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
                                                 className={clsx(
                                                     "text-gray-500 italic leading-relaxed cursor-pointer transition-all duration-300",
-                                                    expandedLogId === log.id ? "whitespace-normal bg-gray-50/80 p-1 rounded-md border border-gray-100 shadow-sm" : "truncate hover:text-indigo-600"
+                                                    expandedLogId === log.id ? "whitespace-normal bg-gray-50/80 p-1 rounded-md border border-gray-100 shadow-sm" : "truncate hover:text-brand-purple"
                                                 )}
                                                 title={expandedLogId === log.id ? "Klik untuk memperkecil" : (log.notes ? "Klik untuk melihat catatan lengkap" : "")}
                                             >

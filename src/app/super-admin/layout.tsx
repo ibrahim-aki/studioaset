@@ -30,7 +30,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-purple animate-spin" />
             </div>
         );
     }
@@ -50,7 +50,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-8">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                            <div className="w-8 h-8 bg-brand-purple rounded-lg flex items-center justify-center">
                                 <span className="text-white font-bold text-xs">SA</span>
                             </div>
                             <div>
@@ -66,10 +66,10 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                             onClick={() => setIsPasswordModalOpen(true)}
                             className="flex items-center gap-2 px-2 sm:px-3 py-1.5 hover:bg-gray-50 rounded-lg transition-colors group"
                         >
-                            <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            <div className="w-7 h-7 rounded-full bg-brand-purple/10 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
                                 <KeyRound className="w-4 h-4" />
                             </div>
-                            <span className="hidden sm:inline text-xs font-bold text-gray-600 group-hover:text-indigo-600 transition-colors">{user?.name || "User"}</span>
+                            <span className="hidden sm:inline text-xs font-bold text-gray-600 group-hover:text-brand-purple transition-colors">{user?.name || "User"}</span>
                         </button>
 
                         <button

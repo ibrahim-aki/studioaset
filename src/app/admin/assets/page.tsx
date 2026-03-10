@@ -638,7 +638,7 @@ function AssetsContent() {
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
-                        <Video className="w-6 h-6 text-indigo-600" />
+                        <Video className="w-6 h-6 text-brand-purple" />
                         Katalog Aset Master
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
@@ -651,7 +651,7 @@ function AssetsContent() {
                         onClick={() => setActiveTab("MASTER")}
                         className={clsx(
                             "px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
-                            activeTab === "MASTER" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                            activeTab === "MASTER" ? "bg-white text-brand-purple shadow-sm" : "text-gray-500 hover:text-gray-700"
                         )}
                     >
                         <Box className="w-3.5 h-3.5" />
@@ -683,7 +683,7 @@ function AssetsContent() {
                                 placeholder="Cari Nama, Kode, atau Posisi..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="block w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50/30 text-xs focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none"
+                                className="block w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50/30 text-xs focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-all outline-none"
                             />
                         </div>
 
@@ -697,8 +697,8 @@ function AssetsContent() {
                                         className={clsx(
                                             "flex items-center justify-center p-2 rounded-lg transition-all",
                                             isFilterMenuOpen || locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL"
-                                                ? "bg-indigo-600 text-white shadow-sm"
-                                                : "text-gray-500 hover:text-indigo-600 hover:bg-white"
+                                                ? "bg-brand-purple text-white shadow-sm"
+                                                : "text-gray-500 hover:text-brand-purple hover:bg-white"
                                         )}
                                         title="Filter Data"
                                     >
@@ -721,7 +721,7 @@ function AssetsContent() {
                                                         <select
                                                             value={locationFilter}
                                                             onChange={(e) => setLocationFilter(e.target.value)}
-                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-indigo-500 outline-none transition-all"
+                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
                                                         >
                                                             <option value="ALL">Semua Cabang</option>
                                                             {rawLocations.map(loc => (
@@ -734,7 +734,7 @@ function AssetsContent() {
                                                         <select
                                                             value={categoryFilter}
                                                             onChange={(e) => setCategoryFilter(e.target.value)}
-                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-indigo-500 outline-none transition-all"
+                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
                                                         >
                                                             <option value="ALL">Semua Kategori</option>
                                                             {categories.map(cat => (
@@ -747,7 +747,7 @@ function AssetsContent() {
                                                         <select
                                                             value={statusFilter}
                                                             onChange={(e) => setStatusFilter(e.target.value)}
-                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-indigo-500 outline-none transition-all"
+                                                            className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
                                                         >
                                                             <option value="ALL">Semua Kondisi</option>
                                                             <option value="BAIK">Baik</option>
@@ -760,7 +760,7 @@ function AssetsContent() {
                                                     </div>
                                                     <div className="pt-2 flex gap-2">
                                                         <button onClick={() => { setLocationFilter("ALL"); setCategoryFilter("ALL"); setStatusFilter("ALL"); }} className="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-50 rounded-lg">Reset</button>
-                                                        <button onClick={() => setIsFilterMenuOpen(false)} className="flex-1 py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-all">Terapkan</button>
+                                                        <button onClick={() => setIsFilterMenuOpen(false)} className="flex-1 py-2 bg-brand-purple text-white text-xs font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-all">Terapkan</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -770,7 +770,7 @@ function AssetsContent() {
                                 {canManageInfrastructure() && (
                                     <button
                                         onClick={() => setIsCategoryModalOpen(true)}
-                                        className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-white transition-all"
+                                        className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-purple hover:bg-white transition-all"
                                         title="Kelola Kategori"
                                     >
                                         <Tag className="w-4 h-4" />
@@ -782,12 +782,12 @@ function AssetsContent() {
                             <div className="flex items-center gap-1">
                                 <button
                                     onClick={handleExport}
-                                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                    className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all"
                                     title="Ekspor ke Excel"
                                 >
                                     <Download className="w-5 h-5" />
                                 </button>
-                                <label className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all cursor-pointer" title="Impor Data Excel">
+                                <label className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all cursor-pointer" title="Impor Data Excel">
                                     <Upload className="w-5 h-5" />
                                     <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImport} />
                                 </label>
@@ -796,7 +796,7 @@ function AssetsContent() {
                             {/* Add Button - Highlighted */}
                             <button
                                 onClick={() => openModal()}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 uppercase tracking-widest"
+                                className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-brand-purple/20 uppercase tracking-widest"
                                 title="Tambah Aset Baru"
                             >
                                 <Plus className="w-4 h-4" />
@@ -809,7 +809,7 @@ function AssetsContent() {
                     <div className="overflow-hidden">
                         {loading ? (
                             <div className="p-24 flex flex-col items-center justify-center gap-4">
-                                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                                <Loader2 className="w-8 h-8 text-brand-purple animate-spin" />
                                 <span className="text-sm font-medium text-gray-500">Memuat data aset...</span>
                             </div>
                         ) : filteredAssets.length === 0 ? (
@@ -821,7 +821,7 @@ function AssetsContent() {
                                 <p className="text-gray-500 mt-1 mb-6 text-sm">Coba sesuaikan kata kunci atau filter pencarian Anda.</p>
                                 <button
                                     onClick={() => { setSearchTerm(""); setLocationFilter("ALL"); setCategoryFilter("ALL"); setStatusFilter("ALL"); }}
-                                    className="text-indigo-600 font-bold hover:text-indigo-700 text-xs uppercase"
+                                    className="text-brand-purple font-bold hover:text-indigo-700 text-xs uppercase"
                                 >
                                     Bersihkan Pencarian
                                 </button>
@@ -878,7 +878,7 @@ function AssetsContent() {
                                                         <td className="py-1 px-2 text-[10px] text-gray-400 text-center">
                                                             {index + 1}
                                                         </td>
-                                                        <td className="py-1 px-2 text-[10px] font-mono font-bold text-indigo-600 whitespace-nowrap truncate">
+                                                        <td className="py-1 px-2 text-[10px] font-mono font-bold text-brand-purple whitespace-nowrap truncate">
                                                             {asset.assetCode || "-"}
                                                         </td>
                                                         <td className="py-1 px-2 truncate">
@@ -890,7 +890,7 @@ function AssetsContent() {
                                                         <td className="py-1 px-2 text-[10px] text-gray-400 whitespace-nowrap">
                                                             {displayDate}
                                                         </td>
-                                                        <td className="py-1 px-2 text-[10px] font-medium text-indigo-600 whitespace-nowrap truncate">
+                                                        <td className="py-1 px-2 text-[10px] font-medium text-brand-purple whitespace-nowrap truncate">
                                                             {umurAset}
                                                         </td>
                                                         <td className="py-1 px-2 text-[10px] text-gray-500 whitespace-nowrap truncate">
@@ -933,7 +933,7 @@ function AssetsContent() {
                                                                 onClick={() => setExpandedNoteId(expandedNoteId === asset.id ? null : asset.id)}
                                                                 className={clsx(
                                                                     "text-[10px] text-gray-400 font-medium cursor-pointer transition-all duration-300",
-                                                                    expandedNoteId === asset.id ? "whitespace-normal bg-gray-50/80 p-1 rounded-md border border-gray-100 shadow-sm" : "truncate hover:text-indigo-600"
+                                                                    expandedNoteId === asset.id ? "whitespace-normal bg-gray-50/80 p-1 rounded-md border border-gray-100 shadow-sm" : "truncate hover:text-brand-purple"
                                                                 )}
                                                                 title={expandedNoteId === asset.id ? "Klik untuk memperkecil" : (asset.conditionNotes ? "Klik untuk melihat catatan lengkap" : "")}
                                                             >
@@ -947,11 +947,11 @@ function AssetsContent() {
                                                                     "absolute right-full mr-2 z-50 flex items-center gap-0.5 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-lg border border-gray-100 shadow-lg transition-all duration-300 transform",
                                                                     activeActionMenu === asset.id ? "opacity-100 scale-100 translate-x-0" : "opacity-0 scale-95 translate-x-2 pointer-events-none"
                                                                 )}>
-                                                                    <button onClick={() => { openHistory(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Riwayat"><History className="w-3.5 h-3.5" /></button>
+                                                                    <button onClick={() => { openHistory(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors" title="Riwayat"><History className="w-3.5 h-3.5" /></button>
 
                                                                     {canManageAsset(asset.category) ? (
                                                                         <>
-                                                                            <button onClick={() => { openModal(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                                            <button onClick={() => { openModal(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
                                                                             <button onClick={() => { handleDeleteClick(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5" /></button>
                                                                         </>
                                                                     ) : (
@@ -963,7 +963,7 @@ function AssetsContent() {
 
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); setActiveActionMenu(activeActionMenu === asset.id ? null : asset.id); }}
-                                                                    className={`p-1 rounded-md transition-all z-40 ${activeActionMenu === asset.id ? 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}
+                                                                    className={`p-1 rounded-md transition-all z-40 ${activeActionMenu === asset.id ? 'bg-brand-purple/10 text-brand-purple ring-1 ring-brand-purple/30' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}
                                                                 >
                                                                     <MoreVertical className="w-3.5 h-3.5" />
                                                                 </button>
@@ -999,10 +999,10 @@ function AssetsContent() {
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <button onClick={() => openHistory(asset)} className="p-2 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-gray-50"><History className="w-5 h-5" /></button>
+                                                        <button onClick={() => openHistory(asset)} className="p-2 text-gray-400 hover:text-brand-purple rounded-lg hover:bg-gray-50"><History className="w-5 h-5" /></button>
                                                         {canManageAsset(asset.category) ? (
                                                             <>
-                                                                <button onClick={() => openModal(asset)} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-50"><Edit2 className="w-5 h-5" /></button>
+                                                                <button onClick={() => openModal(asset)} className="p-2 text-gray-400 hover:text-brand-teal rounded-lg hover:bg-gray-50"><Edit2 className="w-5 h-5" /></button>
                                                                 <button onClick={() => handleDeleteClick(asset)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-50"><Trash2 className="w-5 h-5" /></button>
                                                             </>
                                                         ) : (
@@ -1072,7 +1072,7 @@ function AssetsContent() {
                                                     <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{asset.category}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-4 text-[11px] font-mono font-bold text-indigo-600">{asset.assetCode}</td>
+                                            <td className="py-4 px-4 text-[11px] font-mono font-bold text-brand-purple">{asset.assetCode}</td>
                                             <td className="py-4 px-4">
                                                 <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium">
                                                     <User className="w-3 h-3 text-gray-400" />
@@ -1087,7 +1087,7 @@ function AssetsContent() {
                                             </td>
                                             <td className="py-4 px-4">
                                                 <div className="flex items-start gap-1.5">
-                                                    <AlertTriangle className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
+                                                    <AlertTriangle className="w-3 h-3 text-brand-orange mt-0.5 shrink-0" />
                                                     <span className="text-[11px] text-gray-600 italic">"{asset.reason}"</span>
                                                 </div>
                                             </td>
@@ -1129,7 +1129,7 @@ function AssetsContent() {
                                             required
                                             value={formData.locationId}
                                             onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all text-sm font-medium shadow-sm"
                                         >
                                             <option value="" disabled>Pilih Lokasi Cabang</option>
                                             {rawLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -1143,7 +1143,7 @@ function AssetsContent() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsAddingCategory(!isAddingCategory)}
-                                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter"
+                                                    className="text-[10px] font-bold text-brand-purple hover:text-indigo-700 bg-brand-purple/10 px-2 py-0.5 rounded uppercase tracking-tighter"
                                                 >
                                                     {isAddingCategory ? "Gunakan List" : "Tulis Baru"}
                                                 </button>
@@ -1161,7 +1161,7 @@ function AssetsContent() {
                                                 value={newCategoryName}
                                                 onChange={(e) => setNewCategoryName(e.target.value)}
                                                 placeholder="Masukkan nama kategori baru..."
-                                                className="w-full px-4 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/30 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm placeholder:text-indigo-300"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-brand-purple/30 bg-brand-purple/10/30 focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all text-sm font-medium shadow-sm placeholder:text-brand-purple/40"
                                                 autoFocus
                                             />
                                         ) : (
@@ -1169,7 +1169,7 @@ function AssetsContent() {
                                                 required
                                                 value={formData.category}
                                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium shadow-sm"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all text-sm font-medium shadow-sm"
                                             >
                                                 {categories
                                                     // ADMIN STUDIO tidak dapat menggunakan kategori Client Asset/Aset
@@ -1195,7 +1195,7 @@ function AssetsContent() {
                                             value={formData.assetCode}
                                             onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
                                             placeholder="Kosongkan untuk generate otomatis"
-                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-mono font-bold shadow-sm"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all text-sm font-mono font-bold shadow-sm"
                                         />
                                         <p className="text-[9px] text-gray-400 italic">Contoh: CAM-0001 atau SONY-A6400-01</p>
                                     </div>
@@ -1209,7 +1209,7 @@ function AssetsContent() {
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="Misal: Sony A6400"
                                             list="asset-names"
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm"
                                         />
                                         <datalist id="asset-names">
                                             {uniqueNames.map(name => <option key={name} value={name} />)}
@@ -1222,7 +1222,7 @@ function AssetsContent() {
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             placeholder="Detil spesifikasi atau keterangan..."
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm h-24 resize-none"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm h-24 resize-none"
                                         />
                                     </div>
 
@@ -1233,7 +1233,7 @@ function AssetsContent() {
                                             required
                                             value={formData.entryDate}
                                             onChange={(e) => setFormData({ ...formData, entryDate: e.target.value })}
-                                            className="block w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                                            className="block w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-all"
                                         />
                                     </div>
 
@@ -1245,7 +1245,7 @@ function AssetsContent() {
                                                 <select
                                                     value={formData.status}
                                                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm"
                                                 >
                                                     <option value="BAIK">Kondisi Prima (Baik)</option>
                                                     <option value="RUSAK">Perlu Perbaikan (Rusak)</option>
@@ -1259,7 +1259,7 @@ function AssetsContent() {
                                                 placeholder="Catatan hasil audit aset..."
                                                 value={formData.conditionNotes}
                                                 onChange={(e) => setFormData({ ...formData, conditionNotes: e.target.value })}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm h-20"
+                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm h-20"
                                             />
                                         </div>
                                     )}
@@ -1313,14 +1313,14 @@ function AssetsContent() {
                                     )}
 
                                     <div className="mt-4 grid grid-cols-2 gap-3">
-                                        <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
-                                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Umur Aset</p>
+                                        <div className="bg-brand-purple/10 p-3 rounded-xl border border-brand-purple/20">
+                                            <p className="text-[10px] font-black text-brand-purple uppercase tracking-widest mb-1">Umur Aset</p>
                                             <p className="text-sm font-bold text-gray-900">
                                                 {calculateAssetAge(historyAsset.entryDate || historyAsset.updatedAt)}
                                             </p>
                                         </div>
                                         <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Riwayat Servis</p>
+                                            <p className="text-[10px] font-black text-brand-teal uppercase tracking-widest mb-1">Riwayat Servis</p>
                                             <p className="text-sm font-bold text-gray-900">
                                                 {getAssetHistory(historyAsset.id).filter(log =>
                                                     log.toValue === 'SERVIS' ||
@@ -1348,7 +1348,7 @@ function AssetsContent() {
                                                 <div className="flex items-center gap-3">
                                                     <div className={clsx(
                                                         "p-2 rounded-md",
-                                                        h.type === 'MOVEMENT' ? 'bg-blue-50 text-blue-600' :
+                                                        h.type === 'MOVEMENT' ? 'bg-blue-50 text-brand-teal' :
                                                             h.type === 'SYSTEM' ? 'bg-gray-100 text-gray-600' :
                                                                 h.toValue === 'BAIK' ? 'bg-green-50 text-green-600' :
                                                                     h.toValue === 'RUSAK' ? 'bg-red-50 text-red-600' :
@@ -1469,13 +1469,13 @@ function AssetsContent() {
                         <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                    <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                                         <Tag className="w-5 h-5" />
                                     </div>
                                     <div>
                                         <h2 className="text-xl font-bold text-gray-900 tracking-tight">Kelola Kategori</h2>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest mt-0.5">Daftar Resmi Sistem</p>
+                                            <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest mt-0.5">Daftar Resmi Sistem</p>
                                             <button
                                                 onClick={async () => {
                                                     const allAssetCats = Array.from(new Set(rawAssets.map(a => a.category).filter(Boolean)));
@@ -1487,7 +1487,7 @@ function AssetsContent() {
                                                         alert("Semua kategori aset sudah terdaftar di sistem.");
                                                     }
                                                 }}
-                                                className="text-[9px] font-black text-white bg-indigo-500 hover:bg-indigo-600 px-1.5 py-0.5 rounded uppercase tracking-tighter transition-all"
+                                                className="text-[9px] font-black text-white bg-brand-purple hover:bg-brand-purple px-1.5 py-0.5 rounded uppercase tracking-tighter transition-all"
                                                 title="Sinkronisasi kategori dari data aset yang sudah ada"
                                             >
                                                 Sinkronisasi
@@ -1505,7 +1505,7 @@ function AssetsContent() {
                                     <input
                                         type="text"
                                         placeholder="Tambah kategori baru..."
-                                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-purple outline-none shadow-sm"
                                         onKeyDown={async (e) => {
                                             if (e.key === 'Enter') {
                                                 const val = e.currentTarget.value.trim();
@@ -1525,7 +1525,7 @@ function AssetsContent() {
                                                 input.value = "";
                                             }
                                         }}
-                                        className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm"
+                                        className="bg-brand-purple text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm"
                                     >
                                         Tambah
                                     </button>
@@ -1539,7 +1539,7 @@ function AssetsContent() {
                                         const isUsed = usageCount > 0;
 
                                         return (
-                                            <div key={cat} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-indigo-100 hover:bg-white transition-all shadow-sm">
+                                            <div key={cat} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-brand-purple/20 hover:bg-white transition-all shadow-sm">
                                                 <div className="flex items-center gap-3">
                                                     <div className={clsx(
                                                         "w-2 h-2 rounded-full",
@@ -1587,7 +1587,7 @@ function AssetsContent() {
 
 export default function AssetsPage() {
     return (
-        <Suspense fallback={<div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>}>
+        <Suspense fallback={<div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-brand-teal" /></div>}>
             <AssetsContent />
         </Suspense>
     );

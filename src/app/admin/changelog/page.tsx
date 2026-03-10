@@ -91,7 +91,7 @@ export default function ChangelogPage() {
                             {/* Dot on timeline */}
                             <div className={clsx(
                                 "absolute -left-[27px] top-1.5 w-2 h-2 rounded-full border-2 border-white transition-all",
-                                index === 0 ? "bg-emerald-500 animate-pulse" : "bg-gray-300"
+                                index === 0 ? "bg-brand-teal animate-pulse" : "bg-gray-300"
                             )} />
 
                             <div className={clsx(

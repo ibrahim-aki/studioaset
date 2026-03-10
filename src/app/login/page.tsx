@@ -146,7 +146,7 @@ export default function LoginPage() {
             <div
                 className="absolute inset-0 -z-10"
                 style={{
-                    background: "linear-gradient(to bottom, #0d0121 0%, #2e0a6e 25%, #7b2fa0 50%, #c85a15 75%, #e87020 100%)"
+                    background: "linear-gradient(to bottom, #1A0D3C 0%, #7C4DFF 40%, #FFB246 100%)"
                 }}
             />
 
@@ -194,7 +194,7 @@ export default function LoginPage() {
                 }}
             >
                 {/* LEFT SECTION */}
-                <div className="md:w-5/12 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-br from-blue-600/[0.005] to-purple-800/[0.005]">
+                <div className="md:w-5/12 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-br from-brand-teal/[0.005] to-purple-800/[0.005]">
                     <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">{welcomeTitle}</h2>
                     <p className="text-sm font-medium text-white/70 leading-relaxed mb-8 max-w-[220px] mx-auto">
                         {welcomeDescription}
@@ -236,7 +236,7 @@ export default function LoginPage() {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
+                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-brand-blue/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
                                             style={{
                                                 backgroundColor: 'transparent',
                                                 WebkitBoxShadow: '0 0 0 1000px transparent inset',
@@ -253,7 +253,7 @@ export default function LoginPage() {
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
+                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-brand-purple/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
                                             style={{
                                                 backgroundColor: 'transparent',
                                                 WebkitBoxShadow: '0 0 0 1000px transparent inset',
@@ -269,7 +269,7 @@ export default function LoginPage() {
                                     <label className="flex items-center gap-2 cursor-pointer group">
                                         <input
                                             type="checkbox"
-                                            className="w-4 h-4 rounded border border-white/20 bg-transparent appearance-none checked:bg-blue-500/40 transition-all cursor-pointer relative group-hover:border-blue-400"
+                                            className="w-4 h-4 rounded border border-white/20 bg-transparent appearance-none checked:bg-brand-blue/40 transition-all cursor-pointer relative group-hover:border-brand-blue"
                                             style={{
                                                 backgroundColor: 'transparent',
                                                 boxShadow: 'none'
@@ -319,9 +319,9 @@ export default function LoginPage() {
                                     disabled={loading}
                                     className="w-full py-4 px-4 rounded-full text-[12px] font-black uppercase tracking-[0.2em] text-white transition-all transform hover:scale-[1.05]"
                                     style={{
-                                        background: "linear-gradient(to right, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15))",
-                                        backdropFilter: "blur(2px)",
-                                        border: "1px solid rgba(255, 255, 255, 0.05)"
+                                        background: "linear-gradient(to right, #7C4DFF, #FFB246)",
+                                        boxShadow: "0 0 20px rgba(124, 77, 255, 0.4)",
+                                        border: "1px solid rgba(255, 255, 255, 0.2)"
                                     }}
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "SIGN IN"}
