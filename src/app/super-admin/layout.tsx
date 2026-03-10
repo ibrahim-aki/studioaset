@@ -59,15 +59,6 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                             </div>
                         </div>
 
-                        <div className="hidden md:flex items-center gap-1">
-                            <button
-                                onClick={() => router.push("/super-admin")}
-                                className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <span className="w-1 h-1 rounded-full bg-indigo-600"></span>
-                                DASHBOARD UTAMA
-                            </button>
-                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-4">
@@ -99,14 +90,6 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                     </div>
                 </div>
 
-                <div className="mt-3 flex md:hidden items-center gap-1 overflow-x-auto pb-1 no-scrollbar border-t border-gray-50 pt-3">
-                    <button
-                        onClick={() => router.push("/super-admin")}
-                        className="whitespace-nowrap px-3 py-2 text-[10px] font-black text-indigo-600 bg-indigo-50 rounded-xl transition-all"
-                    >
-                        DASHBOARD UTAMA
-                    </button>
-                </div>
             </nav>
             <main className="">
                 {children}

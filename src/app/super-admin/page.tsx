@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
@@ -503,7 +503,7 @@ function AddCompanyModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
 export default function UserManagementPage() {
     const [view, setView] = useState<"companies" | "management">("companies");
     const [selectedCompany, setSelectedCompany] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<"users" | "logs" | "settings" | "dashboard">("dashboard");
+    const [activeTab, setActiveTab] = useState<"users" | "logs" | "settings" | "dashboard" | "cloud">("dashboard");
     const [users, setUsers] = useState<UserData[]>([]);
     const [checklists, setChecklists] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -515,6 +515,9 @@ export default function UserManagementPage() {
     const [loginTitle, setLoginTitle] = useState("Welcome Back!");
     const [loginDesc, setLoginDesc] = useState("Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
     const [savingSettings, setSavingSettings] = useState(false);
+    const [cloudStats, setCloudStats] = useState({ users: 0, companies: 0, assets: 0, logs: 0 });
+    const [statsLoading, setStatsLoading] = useState(false);
+    const [usageMetrics, setUsageMetrics] = useState({ dailyWrites: 0, monthlyActiveUsers: 0, dailyReadsEstimate: 0 });
 
     const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, rooms, assets } = useLocalDb();
 
@@ -562,6 +565,42 @@ export default function UserManagementPage() {
     useEffect(() => {
         setChecklists(contextChecklists);
     }, [contextChecklists]);
+
+    useEffect(() => {
+        // Global Cloud Health Listener (when no specific company selected)
+        if (!selectedCompany) {
+            setStatsLoading(true);
+            const unsubs = [
+                onSnapshot(collection(db, "users"), snap => setCloudStats(prev => ({ ...prev, users: snap.size }))),
+                onSnapshot(collection(db, "companies"), snap => setCloudStats(prev => ({ ...prev, companies: snap.size }))),
+                onSnapshot(collection(db, "assets"), snap => setCloudStats(prev => ({ ...prev, assets: snap.size }))),
+                onSnapshot(collection(db, "assetLogs"), snap => {
+                    setCloudStats(prev => ({ ...prev, logs: snap.size }));
+
+                    // Calculate Usage Analytics
+                    const now = new Date();
+                    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+                    const allLogs = snap.docs.map(doc => doc.data());
+                    const todayLogs = allLogs.filter(log => log.timestamp && new Date(log.timestamp).getTime() >= startOfToday);
+                    const monthLogs = allLogs.filter(log => log.timestamp && new Date(log.timestamp).getTime() >= startOfMonth);
+
+                    // Unique users this month (MAU Estimate)
+                    const uniqueUsersThisMonth = new Set(monthLogs.map(log => log.operatorName)).size;
+
+                    setUsageMetrics({
+                        dailyWrites: todayLogs.length,
+                        monthlyActiveUsers: uniqueUsersThisMonth,
+                        dailyReadsEstimate: todayLogs.length * 5 // Rough estimate: each write usually triggers several reads for lists/syncs
+                    });
+
+                    setStatsLoading(false);
+                })
+            ];
+            return () => unsubs.forEach(unsub => unsub());
+        }
+    }, [selectedCompany?.id]);
 
     const handleRoleChange = async (userId: string, newRole: string) => {
         try {
@@ -660,12 +699,12 @@ export default function UserManagementPage() {
                         <button
                             onClick={() => {
                                 setView("management");
-                                setActiveTab("settings");
+                                setActiveTab("cloud");
                                 setSelectedCompany(null);
                             }}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
+                            className="bg-gray-900 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-black transition-all shadow-lg shadow-gray-200 flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
                         >
-                            <Settings2 className="w-4 h-4" /> PENGATURAN LOGIN
+                            <Settings2 className="w-4 h-4" /> SYSTEM
                         </button>
                         <button
                             onClick={() => setIsAddCompanyOpen(true)}
@@ -829,6 +868,7 @@ export default function UserManagementPage() {
                             { id: "dashboard", name: "Monitor Dashboard", icon: LayoutDashboard, show: !!selectedCompany },
                             { id: "users", name: "Tim & Akses", icon: Users, show: !!selectedCompany },
                             { id: "logs", name: "Audit Log", icon: History, show: !!selectedCompany },
+                            { id: "cloud", name: "Cloud Health", icon: Cloud, show: !selectedCompany },
                             { id: "settings", name: "System", icon: Settings2, show: true }
                         ].filter(t => t.show).map((tab) => (
                             <button
@@ -1127,6 +1167,283 @@ export default function UserManagementPage() {
                     </div>
                 )}
 
+                {activeTab === "cloud" && !selectedCompany && (
+                    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                        {/* Summary Header */}
+                        <div className="bg-indigo-950 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/5">
+                            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                                <div>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-full border border-blue-500/30 text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-6">
+                                        <Activity className="w-3 h-3 animate-pulse" /> Global System Infrastructure
+                                    </div>
+                                    <h3 className="text-4xl font-black mb-4 tracking-tighter leading-none">Cloud Resource <br /><span className="text-blue-400">Inventory Monitoring</span></h3>
+                                    <p className="text-sm text-indigo-200/70 leading-relaxed max-w-md">
+                                        Memantau konsumsi database secara real-time. Firebase Spark Plan memiliki batas limit, pastikan data seperti log tetap terjaga.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10">
+                                        <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Total Users</p>
+                                        <p className="text-3xl font-black">{cloudStats.users}</p>
+                                    </div>
+                                    <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10">
+                                        <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Total Klien</p>
+                                        <p className="text-3xl font-black">{cloudStats.companies}</p>
+                                    </div>
+                                    <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 lg:col-span-2">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-[10px] font-black text-amber-300 uppercase tracking-widest leading-none">Aset & Logs Terdata</p>
+                                            <span className="text-[9px] font-bold text-gray-400">{cloudStats.assets + cloudStats.logs} Docs</span>
+                                        </div>
+                                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${Math.min(((cloudStats.assets + cloudStats.logs) / 50000) * 100, 100)}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <Cloud className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 pointer-events-none" />
+                        </div>
+
+                        {/* Quota Banners */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Read Quota Card */}
+                            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm relative group overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform">
+                                    <Gauge className="w-16 h-16 text-indigo-600" />
+                                </div>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <Zap className="w-3 h-3 text-amber-500" /> Read Threshold
+                                </h4>
+                                <div className="flex items-baseline gap-2 mb-2">
+                                    <span className="text-3xl font-black text-gray-900">50,000</span>
+                                    <span className="text-xs font-bold text-gray-400">/ Day</span>
+                                </div>
+                                <p className="text-[11px] text-gray-500 leading-relaxed">
+                                    Batas pembacaan dokumen harian versi Gratis. Disarankan optimasi snapshot listener.
+                                </p>
+                            </div>
+
+                            {/* Storage Warning Card */}
+                            <div className={clsx(
+                                "border rounded-3xl p-8 shadow-sm relative group transition-all",
+                                cloudStats.logs > 10000
+                                    ? "bg-rose-50 border-rose-100 animate-pulse"
+                                    : "bg-white border-gray-100"
+                            )}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h4 className={clsx(
+                                        "text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2",
+                                        cloudStats.logs > 10000 ? "text-rose-600" : "text-gray-400"
+                                    )}>
+                                        <ShieldAlert className="w-3 h-3" /> System Logs Safety
+                                    </h4>
+                                    {cloudStats.logs > 10000 && (
+                                        <span className="px-2 py-0.5 bg-rose-600 text-white text-[8px] font-black rounded-full animate-bounce">WARNING</span>
+                                    )}
+                                </div>
+                                <div className="flex items-baseline gap-2 mb-2">
+                                    <span className={clsx("text-3xl font-black", cloudStats.logs > 10000 ? "text-rose-700" : "text-gray-900")}>
+                                        {cloudStats.logs.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs font-bold text-gray-400">Entries</span>
+                                </div>
+                                <p className={clsx("text-[11px] leading-relaxed", cloudStats.logs > 10000 ? "text-rose-600 font-medium" : "text-gray-500")}>
+                                    {cloudStats.logs > 10000
+                                        ? "⚠️ Jumlah log melebihi batas aman (10k). Disarankan segera lakukan pembersihan log lama agar performa tidak menurun."
+                                        : "Status Log saat ini dalam kondisi optimal dan di bawah ambang batas pembersihan."
+                                    }
+                                </p>
+                            </div>
+
+                            {/* Database Size Card */}
+                            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <Box className="w-3 h-3 text-indigo-500" /> Database Cap
+                                </h4>
+                                <div className="flex items-baseline gap-2 mb-2">
+                                    <span className="text-3xl font-black text-gray-900">1.0</span>
+                                    <span className="text-xs font-bold text-gray-400">GB</span>
+                                </div>
+                                <p className="text-[11px] text-gray-500 leading-relaxed">
+                                    Total kapasitas penyimpanan Spark Plan. Includes all metadata and indices.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Action Banner */}
+                        {cloudStats.logs > 10000 && (
+                            <div className="bg-white border-2 border-dashed border-rose-200 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-rose-100/50">
+                                <div className="flex items-start gap-5">
+                                    <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 shrink-0">
+                                        <AlertTriangle className="w-7 h-7" />
+                                    </div>
+                                    <div>
+                                        <h5 className="text-lg font-black text-gray-900 leading-none mb-2">Optimization Required</h5>
+                                        <p className="text-xs text-gray-500 max-w-xl leading-relaxed">
+                                            Aplikasi mendeteksi bahwa koleksi <span className="font-bold text-gray-900">assetLogs</span> sudah mulai membengkak. Pada Firebase Free Tier, disarankan untuk melakukan "Log Trimming" (hapus log &gt; 30 hari) untuk menghindari biaya tak terduga jika berpindah plan atau lambatnya query audit.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={`https://console.firebase.google.com/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/firestore/usage`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-8 py-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-200"
+                                >
+                                    Buka Firebase Console
+                                </a>
+                            </div>
+                        )}
+
+                        {!statsLoading && cloudStats.logs <= 10000 && (
+                            <div className="bg-emerald-50 border border-emerald-100 rounded-[2.5rem] p-8 flex items-center gap-6">
+                                <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shrink-0">
+                                    <CheckCircle2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h5 className="text-sm font-black text-emerald-900 uppercase tracking-widest leading-none mb-1">System is healthy</h5>
+                                    <p className="text-[10px] text-emerald-600 font-medium">Resources are being used efficiently within the Free Tier limits.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Quota Reference Center */}
+                        <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                    <Info className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h5 className="text-sm font-black text-gray-900 uppercase tracking-widest leading-none mb-1">Quota Reference Center</h5>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Panduan Batas Penggunaan Firebase Spark Plan (Gratis)</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                {/* Firestore Details */}
+                                <div className="space-y-4">
+                                    <h6 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                        <Database className="w-3 h-3" /> Firestore DB
+                                    </h6>
+                                    <div className="space-y-4">
+                                        {[
+                                            { label: "Reads", val: usageMetrics.dailyReadsEstimate, limit: 50000, type: "Daily" },
+                                            { label: "Writes", val: usageMetrics.dailyWrites, limit: 20000, type: "Daily" }
+                                        ].map((item, i) => {
+                                            const percent = (item.val / item.limit) * 100;
+                                            return (
+                                                <div key={i} className="space-y-2">
+                                                    <div className="flex items-center justify-between text-[10px] font-bold">
+                                                        <span className="text-gray-400">{item.label}</span>
+                                                        <span className="text-gray-900">{item.val.toLocaleString()} / {item.limit / 1000}k</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={clsx(
+                                                                "h-full transition-all duration-500",
+                                                                percent >= 80 ? "bg-amber-500" : percent >= 95 ? "bg-rose-600" : "bg-indigo-500"
+                                                            )}
+                                                            style={{ width: `${Math.min(percent, 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">Resets: Midnight</p>
+                                                </div>
+                                            );
+                                        })}
+                                        <div className="pt-2 border-t border-gray-50">
+                                            <div className="flex items-center justify-between text-[9px] mb-1">
+                                                <span className="text-gray-400 font-bold">DELETES</span>
+                                                <span className="text-gray-900 font-bold">20k / day</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[9px]">
+                                                <span className="text-gray-400 font-bold">STORAGE</span>
+                                                <span className="text-gray-900 font-bold">1 GB</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Auth Details */}
+                                <div className="space-y-4">
+                                    <h6 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                        <Users className="w-3 h-3" /> Authentication
+                                    </h6>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-[10px] font-bold">
+                                                <span className="text-gray-400">Monthly Active (MAU)</span>
+                                                <span className="text-gray-900">{usageMetrics.monthlyActiveUsers} / 50k</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                                                <div
+                                                    className={clsx(
+                                                        "h-full transition-all duration-500",
+                                                        (usageMetrics.monthlyActiveUsers / 50000) * 100 >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                                                    )}
+                                                    style={{ width: `${Math.min((usageMetrics.monthlyActiveUsers / 50000) * 100, 100)}%` }}
+                                                ></div>
+                                            </div>
+                                            <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">Resets: 1st of Month</p>
+                                        </div>
+                                        <div className="pt-2 border-t border-gray-50 space-y-2">
+                                            <div className="flex items-center justify-between text-[9px]">
+                                                <span className="text-gray-400 font-bold">PHONE AUTH</span>
+                                                <span className="text-gray-900 font-bold">10k / Mo</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[9px]">
+                                                <span className="text-gray-400 font-bold">PASSWORD</span>
+                                                <span className="text-gray-900 font-bold">Unlimited</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Storage Details */}
+                                <div className="space-y-4">
+                                    <h6 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                                        <Cloud className="w-3 h-3" /> Cloud Storage
+                                    </h6>
+                                    <div className="space-y-2">
+                                        {[
+                                            { label: "Total Storage", val: "5 GB" },
+                                            { label: "Download", val: "1 GB / day" },
+                                            { label: "Upload Opt", val: "20k / day" },
+                                            { label: "Download Opt", val: "50k / day" }
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex items-center justify-between text-[11px] border-b border-gray-50 pb-1.5">
+                                                <span className="text-gray-400 font-medium">{item.label}</span>
+                                                <span className="text-gray-900 font-bold">{item.val}</span>
+                                            </div>
+                                        ))}
+                                        <p className="text-[8px] text-gray-300 italic mt-2">*Usage based on file uploads</p>
+                                    </div>
+                                </div>
+
+                                {/* Hosting Details */}
+                                <div className="space-y-4">
+                                    <h6 className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                                        <LayoutGrid className="w-3 h-3" /> Hosting
+                                    </h6>
+                                    <div className="space-y-2">
+                                        {[
+                                            { label: "Storage", val: "10 GB" },
+                                            { label: "Data Transfer", val: "360 MB / day" },
+                                            { label: "Custom Domain", val: "Free SSL" },
+                                            { label: "Preview URLs", val: "Disabled" }
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex items-center justify-between text-[11px] border-b border-gray-50 pb-1.5">
+                                                <span className="text-gray-400 font-medium">{item.label}</span>
+                                                <span className="text-gray-900 font-bold">{item.val}</span>
+                                            </div>
+                                        ))}
+                                        <p className="text-[8px] text-gray-300 italic mt-2">*Updated daily by Firebase</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {activeTab === "settings" && (
                     <div id="super-admin-settings-content" className="space-y-8 animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -1149,7 +1466,7 @@ export default function UserManagementPage() {
                                             <LayoutDashboard className="w-4 h-4 text-indigo-600" />
                                             Login Page Customization
                                         </h3>
-                                        
+
                                         <div className="space-y-6">
                                             <div>
                                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Welcome Title</label>
