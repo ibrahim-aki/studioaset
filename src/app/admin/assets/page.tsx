@@ -712,8 +712,11 @@ function AssetsContent() {
 
                                     {isFilterMenuOpen && (
                                         <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setIsFilterMenuOpen(false)}></div>
-                                            <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 p-6">
+                                            {/* Backdrop: Darker on mobile for focus, transparent on desktop */}
+                                            <div className="fixed inset-0 z-[90] bg-gray-900/20 md:bg-transparent" onClick={() => setIsFilterMenuOpen(false)}></div>
+
+                                            {/* Menu: Fixed center on mobile, Absolute dropdown on desktop */}
+                                            <div className="fixed inset-x-4 top-[15%] md:absolute md:inset-auto md:right-0 md:top-full mt-2 w-auto md:w-72 bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 z-[100] p-6 animate-in fade-in zoom-in-95 duration-200">
                                                 <div className="space-y-4">
                                                     <h3 className="text-sm font-bold text-gray-900">Saring Aset</h3>
                                                     <div>
@@ -828,26 +831,26 @@ function AssetsContent() {
                             </div>
                         ) : (
                             <>
-                                {/* Desktop Table - Minimalist List Style */}
-                                <div className="hidden md:block overflow-hidden">
+                                {/* Desktop Table - Sticky Header & Scrollable Body */}
+                                <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] custom-scrollbar border border-gray-100 rounded-xl bg-white shadow-sm">
                                     <table className="w-full border-collapse table-fixed">
-                                        <thead>
-                                            <tr className="text-gray-400">
-                                                <th scope="col" className="py-2 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[40px]">No</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px]">Kode</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[180px]">Identitas Aset</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[110px]">Kategori</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px]">Tgl Masuk</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[75px]">Umur Aset</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px]">Cabang</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px]">Ruangan</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px]">Servis</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[80px]">Kondisi</th>
-                                                <th scope="col" className="py-2 px-2 text-left text-[9px] font-bold uppercase tracking-wider">Catatan</th>
-                                                <th scope="col" className="relative py-2 px-4 text-right text-[9px] font-bold uppercase tracking-wider w-[60px]">Aksi</th>
+                                        <thead className="sticky top-0 z-[60] border-b-2 border-gray-200">
+                                            <tr className="text-gray-500">
+                                                <th scope="col" className="py-3 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[40px] bg-gray-100">No</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Kode</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[180px] bg-gray-100">Identitas Aset</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[110px] bg-gray-100">Kategori</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px] bg-gray-100">Tgl Masuk</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[75px] bg-gray-100">Umur Aset</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Cabang</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Ruangan</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px] bg-gray-100">Servis</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[80px] bg-gray-100">Kondisi</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider bg-gray-100">Catatan</th>
+                                                <th scope="col" className="relative py-3 px-4 text-right text-[9px] font-bold uppercase tracking-wider w-[60px] bg-gray-100">Aksi</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-gray-50">
                                             {filteredAssets.map((asset, index) => {
                                                 const roomAsset = rawRoomAssets.find(ra => ra.assetId === asset.id);
                                                 const currentRoom = rawRooms.find(r => r.id === roomAsset?.roomId);
@@ -944,7 +947,7 @@ function AssetsContent() {
                                                             <div className="flex items-center justify-end relative">
                                                                 {/* Floating Menu - Melayang di atas kolom catatan tanpa menggeser layout */}
                                                                 <div className={clsx(
-                                                                    "absolute right-full mr-2 z-50 flex items-center gap-0.5 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-lg border border-gray-100 shadow-lg transition-all duration-300 transform",
+                                                                    "absolute right-full mr-2 z-[70] flex items-center gap-0.5 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-lg border border-gray-100 shadow-xl transition-all duration-300 transform",
                                                                     activeActionMenu === asset.id ? "opacity-100 scale-100 translate-x-0" : "opacity-0 scale-95 translate-x-2 pointer-events-none"
                                                                 )}>
                                                                     <button onClick={() => { openHistory(asset); setActiveActionMenu(null); }} className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors" title="Riwayat"><History className="w-3.5 h-3.5" /></button>

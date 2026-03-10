@@ -184,7 +184,7 @@ export default function LoginPage() {
 
             {/* ── Glass Card ── */}
             <div
-                className="max-w-2xl w-full flex flex-col md:flex-row rounded-[2.5rem] relative z-10 overflow-hidden"
+                className="max-w-2xl w-full flex flex-col md:flex-row rounded-[1.5rem] relative z-10 overflow-hidden"
                 style={{
                     background: "rgba(255, 255, 255, 0.001)",
                     backdropFilter: "blur(16px) saturate(110%)",
@@ -208,7 +208,7 @@ export default function LoginPage() {
                 <div className="md:w-7/12 p-8 md:p-12 relative">
                     {displayMessage ? (
                         <div className="h-full flex flex-col justify-center items-center space-y-6">
-                            <div className="p-8 bg-white/5 border border-white/10 rounded-3xl text-center w-full max-w-sm">
+                            <div className="p-8 bg-white/5 border border-white/10 rounded-2xl text-center w-full max-w-sm">
                                 <ShieldAlert className="w-7 h-7 text-rose-500 mx-auto mb-6" />
                                 <p className="text-white/90 font-medium leading-relaxed text-sm">
                                     {displayMessage}
@@ -236,7 +236,7 @@ export default function LoginPage() {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-brand-blue/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
+                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-brand-blue/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
                                             style={{
                                                 backgroundColor: 'transparent',
                                                 WebkitBoxShadow: '0 0 0 1000px transparent inset',
@@ -253,7 +253,7 @@ export default function LoginPage() {
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-brand-purple/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
+                                            className="block w-full pl-6 pr-12 py-4 bg-transparent border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-brand-purple/30 focus:border-white/40 hover:bg-white/[0.03] hover:border-white/30 transition-all text-sm font-medium"
                                             style={{
                                                 backgroundColor: 'transparent',
                                                 WebkitBoxShadow: '0 0 0 1000px transparent inset',
@@ -317,13 +317,14 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full py-4 px-4 rounded-full text-[12px] font-black uppercase tracking-[0.2em] text-white transition-all transform hover:scale-[1.05]"
+                                    className="w-full py-4 px-4 rounded-xl text-[12px] font-black uppercase tracking-[0.3em] text-white transition-all transform hover:translate-y-[-2px] active:scale-[0.98] relative overflow-hidden group/btn shadow-[0_10px_20px_-10px_rgba(124,77,255,0.5)] border border-white/20"
                                     style={{
-                                        background: "linear-gradient(to right, #7C4DFF, #FFB246)",
-                                        boxShadow: "0 0 20px rgba(124, 77, 255, 0.4)",
-                                        border: "1px solid rgba(255, 255, 255, 0.2)"
+                                        background: "linear-gradient(135deg, rgba(124, 77, 255, 0.4) 0%, rgba(58, 190, 249, 0.4) 100%)",
+                                        backdropFilter: "blur(8px)",
+                                        WebkitBackdropFilter: "blur(8px)",
                                     }}
                                 >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "SIGN IN"}
                                 </button>
                             </form>
