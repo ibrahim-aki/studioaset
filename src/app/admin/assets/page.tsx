@@ -692,22 +692,21 @@ function AssetsContent() {
 
                             {/* Action Group: Filters & Buttons */}
                             <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-between md:justify-end">
-                                {/* Filter & Tag (Category Management) */}
-                                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                                {/* Left Side Group (Mobile): Filter & Category */}
+                                <div className="flex items-center gap-1.5 shrink-0">
                                     <div className="relative">
                                         <button
                                             onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
                                             className={clsx(
-                                                "flex items-center justify-center p-2 rounded-lg transition-all",
+                                                "flex items-center justify-center w-10 h-10 rounded-xl transition-all shadow-sm border",
                                                 isFilterMenuOpen || locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL"
-                                                    ? "bg-brand-purple text-white shadow-sm"
-                                                    : "text-gray-500 hover:text-brand-purple hover:bg-white"
+                                                    ? "bg-brand-purple text-white border-brand-purple"
+                                                    : "bg-white text-gray-500 border-gray-100 hover:border-brand-purple/50"
                                             )}
-                                            title="Filter Data"
                                         >
                                             <Filter className="w-4 h-4" />
                                             {(locationFilter !== "ALL" || categoryFilter !== "ALL" || statusFilter !== "ALL") && (
-                                                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-bold bg-rose-500 text-white rounded-full border border-white">
+                                                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-[16px] px-1 text-[8px] font-bold bg-rose-500 text-white rounded-full border border-white">
                                                     {(locationFilter !== "ALL" ? 1 : 0) + (categoryFilter !== "ALL" ? 1 : 0) + (statusFilter !== "ALL" ? 1 : 0)}
                                                 </span>
                                             )}
@@ -715,10 +714,7 @@ function AssetsContent() {
 
                                         {isFilterMenuOpen && (
                                             <>
-                                                {/* Backdrop: Darker on mobile for focus, transparent on desktop */}
                                                 <div className="fixed inset-0 z-[90] bg-gray-900/40 md:bg-transparent" onClick={() => setIsFilterMenuOpen(false)}></div>
-
-                                                {/* Menu: Fixed center on mobile, Absolute dropdown on desktop */}
                                                 <div className="fixed inset-x-4 top-[20%] md:absolute md:inset-auto md:right-0 md:top-full mt-2 w-auto md:w-72 bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 z-[100] p-6 animate-in fade-in zoom-in-95 duration-200">
                                                     <div className="space-y-4">
                                                         <h3 className="text-sm font-bold text-gray-900">Saring Aset</h3>
@@ -773,10 +769,11 @@ function AssetsContent() {
                                             </>
                                         )}
                                     </div>
+
                                     {canManageInfrastructure() && (
                                         <button
                                             onClick={() => setIsCategoryModalOpen(true)}
-                                            className="flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-purple hover:bg-white transition-all"
+                                            className="flex items-center justify-center w-10 h-10 bg-white text-brand-purple border border-gray-100 rounded-xl transition-all shadow-sm hover:scale-105 active:scale-95"
                                             title="Kelola Kategori"
                                         >
                                             <Tag className="w-4 h-4" />
@@ -784,30 +781,27 @@ function AssetsContent() {
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-1.5">
-                                    {/* Utility Buttons: Export & Import */}
-                                    <div className="flex items-center gap-1">
+                                {/* Right Side Group (Mobile): Utils & Add */}
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <div className="flex items-center gap-1.5 bg-gray-50/50 p-1 rounded-xl border border-gray-100">
                                         <button
                                             onClick={handleExport}
-                                            className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all"
-                                            title="Ekspor ke Excel"
+                                            className="p-1.5 text-gray-400 hover:text-brand-purple hover:bg-white rounded-lg transition-all"
                                         >
-                                            <Download className="w-5 h-5" />
+                                            <Download className="w-4 h-4" />
                                         </button>
-                                        <label className="p-2 text-gray-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-xl transition-all cursor-pointer" title="Impor Data Excel">
-                                            <Upload className="w-5 h-5" />
+                                        <label className="p-1.5 text-gray-400 hover:text-brand-purple hover:bg-white rounded-lg transition-all cursor-pointer">
+                                            <Upload className="w-4 h-4" />
                                             <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImport} />
                                         </label>
                                     </div>
 
-                                    {/* Add Button - Highlighted */}
                                     <button
                                         onClick={() => openModal()}
-                                        className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-brand-purple/20 uppercase tracking-widest whitespace-nowrap"
-                                        title="Tambah Aset Baru"
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand-purple text-white text-[10px] font-black rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-brand-purple/20 uppercase tracking-widest shrink-0"
                                     >
                                         <Plus className="w-4 h-4" />
-                                        <span>Tambah</span>
+                                        <span>TAMBAH</span>
                                     </button>
                                 </div>
                             </div>
