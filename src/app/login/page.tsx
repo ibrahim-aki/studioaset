@@ -63,6 +63,8 @@ export default function LoginPage() {
     const [displayMessage, setDisplayMessage] = useState<string | null>(null);
     const [welcomeTitle, setWelcomeTitle] = useState("Welcome Back!");
     const [welcomeDescription, setWelcomeDescription] = useState("Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
+    const [showNotificationImage, setShowNotificationImage] = useState(false);
+    const [notificationImageUrl, setNotificationImageUrl] = useState("");
     const router = useRouter();
     const { addLog } = useLocalDb();
     const { showToast } = useToast();
@@ -74,6 +76,8 @@ export default function LoginPage() {
                 const data = snap.data();
                 if (data.welcomeTitle) setWelcomeTitle(data.welcomeTitle);
                 if (data.welcomeDescription) setWelcomeDescription(data.welcomeDescription);
+                setShowNotificationImage(data.showNotificationImage || false);
+                setNotificationImageUrl(data.notificationImageUrl || "");
             }
         });
         return () => unsub();
@@ -195,11 +199,32 @@ export default function LoginPage() {
             >
                 {/* LEFT SECTION */}
                 <div className="md:w-5/12 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-br from-brand-teal/[0.005] to-purple-800/[0.005]">
-                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">{welcomeTitle}</h2>
-                    <p className="text-sm font-medium text-white/70 leading-relaxed mb-8 max-w-[220px] mx-auto">
-                        {welcomeDescription}
-                    </p>
-                    <div className="w-12 h-1 bg-white/30 mx-auto rounded-full" />
+                    {displayMessage && showNotificationImage && notificationImageUrl ? (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="absolute inset-0 w-full h-full"
+                        >
+                            <img 
+                                src={notificationImageUrl} 
+                                className="w-full h-full object-cover"
+                                alt="Notification Illustration"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-brand-purple/20 to-black/40 mix-blend-overlay" />
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="relative z-10"
+                        >
+                            <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">{welcomeTitle}</h2>
+                            <p className="text-sm font-medium text-white/70 leading-relaxed mb-8 max-w-[220px] mx-auto">
+                                {welcomeDescription}
+                            </p>
+                            <div className="w-12 h-1 bg-white/30 mx-auto rounded-full" />
+                        </motion.div>
+                    )}
                 </div>
 
                 <div className="hidden md:block w-[1px] self-stretch bg-gradient-to-b from-transparent via-white/[0.08] to-transparent" />
@@ -269,6 +294,8 @@ export default function LoginPage() {
                                     <label className="flex items-center gap-2 cursor-pointer group">
                                         <input
                                             type="checkbox"
+                                            onChange={() => setDisplayMessage("Maaf demi alasan keamanan fitur REMEMBER ME kami NON AKTIFKAN")}
+                                            readOnly
                                             className="w-4 h-4 rounded border border-white/20 bg-transparent appearance-none checked:bg-brand-blue/40 transition-all cursor-pointer relative group-hover:border-brand-blue"
                                             style={{
                                                 backgroundColor: 'transparent',
@@ -329,7 +356,10 @@ export default function LoginPage() {
                                 </button>
                             </form>
 
-                            <div className="mt-8 text-center text-[9px] font-black text-white/30 flex items-center justify-center gap-3 group/signup cursor-pointer">
+                            <div 
+                                onClick={() => setDisplayMessage("Mohon maaf aplikasi ini belum dibuka untuk umum")}
+                                className="mt-8 text-center text-[9px] font-black text-white/30 flex items-center justify-center gap-3 group/signup cursor-pointer"
+                            >
                                 <span className="shrink-0">Don't have an account?</span>
                                 <span className="text-white/60 tracking-widest group-hover/signup:text-white transition-colors underline underline-offset-4 decoration-white/20">SIGN UP</span>
                             </div>

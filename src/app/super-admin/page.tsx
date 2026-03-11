@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2 } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
@@ -514,6 +514,10 @@ export default function UserManagementPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [loginTitle, setLoginTitle] = useState("Welcome Back!");
     const [loginDesc, setLoginDesc] = useState("Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
+    const [showNotificationImage, setShowNotificationImage] = useState(false);
+    const [notificationImageUrl, setNotificationImageUrl] = useState("");
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
     const [cloudStats, setCloudStats] = useState({ users: 0, companies: 0, assets: 0, logs: 0 });
     const [statsLoading, setStatsLoading] = useState(false);
@@ -552,6 +556,8 @@ export default function UserManagementPage() {
                 const data = snap.data();
                 setLoginTitle(data.welcomeTitle || "Welcome Back!");
                 setLoginDesc(data.welcomeDescription || "Hubungkan kembali koneksi Anda untuk mengelola aset dengan cerdas.");
+                setShowNotificationImage(data.showNotificationImage || false);
+                setNotificationImageUrl(data.notificationImageUrl || "");
             }
         }, (err) => {
             console.error("SETTINGS SNAPSHOT ERROR:", err);
@@ -635,12 +641,70 @@ export default function UserManagementPage() {
         }
     };
 
+    // FUNGSI KOMPRESI & KONVERSI BASE64 (Pengganti Storage)
+    const handleImageUpload = async (file: File) => {
+        setUploadingImage(true);
+        try {
+            // ─── KOMPRESI GAMBAR VIA CANVAS ───
+            const compressImageToBase64 = async (file: File): Promise<string> => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.src = event.target?.result as string;
+                        img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            const ctx = canvas.getContext("2d");
+                            
+                            // Max dimensions (Standar Website)
+                            let width = img.width;
+                            let height = img.height;
+                            const maxSize = 800; // Perkecil lagi agar database super ringan
+                            
+                            if (width > height) {
+                                if (width > maxSize) {
+                                    height *= maxSize / width;
+                                    width = maxSize;
+                                }
+                            } else {
+                                if (height > maxSize) {
+                                    width *= maxSize / height;
+                                    height = maxSize;
+                                }
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx?.drawImage(img, 0, 0, width, height);
+                            
+                            // Convert to WebP format with 70% quality (Sangat hemat data)
+                            const base64String = canvas.toDataURL("image/webp", 0.7);
+                            resolve(base64String);
+                        };
+                    };
+                });
+            };
+
+            const base64Result = await compressImageToBase64(file);
+            setNotificationImageUrl(base64Result);
+            alert("Foto berhasil diproses & dikompresi!");
+        } catch (err: any) {
+            console.error("Processing failed:", err);
+            alert("Gagal memproses gambar: " + err.message);
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
     const handleSaveLoginConfig = async () => {
         setSavingSettings(true);
         try {
             await setDoc(doc(db, "settings", "login-config"), {
                 welcomeTitle: loginTitle,
                 welcomeDescription: loginDesc,
+                showNotificationImage: showNotificationImage,
+                notificationImageUrl: notificationImageUrl,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
             alert("Konfigurasi Login berhasil diperbarui!");
@@ -1551,9 +1615,94 @@ export default function UserManagementPage() {
                                             <button
                                                 onClick={handleSaveLoginConfig}
                                                 disabled={savingSettings}
-                                                className="w-full py-4 bg-brand-purple hover:bg-brand-purple text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-brand-purple/20"
+                                                className="w-full py-4 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-gray-200"
                                             >
-                                                {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PERUBAHAN LOGIN"}
+                                                {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN TEKS LOGIN"}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Login Notification Image Settings */}
+                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                        <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-brand-orange/10 rounded-lg flex items-center justify-center text-brand-orange">
+                                                    <ImageIcon className="w-4 h-4" />
+                                                </div>
+                                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                                    Notification Image
+                                                </h3>
+                                            </div>
+                                            <div 
+                                                onClick={() => setShowNotificationImage(!showNotificationImage)}
+                                                className={clsx(
+                                                    "w-12 h-6 rounded-full p-1 cursor-pointer transition-all duration-300",
+                                                    showNotificationImage ? "bg-brand-purple" : "bg-gray-200"
+                                                )}
+                                            >
+                                                <div className={clsx(
+                                                    "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
+                                                    showNotificationImage ? "translate-x-6" : "translate-x-0"
+                                                )} />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="relative group/upload">
+                                                <div className={clsx(
+                                                    "border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center transition-all min-h-[200px] relative overflow-hidden",
+                                                    notificationImageUrl ? "border-brand-purple/20 bg-brand-purple/[0.02]" : "border-gray-100 bg-gray-50/50 hover:border-brand-purple/40"
+                                                )}>
+                                                    {notificationImageUrl ? (
+                                                        <>
+                                                            <img 
+                                                                src={notificationImageUrl} 
+                                                                className="absolute inset-0 w-full h-full object-cover opacity-20" 
+                                                                alt="Preview"
+                                                            />
+                                                            <div className="relative z-10 flex flex-col items-center">
+                                                                <div className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4 text-emerald-500">
+                                                                    <Check className="w-7 h-7" />
+                                                                </div>
+                                                                <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Foto Siap Disimpan ke DB</p>
+                                                                <button 
+                                                                    onClick={() => setNotificationImageUrl("")}
+                                                                    className="mt-4 text-[9px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-700 transition-colors"
+                                                                >Hapus Foto</button>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-4 text-gray-300 group-hover/upload:text-brand-purple transition-colors">
+                                                                {uploadingImage ? <Loader2 className="w-7 h-7 animate-spin" /> : <Upload className="w-7 h-7" />}
+                                                            </div>
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">PROSES FOTO (BASE64)</p>
+                                                            <p className="text-[9px] text-gray-400 font-medium text-center px-4">Auto-Compress • Max 800px • Tanpa Storage</p>
+                                                            <input 
+                                                                type="file" 
+                                                                accept="image/*"
+                                                                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                                                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                disabled={uploadingImage}
+                                                            />
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-brand-orange/5 border border-brand-orange/10 rounded-2xl p-4 flex items-start gap-3">
+                                                <Info className="w-3.5 h-3.5 text-brand-orange shrink-0 mt-0.5" />
+                                                <p className="text-[9px] text-brand-orange font-bold uppercase tracking-tight leading-relaxed">
+                                                    Foto ini akan muncul menggantikan teks Welcome Back secara otomatis jika ada pesan notifikasi muncul di halaman login.
+                                                </p>
+                                            </div>
+
+                                            <button
+                                                onClick={handleSaveLoginConfig}
+                                                disabled={savingSettings || uploadingImage}
+                                                className="w-full py-4 bg-brand-purple hover:bg-brand-purple text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-brand-purple/20"
+                                            >
+                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Cloud className="w-4 h-4" /> Update Konfigurasi Foto</>}
                                             </button>
                                         </div>
                                     </div>
