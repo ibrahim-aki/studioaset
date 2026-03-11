@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { useToast } from "@/context/ToastContext";
 import { motion } from "framer-motion";
+import clsx from "clsx";
 
 // CSS for smooth twinkling and floating without taxing the main thread
 const starStyles = `
@@ -198,7 +199,10 @@ export default function LoginPage() {
                 }}
             >
                 {/* LEFT SECTION */}
-                <div className="md:w-5/12 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-br from-brand-teal/[0.005] to-purple-800/[0.005]">
+                <div className={clsx(
+                    "md:w-5/12 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-br from-brand-teal/[0.005] to-purple-800/[0.005]",
+                    displayMessage && "hidden md:flex"
+                )}>
                     {displayMessage && showNotificationImage && notificationImageUrl ? (
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -230,18 +234,30 @@ export default function LoginPage() {
                 <div className="hidden md:block w-[1px] self-stretch bg-gradient-to-b from-transparent via-white/[0.08] to-transparent" />
 
                 {/* RIGHT SECTION */}
-                <div className="md:w-7/12 p-8 md:p-12 relative">
+                <div className="md:w-7/12 p-8 md:p-12 relative flex flex-col justify-center">
                     {displayMessage ? (
-                        <div className="h-full flex flex-col justify-center items-center space-y-6">
-                            <div className="p-8 bg-white/5 border border-white/10 rounded-2xl text-center w-full max-w-sm">
-                                <ShieldAlert className="w-7 h-7 text-rose-500 mx-auto mb-6" />
-                                <p className="text-white/90 font-medium leading-relaxed text-sm">
+                        <div className="h-full flex flex-col justify-center items-center space-y-6 relative min-h-[400px] md:min-h-0">
+                            {/* MOBILE BACKGROUND PHOTO (Hidden on Desktop) */}
+                            {showNotificationImage && notificationImageUrl && (
+                                <div className="absolute inset-x-0 inset-y-0 -m-8 md:hidden -z-10 overflow-hidden">
+                                    <img 
+                                        src={notificationImageUrl} 
+                                        className="w-full h-full object-cover opacity-60" 
+                                        alt="Notification BG mobile"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 backdrop-blur-[1px]" />
+                                </div>
+                            )}
+
+                            <div className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl text-center w-full max-w-sm shadow-xl relative z-10">
+                                <ShieldAlert className="w-8 h-8 text-rose-500 mx-auto mb-6 drop-shadow-[0_0_10px_rgba(244,63,94,0.4)]" />
+                                <p className="text-white font-semibold leading-relaxed text-sm tracking-tight uppercase">
                                     {displayMessage}
                                 </p>
                             </div>
                             <button
                                 onClick={() => setDisplayMessage(null)}
-                                className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition-all text-xs uppercase tracking-widest"
+                                className="px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-bold transition-all text-[11px] uppercase tracking-[0.2em] backdrop-blur-sm relative z-10"
                             >
                                 Kembali ke Login
                             </button>
