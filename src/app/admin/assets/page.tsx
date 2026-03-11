@@ -88,7 +88,7 @@ function AssetsContent() {
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<"MASTER" | "DELETED">("MASTER");
+    const [showDeleted, setShowDeleted] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
     const [deleteReason, setDeleteReason] = useState("");
@@ -647,33 +647,9 @@ function AssetsContent() {
                     </p>
                 </div>
 
-                <div className="mt-4 sm:mt-0 flex items-center bg-gray-100 p-1 rounded-xl gap-1 border border-gray-200 shadow-inner">
-                    <button
-                        onClick={() => setActiveTab("MASTER")}
-                        className={clsx(
-                            "px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
-                            activeTab === "MASTER" ? "bg-white text-brand-purple shadow-sm" : "text-gray-500 hover:text-gray-700"
-                        )}
-                    >
-                        <Box className="w-3.5 h-3.5" />
-                        Master Aset
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("DELETED")}
-                        className={clsx(
-                            "px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
-                            activeTab === "DELETED" ? "bg-white text-rose-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                        )}
-                        title="Aset Dihapus"
-                    >
-                        <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                </div>
             </div>
 
-            {activeTab === "MASTER" ? (
-                <>
-                    {/* Sticky Search and Controls Header for Mobile & Desktop */}
+            {/* Sticky Search and Controls Header for Mobile & Desktop */}
                     <div className="sticky top-16 md:top-0 z-40 -mx-4 px-4 py-3 mb-6 bg-gray-50 border-b border-gray-100 md:relative md:top-auto md:mx-0 md:px-0 md:py-0 md:border-none md:bg-transparent transition-all duration-300">
                         <div className="flex flex-col md:flex-row items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                             {/* Search Bar - Flexible width */}
@@ -747,12 +723,91 @@ function AssetsContent() {
                                         <Plus className="w-4 h-4" />
                                         <span>TAMBAH</span>
                                     </button>
+
+                                    <button
+                                        onClick={() => setShowDeleted(!showDeleted)}
+                                        className={clsx(
+                                            "flex items-center gap-2 px-4 py-2 bg-white text-[10px] font-black rounded-xl border transition-all shadow-sm uppercase tracking-widest shrink-0 outline-none",
+                                            showDeleted
+                                                ? "border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-rose-100/50 ring-2 ring-rose-100"
+                                                : "border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                                        )}
+                                        title={showDeleted ? "Tutup Riwayat" : "Buka Riwayat Hapus"}
+                                    >
+                                        <div className="relative flex items-center justify-center w-3 h-3">
+                                            <Trash2 className="w-full h-full" />
+                                            <div className={clsx(
+                                                "absolute -top-1 -right-1 rounded-full",
+                                                showDeleted ? "bg-rose-50 text-rose-600" : "bg-white text-gray-400"
+                                            )}>
+                                                <History className="w-[9px] h-[9px]" />
+                                            </div>
+                                        </div>
+                                        <span>{showDeleted ? "TUTUP RIWAYAT" : "RIWAYAT"}</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Table section */}
+                    {showDeleted ? (
+                        /* DELETED ASSETS TAB CONTENT */
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-6">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-100">
+                                    <thead className="bg-gray-50/50">
+                                        <tr className="text-gray-400">
+                                            <th scope="col" className="py-3 px-4 text-center text-[10px] font-bold uppercase tracking-wider w-12">No</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Identitas Aset</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Kode Aset</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Dihapus Oleh</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Tgl Hapus</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Alasan Hapus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {deletedAssets.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={6} className="py-24 text-center text-xs text-gray-400">Tidak ada riwayat aset yang dihapus</td>
+                                            </tr>
+                                        ) : (
+                                            deletedAssets.map((asset, index) => (
+                                                <tr key={asset.id} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="py-4 px-4 text-[10px] text-gray-400 text-center">{index + 1}</td>
+                                                    <td className="py-4 px-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[11px] font-bold text-gray-900">{asset.assetName}</span>
+                                                            <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{asset.category}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-4 text-[11px] font-mono font-bold text-brand-purple">{asset.assetCode}</td>
+                                                    <td className="py-4 px-4">
+                                                        <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium">
+                                                            <User className="w-3 h-3 text-gray-400" />
+                                                            {asset.deletedBy}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-4 text-[11px] text-gray-500">
+                                                        {new Date(asset.deleteDate).toLocaleString('id-ID', {
+                                                            day: '2-digit', month: '2-digit', year: 'numeric',
+                                                            hour: '2-digit', minute: '2-digit'
+                                                        })}
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <div className="flex items-start gap-1.5">
+                                                            <AlertTriangle className="w-3 h-3 text-brand-orange mt-0.5 shrink-0" />
+                                                            <span className="text-[11px] text-gray-600 italic">"{asset.reason}"</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ) : (
                     <div className="overflow-hidden">
                         {loading ? (
                             <div className="p-24 flex flex-col items-center justify-center gap-4">
@@ -1070,65 +1125,7 @@ function AssetsContent() {
                             </>
                         )}
                     </div>
-                </>
-            ) : (
-                /* DELETED ASSETS TAB CONTENT */
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-6">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-100">
-                            <thead className="bg-gray-50/50">
-                                <tr className="text-gray-400">
-                                    <th scope="col" className="py-3 px-4 text-center text-[10px] font-bold uppercase tracking-wider w-12">No</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Identitas Aset</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Kode Aset</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Dihapus Oleh</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Tgl Hapus</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider">Alasan Hapus</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {deletedAssets.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="py-24 text-center text-xs text-gray-400">Tidak ada riwayat aset yang dihapus</td>
-                                    </tr>
-                                ) : (
-                                    deletedAssets.map((asset, index) => (
-                                        <tr key={asset.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-4 px-4 text-[10px] text-gray-400 text-center">{index + 1}</td>
-                                            <td className="py-4 px-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[11px] font-bold text-gray-900">{asset.assetName}</span>
-                                                    <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{asset.category}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-4 text-[11px] font-mono font-bold text-brand-purple">{asset.assetCode}</td>
-                                            <td className="py-4 px-4">
-                                                <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium">
-                                                    <User className="w-3 h-3 text-gray-400" />
-                                                    {asset.deletedBy}
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-4 text-[11px] text-gray-500">
-                                                {new Date(asset.deleteDate).toLocaleString('id-ID', {
-                                                    day: '2-digit', month: '2-digit', year: 'numeric',
-                                                    hour: '2-digit', minute: '2-digit'
-                                                })}
-                                            </td>
-                                            <td className="py-4 px-4">
-                                                <div className="flex items-start gap-1.5">
-                                                    <AlertTriangle className="w-3 h-3 text-brand-orange mt-0.5 shrink-0" />
-                                                    <span className="text-[11px] text-gray-600 italic">"{asset.reason}"</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )
-            }
+            )}
 
             {/* Asset Form Modal */}
             {
