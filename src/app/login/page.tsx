@@ -146,7 +146,7 @@ export default function LoginPage() {
             <div
                 className="absolute inset-0 -z-10"
                 style={{
-                    background: "linear-gradient(to bottom, #1A0D3C 0%, #7C4DFF 40%, #FFB246 100%)"
+                    background: "linear-gradient(to bottom, #0A051E 0%, #703DFF 45%, #FF8A00 100%)"
                 }}
             />
 
@@ -157,12 +157,12 @@ export default function LoginPage() {
             <div
                 className="absolute -z-10 rounded-full"
                 style={{
-                    width: "70px",
-                    height: "70px",
-                    top: "10%",
-                    left: "22%",
-                    background: "radial-gradient(circle at 35% 35%, #f5c842, #e0860d)",
-                    boxShadow: "0 0 40px 10px rgba(240,160,20,0.35)",
+                    width: "75px",
+                    height: "75px",
+                    top: "12%",
+                    left: "20%",
+                    background: "radial-gradient(circle at 30% 30%, #FFF176, #FF9100)",
+                    boxShadow: "0 0 60px 20px rgba(255, 145, 0, 0.4), 0 0 100px 40px rgba(255, 213, 79, 0.15)",
                 }}
             />
 
@@ -174,12 +174,12 @@ export default function LoginPage() {
                 xmlns="http://www.w3.org/2000/svg"
             >
                 <path d="M0,280 L120,160 L240,220 L360,100 L480,180 L600,80 L720,160 L840,90 L960,170 L1080,110 L1200,190 L1320,120 L1440,200 L1440,320 L0,320 Z"
-                    fill="#3d1367" opacity="0.7" />
+                    fill="#2E1065" opacity="0.8" />
                 <path d="M0,310 L80,220 L180,270 L280,180 L400,240 L520,150 L640,230 L760,170 L880,240 L1000,180 L1120,250 L1240,190 L1360,260 L1440,220 L1440,320 L0,320 Z"
-                    fill="#2a0c55" opacity="0.85" />
+                    fill="#1E0B4B" opacity="0.95" />
                 <path d="M0,320 L60,270 L140,300 L220,250 L320,285 L420,240 L520,275 L620,230 L720,265 L820,235 L920,270 L1020,245 L1120,280 L1220,255 L1320,285 L1440,260 L1440,320 Z"
-                    fill="#170733" />
-                <rect x="0" y="305" width="1440" height="15" fill="#1a0a3d" opacity="0.6" />
+                    fill="#0F0524" />
+                <rect x="0" y="305" width="1440" height="15" fill="#0A051E" opacity="0.4" />
             </svg>
 
             {/* ── Glass Card ── */}
