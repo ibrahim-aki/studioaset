@@ -1247,11 +1247,11 @@ export default function UserManagementPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10">
-                                        <p className="text-[10px] font-black text-brand-purple/40 uppercase tracking-widest mb-1">Total Users</p>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Total Users</p>
                                         <p className="text-3xl font-black">{cloudStats.users}</p>
                                     </div>
                                     <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10">
-                                        <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Total Klien</p>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Total Klien</p>
                                         <p className="text-3xl font-black">{cloudStats.companies}</p>
                                     </div>
                                     <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 lg:col-span-2">
