@@ -1307,19 +1307,19 @@ export default function UserManagementPage() {
                             </div>
                         )}
 
-                        {/* Quota Reference Center */}
+                        {/* Quota Reference Firebase */}
                         <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                                     <Info className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h5 className="text-sm font-black text-gray-900 uppercase tracking-widest leading-none mb-1">Quota Reference Center</h5>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Panduan Batas Penggunaan Firebase Spark Plan (Gratis)</p>
+                                    <h5 className="text-sm font-black text-gray-900 uppercase tracking-widest leading-none mb-1">Cloud Quota Reference</h5>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Panduan Batas Penggunaan Firebase Spark & Vercel Hobby Plan</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8">
                                 {/* Firestore Details */}
                                 <div className="space-y-4">
                                     <h6 className="text-[10px] font-black text-brand-purple uppercase tracking-widest flex items-center gap-2">
@@ -1437,6 +1437,66 @@ export default function UserManagementPage() {
                                             </div>
                                         ))}
                                         <p className="text-[8px] text-gray-300 italic mt-2">*Updated daily by Firebase</p>
+                                    </div>
+                                </div>
+
+                                {/* Vercel Hobby Plan */}
+                                <div className="space-y-4">
+                                    <h6 className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2">
+                                        <Zap className="w-3 h-3" /> Vercel Hobby
+                                    </h6>
+                                    <div className="space-y-4">
+                                        {[
+                                            { 
+                                                label: "Bandwidth", 
+                                                val: (usageMetrics.monthlyActiveUsers * 0.05).toFixed(2), 
+                                                limit: 100, 
+                                                unit: "GB", 
+                                                reset: "Monthly" 
+                                            },
+                                            { 
+                                                label: "Function Inv.", 
+                                                val: usageMetrics.dailyWrites * 5, 
+                                                limit: 100000, 
+                                                unit: "Inv", 
+                                                reset: "Monthly" 
+                                            },
+                                            { 
+                                                label: "Execution", 
+                                                val: (usageMetrics.dailyWrites * 0.001).toFixed(3), 
+                                                limit: 100, 
+                                                unit: "Hrs", 
+                                                reset: "Monthly" 
+                                            },
+                                            { 
+                                                label: "Image Opt.", 
+                                                val: cloudStats.assets, 
+                                                limit: 1000, 
+                                                unit: "Doc", 
+                                                reset: "Monthly" 
+                                            }
+                                        ].map((item, i) => {
+                                            const valNum = Number(item.val);
+                                            const percent = (valNum / item.limit) * 100;
+                                            return (
+                                                <div key={i} className="space-y-2">
+                                                    <div className="flex items-center justify-between text-[10px] font-bold">
+                                                        <span className="text-gray-400">{item.label}</span>
+                                                        <span className="text-gray-900">{item.val} / {item.limit >= 1000 ? (item.limit / 1000) + 'k' : item.limit} {item.unit}</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={clsx(
+                                                                "h-full transition-all duration-500",
+                                                                percent >= 90 ? "bg-rose-600" : percent >= 70 ? "bg-amber-500" : "bg-rose-500"
+                                                            )}
+                                                            style={{ width: `${Math.min(percent, 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <p className="text-[8px] text-gray-300 italic mt-2">*Usage estimated by app activity</p>
                                     </div>
                                 </div>
                             </div>
