@@ -39,11 +39,17 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const { rooms: rawRooms, roomAssets: rawRoomAssets, addChecklist, assets: rawAssets, updateAsset, moveRoomAsset, addRoomAsset, locations: rawLocations, checklists } = useLocalDb();
+
+    // Filter checklists for this room to find latest status
+    const lastCheck = checklists
+        .filter(c => c.roomId === roomId)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+    const isLockedToFinished = lastCheck?.roomStatus === "LIVE_NOW";
 
     const [warehouseSearchTerm, setWarehouseSearchTerm] = useState("");
     const [isAddingFromWarehouse, setIsAddingFromWarehouse] = useState(false);
-
-    const { rooms: rawRooms, roomAssets: rawRoomAssets, addChecklist, assets: rawAssets, updateAsset, moveRoomAsset, addRoomAsset, locations: rawLocations, checklists } = useLocalDb();
 
     useEffect(() => {
         try {
@@ -155,6 +161,11 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
         if (unreturnedDeadAssets.length > 0) {
             alert(`PENTING: Alat yang MATI (${unreturnedDeadAssets.map(a => a.assetName).join(", ")}) WAJIB dikembalikan ke GUDANG. Silakan ubah pilihan lokasi menjadi 'Kembalikan ke Gudang'.`);
+            return;
+        }
+
+        if (isLockedToFinished && roomStatus !== "FINISHED_LIVE") {
+            alert("PERINGATAN: Ruangan ini masih dalam status LIVE. Anda WAJIB memilih status 'Selesai Live' untuk menutup sesi live sebelum dapat mengubah ke status lainnya.");
             return;
         }
 
@@ -498,15 +509,39 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
                 {assets.length > 0 && (
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50">
-                        <label className="block text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <Zap className="w-5 h-5 text-purple-600" /> Status Kesiapan Ruangan
+                        <label className="block text-sm font-bold text-gray-900 mb-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-purple-600" /> Status Kesiapan Ruangan
+                            </div>
+                            {isLockedToFinished && (
+                                <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 animate-pulse">
+                                    LIVE CLOSING REQUIRED
+                                </span>
+                            )}
                         </label>
+
+                        {isLockedToFinished && (
+                            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                                    <AlertTriangle className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black text-amber-900 uppercase tracking-tight">Sesi Live Belum Ditutup</p>
+                                    <p className="text-[10px] text-amber-700 font-medium leading-relaxed mt-1">
+                                        Status terakhir ruangan ini adalah <span className="font-bold underline">SEDANG LIVE</span>. Anda wajib memilih status <span className="font-bold">SELESAI LIVE</span> untuk menandai berakhirnya sesi sebelum bisa mengubah ke status lain di checklist berikutnya.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 gap-3">
                             <button
                                 type="button"
+                                disabled={isLockedToFinished}
                                 onClick={() => setRoomStatus("LIVE_NOW")}
                                 className={clsx(
                                     "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
+                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
                                     roomStatus === "LIVE_NOW"
                                         ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
                                         : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
@@ -520,15 +555,17 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                                 </div>
                                 <div className="text-left">
                                     <p className="font-bold text-sm uppercase leading-tight">Live Sekarang</p>
-                                    <p className="text-xs opacity-70">Studio sedang aktif menyiarkan live</p>
+                                    <p className="text-xs opacity-70 text-nowrap">Studio sedang aktif menyiarkan live</p>
                                 </div>
                             </button>
 
                             <button
                                 type="button"
+                                disabled={isLockedToFinished}
                                 onClick={() => setRoomStatus("READY_FOR_LIVE")}
                                 className={clsx(
                                     "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
+                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
                                     roomStatus === "READY_FOR_LIVE"
                                         ? "bg-green-50 border-green-500 text-green-700 shadow-sm"
                                         : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
@@ -548,9 +585,11 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
                             <button
                                 type="button"
+                                disabled={isLockedToFinished}
                                 onClick={() => setRoomStatus("NOT_READY")}
                                 className={clsx(
                                     "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
+                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
                                     roomStatus === "NOT_READY"
                                         ? "bg-rose-50 border-rose-500 text-rose-700 shadow-sm"
                                         : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
@@ -570,9 +609,11 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
                             <button
                                 type="button"
+                                disabled={isLockedToFinished}
                                 onClick={() => setRoomStatus("STANDBY")}
                                 className={clsx(
                                     "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
+                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
                                     roomStatus === "STANDBY"
                                         ? "bg-amber-50 border-amber-500 text-amber-700 shadow-sm"
                                         : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
@@ -595,16 +636,23 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                                 onClick={() => setRoomStatus("FINISHED_LIVE")}
                                 className={clsx(
                                     "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
+                                    isLockedToFinished && "border-blue-400 bg-blue-50/50",
                                     roomStatus === "FINISHED_LIVE"
                                         ? "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
                                         : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
                                 )}
                             >
                                 <div className={clsx(
-                                    "w-10 h-10 rounded-full flex items-center justify-center",
+                                    "w-10 h-10 rounded-full flex items-center justify-center relative",
                                     roomStatus === "FINISHED_LIVE" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-400"
                                 )}>
                                     <Flag className="w-6 h-6" />
+                                    {isLockedToFinished && (
+                                        <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white"></span>
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="text-left">
                                     <p className="font-bold text-sm uppercase leading-tight">Selesai Live</p>

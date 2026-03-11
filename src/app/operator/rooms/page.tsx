@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useLocalDb, Room } from "@/context/LocalDbContext";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowRight, Video, Loader2, ArrowLeft, Clock, User, MapPin, Lock } from "lucide-react";
+import { ArrowRight, Video, Loader2, ArrowLeft, Clock, User, MapPin, Lock, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import clsx from "clsx";
 
 export default function OperatorRoomSelection() {
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -70,6 +71,22 @@ export default function OperatorRoomSelection() {
             .filter(c => c.roomId === roomId)
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         return roomChecklists[0] || null;
+    };
+
+    const getStatusConfig = (status: string | undefined) => {
+        switch (status) {
+            case "LIVE_NOW":
+                return { label: "Sedang Live", color: "bg-emerald-500", icon: Video };
+            case "READY_FOR_LIVE":
+            case "FINISHED_LIVE":
+                return { label: "Siap Live", color: "bg-green-500", icon: CheckCircle2 };
+            case "STANDBY":
+                return { label: "Standby", color: "bg-amber-500", icon: Clock };
+            case "NOT_READY":
+                return { label: "Dalam Perbaikan", color: "bg-rose-500", icon: AlertTriangle };
+            default:
+                return { label: "Tanpa Status", color: "bg-gray-400", icon: AlertCircle };
+        }
     };
 
     const activeLocationName = locations.find(l => l.id === selectedLocationId)?.name || "";
@@ -142,7 +159,22 @@ export default function OperatorRoomSelection() {
                                     <Video className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-gray-900 leading-tight">{room.name}</h3>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-base font-bold text-gray-900 leading-tight">{room.name}</h3>
+                                        {(() => {
+                                            const lastCheck = getRoomLastCheck(room.id);
+                                            const config = getStatusConfig(lastCheck?.roomStatus);
+                                            return (
+                                                <span className={clsx(
+                                                    "text-[8px] font-black px-1.5 py-0.5 rounded-full text-white uppercase tracking-widest flex items-center gap-1",
+                                                    config.color
+                                                )}>
+                                                    <config.icon className="w-2 h-2" />
+                                                    {config.label}
+                                                </span>
+                                            );
+                                        })()}
+                                    </div>
                                     <p className="text-xs text-gray-400 font-medium line-clamp-1 mt-0.5 mb-1.5">{room.description || "Tidak ada deksripsi"}</p>
 
                                     {getRoomLastCheck(room.id) ? (

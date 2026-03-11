@@ -712,62 +712,6 @@ function AssetsContent() {
                                             )}
                                         </button>
 
-                                        {isFilterMenuOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-[90] bg-gray-900/40 md:bg-transparent" onClick={() => setIsFilterMenuOpen(false)}></div>
-                                                <div className="fixed inset-x-4 top-[20%] md:absolute md:inset-auto md:right-0 md:top-full mt-2 w-auto md:w-72 bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 z-[100] p-6 animate-in fade-in zoom-in-95 duration-200">
-                                                    <div className="space-y-4">
-                                                        <h3 className="text-sm font-bold text-gray-900">Saring Aset</h3>
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Lokasi Cabang</label>
-                                                            <select
-                                                                value={locationFilter}
-                                                                onChange={(e) => setLocationFilter(e.target.value)}
-                                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
-                                                            >
-                                                                <option value="ALL">Semua Cabang</option>
-                                                                {rawLocations.map(loc => (
-                                                                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Kategori Aset</label>
-                                                            <select
-                                                                value={categoryFilter}
-                                                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
-                                                            >
-                                                                <option value="ALL">Semua Kategori</option>
-                                                                {categories.map(cat => (
-                                                                    <option key={cat} value={cat}>{cat}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-gray-500 mb-1.5 leading-none">Status Aset</label>
-                                                            <select
-                                                                value={statusFilter}
-                                                                onChange={(e) => setStatusFilter(e.target.value)}
-                                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-brand-purple outline-none transition-all"
-                                                            >
-                                                                <option value="ALL">Semua Kondisi</option>
-                                                                <option value="BAIK">Baik</option>
-                                                                <option value="RUSAK">Rusak</option>
-                                                                <option value="MATI">Mati</option>
-                                                                <option value="SERVIS">Servis</option>
-                                                                <option value="JUAL">Jual</option>
-                                                                <option value="HILANG">Hilang</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className="pt-2 flex gap-2">
-                                                            <button onClick={() => { setLocationFilter("ALL"); setCategoryFilter("ALL"); setStatusFilter("ALL"); }} className="flex-1 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-50 rounded-lg transition-colors">Reset</button>
-                                                            <button onClick={() => setIsFilterMenuOpen(false)} className="flex-1 py-2 bg-brand-purple text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow-sm transition-all">Terapkan</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
                                     </div>
 
                                     {canManageInfrastructure() && (
@@ -1546,6 +1490,111 @@ function AssetsContent() {
                     </div>
                 )
             }
+            {/* Filter Modal - rendered at root level to escape all stacking contexts */}
+            {
+                isFilterMenuOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsFilterMenuOpen(false)}></div>
+                        <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 bg-brand-purple rounded-xl flex items-center justify-center text-white">
+                                        <Filter className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-bold text-gray-900 tracking-tight">Filter Katalog</h2>
+                                        <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest mt-0.5">Saring Data Aset</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsFilterMenuOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-50 transition-all">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="px-6 py-5 space-y-4">
+                                <div className="group">
+                                    <label className="block text-[9px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Cabang / Lokasi</label>
+                                    <div className="relative">
+                                        <select
+                                            value={locationFilter}
+                                            onChange={(e) => setLocationFilter(e.target.value)}
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold hover:bg-white focus:bg-white focus:border-brand-purple/60 focus:ring-2 focus:ring-brand-purple/10 outline-none transition-all appearance-none cursor-pointer text-gray-700"
+                                        >
+                                            <option value="ALL">Semua Cabang / Lokasi</option>
+                                            {rawLocations.map(loc => (
+                                                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <ChevronDown className="w-4 h-4" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="group">
+                                    <label className="block text-[9px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Kategori Aset</label>
+                                    <div className="relative">
+                                        <select
+                                            value={categoryFilter}
+                                            onChange={(e) => setCategoryFilter(e.target.value)}
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold hover:bg-white focus:bg-white focus:border-brand-purple/60 focus:ring-2 focus:ring-brand-purple/10 outline-none transition-all appearance-none cursor-pointer text-gray-700"
+                                        >
+                                            <option value="ALL">Semua Kategori Aset</option>
+                                            {categories.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <ChevronDown className="w-4 h-4" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="group">
+                                    <label className="block text-[9px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Kondisi / Status</label>
+                                    <div className="relative">
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold hover:bg-white focus:bg-white focus:border-brand-purple/60 focus:ring-2 focus:ring-brand-purple/10 outline-none transition-all appearance-none cursor-pointer text-gray-700"
+                                        >
+                                            <option value="ALL">Semua Kondisi Aset</option>
+                                            <option value="BAIK">Kondisi: BAIK</option>
+                                            <option value="RUSAK">Kondisi: RUSAK</option>
+                                            <option value="MATI">Kondisi: MATI</option>
+                                            <option value="SERVIS">Kondisi: SERVIS</option>
+                                            <option value="JUAL">Kondisi: JUAL</option>
+                                            <option value="HILANG">Kondisi: HILANG</option>
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <ChevronDown className="w-4 h-4" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="px-6 pb-6 flex gap-3">
+                                <button
+                                    onClick={() => { setLocationFilter("ALL"); setCategoryFilter("ALL"); setStatusFilter("ALL"); }}
+                                    className="flex-1 py-3 text-sm font-bold text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all border border-gray-200 hover:border-rose-200"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={() => setIsFilterMenuOpen(false)}
+                                    className="flex-[2] py-3 bg-brand-purple text-white text-sm font-bold rounded-2xl hover:bg-indigo-700 shadow-lg shadow-brand-purple/25 transition-all"
+                                >
+                                    Terapkan Filter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
             {/* Category Management Modal */}
             {
                 isCategoryModalOpen && (
