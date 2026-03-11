@@ -29,3 +29,16 @@ input, textarea, select {
   color: #111827;
   background-color: #ffffff;
 }
+/* Custom Animations */
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+}

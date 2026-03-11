@@ -232,29 +232,59 @@ export default function AdminPage() {
                     { label: "Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "from-brand-teal to-blue-500", href: "/admin/rooms" },
                     { label: "Total Aset", value: assetStats.totalAll, icon: Box, color: "from-brand-purple to-purple-400", href: "/admin/assets" },
                     { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "from-brand-orange to-amber-400", href: "/admin/checklists" }
-                ].map((stat, i) => (
-                    <Link
-                        key={i}
-                        href={stat.href}
-                        className="group relative overflow-hidden bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
-                    >
-                        <div className={`absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity`}>
-                            <stat.icon className="w-12 h-12" />
-                        </div>
-                        <div className="relative z-10">
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-3 shadow-md`}>
-                                <stat.icon className="w-4 h-4" />
+                ].map((stat, i) => {
+                    const isNewReport = stat.label === "Laporan Baru" && stat.value > 0;
+                    return (
+                        <Link
+                            key={i}
+                            href={stat.href}
+                            className={clsx(
+                                "group relative overflow-hidden bg-white p-4 rounded-lg border transition-all duration-500",
+                                isNewReport 
+                                    ? "border-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.1)] ring-1 ring-rose-500/10" 
+                                    : "border-gray-100 shadow-sm hover:shadow-md"
+                            )}
+                        >
+                            <div className={`absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity`}>
+                                <stat.icon className="w-12 h-12" />
                             </div>
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter">{stat.value}</span>
-                                {stat.label === "Laporan Baru" && stat.value > 0 && (
-                                    <span className="text-[8px] font-black text-rose-500 animate-pulse tracking-tighter">ALERT</span>
+                            <div className="relative z-10">
+                                <div className="relative w-fit">
+                                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-3 shadow-md transition-transform group-hover:scale-110 duration-300`}>
+                                        <stat.icon className="w-4 h-4" />
+                                    </div>
+                                    {isNewReport && (
+                                        <>
+                                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span>
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                                <div className="flex items-baseline gap-2">
+                                    <span className={clsx(
+                                        "text-2xl font-black tabular-nums tracking-tighter transition-colors",
+                                        isNewReport ? "text-rose-600" : "text-gray-900"
+                                    )}>
+                                        {stat.value}
+                                    </span>
+                                    {isNewReport && (
+                                        <span className="text-[8px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-full animate-pulse tracking-tighter">
+                                            NEW REPORTS
+                                        </span>
+                                    )}
+                                </div>
+                                {isNewReport && (
+                                    <div className="mt-2 h-0.5 w-full bg-rose-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-rose-500 animate-[shimmer_2s_infinite] bg-gradient-to-r from-rose-500 via-rose-300 to-rose-500 bg-[length:200%_100%]"></div>
+                                    </div>
                                 )}
                             </div>
-                        </div>
-                    </Link>
-                ))}
+                        </Link>
+                    );
+                })}
             </div>
 
             {/* Dashboard Workspace - Refined Grid Scaling */}
