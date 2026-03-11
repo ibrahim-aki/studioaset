@@ -743,7 +743,7 @@ function AssetsContent() {
                                                 <History className="w-[9px] h-[9px]" />
                                             </div>
                                         </div>
-                                        <span>{showDeleted ? "TUTUP RIWAYAT" : "RIWAYAT"}</span>
+
                                     </button>
                                 </div>
                             </div>
