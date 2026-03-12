@@ -257,9 +257,22 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             return query(collection(db, collName), where("companyId", "==", finalCompanyId));
         };
 
-        unsubs.push(onSnapshot(getBaseQuery("companies"), (snap) => {
-            setCompanies(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
-        }));
+        // Koleksi 'companies' tidak punya field 'companyId', jadi tidak bisa pakai getBaseQuery.
+        // Untuk SUPER_ADMIN: ambil semua perusahaan.
+        // Untuk user biasa (ADMIN/OPERATOR/CLIENT): ambil hanya dokumen perusahaan mereka sendiri.
+        if (isSuperAdmin) {
+            unsubs.push(onSnapshot(collection(db, "companies"), (snap) => {
+                setCompanies(snap.docs.map(d => ({ id: d.id, ...d.data() } as Company)));
+            }));
+        } else if (finalCompanyId) {
+            unsubs.push(onSnapshot(doc(db, "companies", finalCompanyId), (docSnap) => {
+                if (docSnap.exists()) {
+                    setCompanies([{ id: docSnap.id, ...docSnap.data() } as Company]);
+                } else {
+                    setCompanies([]);
+                }
+            }));
+        }
         unsubs.push(onSnapshot(getBaseQuery("locations"), (snap) => {
             setLocations(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Location)));
         }));
@@ -329,7 +342,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await setDoc(doc(db, "companies", id), newComp);
         },
         updateCompany: async (id, data) => {
-            await updateDoc(doc(db, "companies", id), data);
+            console.log("DEBUG: Updating company", id, data);
+            try {
+                await updateDoc(doc(db, "companies", id), data);
+                console.log("DEBUG: Update successful");
+            } catch (err) {
+                console.error("DEBUG: Update failed", err);
+                throw err;
+            }
         },
         deleteCompany: async (id) => {
             await deleteDoc(doc(db, "companies", id));
