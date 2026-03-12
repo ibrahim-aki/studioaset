@@ -24,28 +24,32 @@ export default function ChangelogPage() {
     useEffect(() => {
         const fetchCommits = async () => {
             try {
-                // Mengambil riwayat commit dari repository pusat (Limit 100 untuk detail lebih banyak)
+                // Fetch commit history from central repository
                 const response = await fetch("https://api.github.com/repos/ibrahim-aki/studioaset/commits?per_page=100");
-                if (!response.ok) throw new Error("Gagal mengambil data riwayat sistem");
+                if (!response.ok) throw new Error("Failed to load system history");
 
                 const data: GithubCommit[] = await response.json();
 
-                // Filtrasi ketat: Abaikan update yang berkaitan dengan "super admin"
+                // Advanced Filtration: Strictly exclude Super Admin, GitHub, and Vercel related updates
                 const filteredCommits = data.filter(item => {
                     const message = item.commit.message.toLowerCase();
-                    const isSuperAdminRelated =
+                    const isExcluded =
                         message.includes("super admin") ||
                         message.includes("super-admin") ||
                         message.includes("superadmin") ||
                         message.includes("sa-update") ||
-                        message.includes("fix sa");
-                    return !isSuperAdminRelated;
+                        message.includes("fix sa") ||
+                        message.includes("merge branch") ||
+                        message.includes("github") ||
+                        message.includes("vercel") ||
+                        message.includes("sync");
+                    return !isExcluded;
                 });
 
                 setCommits(filteredCommits);
             } catch (err: any) {
                 console.error("Fetch Error:", err);
-                setError("Gagal memuat riwayat pembaruan sistem.");
+                setError("Failed to retrieve system updates.");
             } finally {
                 setLoading(false);
             }
@@ -57,14 +61,14 @@ export default function ChangelogPage() {
     if (loading) {
         return (
             <div className="p-12 font-mono text-[13px] text-gray-400">
-                Loding data...
+                Loading data...
             </div>
         );
     }
 
     return (
         <div className="p-4 sm:p-8 max-w-3xl mx-auto font-mono text-[11px] text-[#333] leading-normal uppercase">
-            <h1 className="font-bold mb-4 text-[14px]">Changelog:</h1>
+            <h1 className="font-bold mb-4 text-[14px]">System Updates:</h1>
 
             {error && (
                 <div className="mb-4 text-rose-600">
@@ -78,13 +82,13 @@ export default function ChangelogPage() {
                     const day = commitDate.getDay();
                     const hour = commitDate.getHours();
 
-                    // Hari Kerja: Senin-Jumat (1-5), Jam Kerja: 09:00-18:00
+                    // Working Hours: Mon-Fri (1-5), 09:00-18:00
                     const isOutsideWorkHours = day === 0 || day === 6 || hour < 9 || hour >= 18;
 
+                    // rule 11: Hari Tanggal Jam tulis dalah bahasa Indonesia
                     const dayStr = commitDate.toLocaleDateString('id-ID', { weekday: 'long' });
                     const dateStr = `${commitDate.getDate()}/${commitDate.getMonth() + 1}/${commitDate.getFullYear()}`;
                     const timeStr = commitDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
-                    const buildNum = commits.length - index;
 
                     return (
                         <div key={item.sha} className="relative">
@@ -104,6 +108,7 @@ export default function ChangelogPage() {
                             <div className="space-y-1">
                                 <div className="flex gap-3">
                                     <span className="shrink-0 text-gray-300">-</span>
+                                    {/* rule 11: deskripsi Cangelog tulis dalam bahasa inggris */}
                                     <p className="flex-1">{item.commit.message.split('\n')[0]}</p>
                                 </div>
 
@@ -124,13 +129,13 @@ export default function ChangelogPage() {
 
                 {commits.length === 0 && !loading && (
                     <div className="text-gray-400 italic">
-                        No records found.
+                        No system records found.
                     </div>
                 )}
             </div>
 
             <footer className="mt-20 pt-10 border-t border-gray-100 opacity-30">
-                <p className="text-[10px]">End of log</p>
+                <p className="text-[10px]">End of system log</p>
             </footer>
         </div>
     );
