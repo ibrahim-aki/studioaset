@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocalDb, Checklist, ChecklistItem } from "@/context/LocalDbContext";
-import { ClipboardList, Calendar, MapPin, User, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertTriangle, AlertOctagon, Zap, Ban, ClipboardCheck, Clock } from "lucide-react";
+import { ClipboardList, Calendar, MapPin, User, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertTriangle, AlertOctagon, Zap, Ban, ClipboardCheck, Clock, Camera, History, LayoutGrid, Search, Filter, Flag } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
 
@@ -138,104 +138,160 @@ export default function ChecklistHistoryPage() {
                     <p className="text-gray-500 mt-1">Laporan dari operator akan muncul di sini.</p>
                 </div>
             ) : (
-                <div className="space-y-3">
-                    {checklists.map((report) => (
-                        <div key={report.id} className={clsx(
-                            "bg-white rounded-lg shadow-sm border transition-all hover:border-gray-300 overflow-hidden",
-                            report.isRead === false ? "border-brand-purple/20 ring-1 ring-brand-purple/10" : "border-gray-100"
-                        )}>
-                            {/* Header Card (Clickable) */}
-                            <div
-                                className="p-4 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none"
-                                onClick={() => handleExpand(report.id, report.isRead)}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className={clsx(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm",
-                                        report.isRead === false ? "bg-brand-purple text-white shadow-md shadow-brand-purple/30" : "bg-gray-50 text-gray-400 group-hover:bg-brand-purple/10 group-hover:text-brand-purple transition-colors"
-                                    )}>
-                                        {report.roomName.charAt(0)}
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="text-sm font-bold text-gray-900 leading-tight">
-                                                {report.roomName}
-                                            </h3>
-                                            {report.isRead === false && (
-                                                <span className="bg-brand-purple text-[8px] font-black px-1.5 py-0.5 rounded text-white uppercase tracking-widest">Baru</span>
+                <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50/50 border-b border-gray-100">
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 tracking-tighter text-left">Waktu</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 tracking-tighter text-left">Gedung / Ruangan</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 tracking-tighter text-left">Operator</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 tracking-tighter text-left">Ringkasan Kondisi</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 tracking-tighter text-left">Status Live</th>
+                                    <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 tracking-tighter text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {checklists.map((report) => (
+                                    <React.Fragment key={report.id}>
+                                        <tr
+                                            className={clsx(
+                                                "group hover:bg-orange-50/10 transition-all duration-150 border-b border-gray-50 last:border-0",
+                                                report.isRead === false && "bg-brand-purple/[0.02]"
                                             )}
-                                            {getStatusSummary(report.items || [])}
-                                            <RoomStatusBadge status={report.roomStatus || ""} />
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                                            <span className="flex items-center gap-1 leading-none"><Calendar className="w-2.5 h-2.5" /> {formatDate(report.timestamp)}</span>
-                                            <span className="flex items-center gap-1 leading-none text-brand-purple/50"><User className="w-2.5 h-2.5" /> {report.operatorName}</span>
-                                            {report.locationName && (
-                                                <span className="flex items-center gap-1 leading-none text-gray-300"><MapPin className="w-2.5 h-2.5" /> {report.locationName}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <div className="text-gray-300">
-                                        {expandedId === report.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Expansion Detail */}
-                            {expandedId === report.id && (
-                                <div className="bg-gray-50 border-t border-gray-100 p-5 px-5 sm:px-8">
-                                    <h4 className="font-semibold text-gray-900 text-sm mb-4">Detail Kondisi Aset</h4>
-
-                                    <ul className="space-y-3">
-                                        {(report.items || []).map((item, idx) => (
-                                            <li key={idx} className="bg-white border text-sm border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <div className="flex items-center gap-3">
-                                                        <StatusIcon status={item.status} />
-                                                        <Link
-                                                            href={`/admin/assets?search=${encodeURIComponent(item.assetName)}&location=${report.locationId}`}
-                                                            className="font-bold text-gray-900 hover:text-brand-teal hover:underline transition-colors decoration-brand-blue decoration-2 underline-offset-4"
-                                                        >
-                                                            {item.assetName}
-                                                        </Link>
-                                                    </div>
-                                                    {item.movedToRoomId && item.movedToRoomId !== "" && (() => {
-                                                        const isWarehouse = item.movedToRoomId === "GL-WAREHOUSE";
-                                                        const targetRoom = isWarehouse ? null : rawRooms.find(r => r.id === item.movedToRoomId);
-                                                        const targetLoc = targetRoom ? rawLocations.find(l => l.id === targetRoom.locationId) : null;
-
-                                                        return (
-                                                            <span className="inline-flex items-center gap-1 mt-1 ml-8 rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 ring-1 ring-inset ring-brand-purple/20">
-                                                                <MapPin className="w-3 h-3" /> Dipindah ke: {isWarehouse ? "Gudang" : (targetRoom?.name || "Ruangan Lain")} {targetLoc ? `(${targetLoc.name})` : ""}
-                                                            </span>
-                                                        );
-                                                    })()}
+                                        >
+                                            <td className="px-4 py-3 whitespace-nowrap align-top">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[11px] font-semibold text-gray-900 leading-tight">{formatDate(report.timestamp).split(',')[1]}</span>
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{formatDate(report.timestamp).split(',')[0]}</span>
                                                 </div>
-
-                                                <div className="flex-1 sm:text-right text-gray-600 text-sm font-medium">
-                                                    {item.status === "BAIK" ? (
-                                                        <span className="text-green-600">Terverifikasi Baik ✅</span>
-                                                    ) : (
-                                                        <span className="text-rose-600 italic">"{item.notes || "Tidak ada rincian"}"</span>
+                                            </td>
+                                            <td className="px-4 py-3 align-top">
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[11px] font-semibold text-gray-900 uppercase tracking-tighter">{report.roomName}</span>
+                                                        {report.isRead === false && (
+                                                            <span className="bg-brand-purple text-[8px] font-semibold px-1 py-0.5 rounded text-white uppercase tracking-widest">Baru</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-tighter flex items-center gap-1">
+                                                        <MapPin className="w-2.5 h-2.5" /> {report.locationName}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 align-top">
+                                                <div className="flex items-center gap-1.5">
+                                                    <User className="w-3 h-3 text-brand-purple/50" />
+                                                    <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-tighter">{report.operatorName}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 align-top">
+                                                <div className="flex items-center gap-2">
+                                                    {getStatusSummary(report.items || [])}
+                                                    {report.items?.some(item => !!item.photoUrl) && (
+                                                        <Camera className="w-3 h-3 text-brand-purple fill-brand-purple/10" />
                                                     )}
                                                 </div>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                            </td>
+                                            <td className="px-4 py-3 align-top">
+                                                <RoomStatusBadge status={report.roomStatus || ""} />
+                                            </td>
+                                            <td className="px-4 py-3 text-right align-top">
+                                                <button
+                                                    onClick={() => handleExpand(report.id, report.isRead)}
+                                                    className={clsx(
+                                                        "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-tighter transition-all",
+                                                        expandedId === report.id
+                                                            ? "bg-brand-purple text-white shadow-md shadow-brand-purple/20"
+                                                            : "bg-gray-100 text-gray-600 hover:bg-brand-purple/10 hover:text-brand-purple"
+                                                    )}
+                                                >
+                                                    {expandedId === report.id ? "Tutup" : "Detail"}
+                                                    {expandedId === report.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {expandedId === report.id && (
+                                            <tr className="bg-gray-50/80 border-b border-gray-100 animate-in slide-in-from-top-2 duration-300">
+                                                <td colSpan={6} className="px-6 py-8">
+                                                    <div className="max-w-5xl mx-auto">
+                                                        <div className="flex items-center justify-between mb-6">
+                                                            <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                                                <ClipboardCheck className="w-4 h-4 text-brand-purple" />
+                                                                Detail Laporan Kondisi Aset
+                                                            </h4>
+                                                        </div>
 
-                                    {report.overallNotes && (
-                                        <div className="mt-5 bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm">
-                                            <p className="font-bold text-yellow-800 mb-1">Catatan Tambahan Operator:</p>
-                                            <p className="text-yellow-700">"{report.overallNotes}"</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {(report.items || []).map((item, idx) => (
+                                                                <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="flex-1">
+                                                                            <div className="flex items-center gap-3 mb-2">
+                                                                                <StatusIcon status={item.status} />
+                                                                                <Link
+                                                                                    href={`/admin/assets?search=${encodeURIComponent(item.assetName)}`}
+                                                                                    className="font-bold text-[11px] text-gray-900 hover:text-brand-purple transition-colors uppercase tracking-tight"
+                                                                                >
+                                                                                    {item.assetName}
+                                                                                </Link>
+                                                                            </div>
+
+                                                                            <div className="pl-8 relative">
+                                                                                <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-50 rounded-full"></div>
+                                                                                <p className={clsx(
+                                                                                    "text-[10px] font-medium leading-relaxed italic",
+                                                                                    item.status === "BAIK" ? "text-gray-400" : "text-rose-600"
+                                                                                )}>
+                                                                                    {item.notes || (item.status === "BAIK" ? "Terverifikasi Baik ✅" : "Tidak ada rincian")}
+                                                                                </p>
+
+                                                                                {item.movedToRoomId && (
+                                                                                    <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-[9px] font-bold text-brand-purple uppercase tracking-tight border border-purple-100">
+                                                                                        <MapPin className="w-2.5 h-2.5" /> Pindah Ke: {item.movedToRoomId === "GL-WAREHOUSE" ? "GUDANG" : "RUANGAN LAIN"}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {item.photoUrl && (
+                                                                            <button
+                                                                                onClick={() => window.open(item.photoUrl, '_blank')}
+                                                                                className="shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 border-brand-purple/20 hover:border-brand-purple transition-all relative group"
+                                                                            >
+                                                                                <img src={item.photoUrl} alt={item.assetName} className="w-full h-full object-cover" />
+                                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                                                    <Camera className="w-5 h-5 text-white" />
+                                                                                </div>
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        {report.overallNotes && (
+                                                            <div className="mt-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 shadow-sm relative group overflow-hidden">
+                                                                <div className="absolute top-0 right-0 p-3 opacity-5 rotate-12 group-hover:rotate-0 transition-transform">
+                                                                    <Flag className="w-8 h-8 text-amber-900" />
+                                                                </div>
+                                                                <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                                                    <Flag className="w-3 h-3" /> Catatan Tambahan Operator:
+                                                                </p>
+                                                                <p className="text-[11px] text-amber-800 font-medium leading-relaxed italic z-10 relative">
+                                                                    "{report.overallNotes}"
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

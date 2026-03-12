@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2 } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
@@ -1709,8 +1709,60 @@ export default function UserManagementPage() {
                                 </div>
                             )}
 
-                            {/* Danger Zone & Maintenance */}
-                            <div className="space-y-6">
+                                                <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
+                                                                <Camera className="w-4 h-4" />
+                                                            </div>
+                                                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">
+                                                                Pengaturan Kamera
+                                                            </h3>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-6">
+                                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100">
+                                                            <div>
+                                                                <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Wajib Foto Saat Checklist</p>
+                                                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-1">
+                                                                    {selectedCompany.requireChecklistPhoto ? "Status: ON (Wajib Foto Kamera)" : "Status: OFF (Foto Opsional)"}
+                                                                </p>
+                                                            </div>
+                                                            <button 
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await updateDoc(doc(db, "companies", selectedCompany.id), {
+                                                                            requireChecklistPhoto: !selectedCompany.requireChecklistPhoto
+                                                                        });
+                                                                        setSelectedCompany((prev: any) => ({
+                                                                            ...prev,
+                                                                            requireChecklistPhoto: !prev.requireChecklistPhoto
+                                                                        }));
+                                                                    } catch (err) {
+                                                                        alert("Gagal memperbarui status foto.");
+                                                                    }
+                                                                }}
+                                                                className={clsx(
+                                                                    "relative w-12 h-6 rounded-full transition-all duration-300 p-1",
+                                                                    selectedCompany.requireChecklistPhoto ? "bg-brand-purple" : "bg-gray-300"
+                                                                )}
+                                                            >
+                                                                <div className={clsx(
+                                                                    "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
+                                                                    selectedCompany.requireChecklistPhoto ? "translate-x-6" : "translate-x-0"
+                                                                )} />
+                                                            </button>
+                                                        </div>
+
+                                                        <p className="text-[9px] text-gray-400 italic font-medium leading-relaxed px-2">
+                                                            * Jika ON, operator wajib mengambil foto kamera untuk setiap aset sebelum bisa menyimpan laporan.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                {/* Danger Zone & Maintenance */}
+                                <div className="space-y-6">
                                 {selectedCompany && (
                                     <div className="bg-rose-50 border border-rose-100 rounded-3xl p-8 shadow-sm">
                                         <h3 className="text-sm font-black text-rose-600 uppercase tracking-widest mb-4">Hapus Perusahaan</h3>

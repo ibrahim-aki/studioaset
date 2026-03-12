@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,11 +20,13 @@ const isValidConfig = firebaseConfig.apiKey &&
 let app: FirebaseApp | undefined;
 let auth: Auth | any;
 let db: Firestore | any;
+let storage: FirebaseStorage | any;
 
 if (isValidConfig) {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
+    storage = getStorage(app);
     console.log("✅ Firebase Client Initialized Successfully");
 } else {
     console.error("❌ Firebase Client Failed to Initialize: Missing or invalid API Key");
@@ -35,6 +38,7 @@ if (isValidConfig) {
     // Provide fallback for build time / missing config
     auth = { onAuthStateChanged: () => (() => { }) } as any;
     db = {} as any;
+    storage = {} as any;
 }
 
-export { app, auth, db };
+export { app, auth, db, storage };

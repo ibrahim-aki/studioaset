@@ -28,6 +28,7 @@ export interface Company {
     email?: string;
     phone?: string;
     createdAt: string;
+    requireChecklistPhoto?: boolean; 
 }
 
 export interface Location {
@@ -75,6 +76,7 @@ export interface ChecklistItem {
     status: string;
     notes: string;
     movedToRoomId?: string;
+    photoUrl?: string;
 }
 
 export interface AssetLog {

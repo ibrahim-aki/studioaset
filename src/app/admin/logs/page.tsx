@@ -43,15 +43,15 @@ export default function AdminLogsPage() {
             {/* Header */}
             <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-black text-gray-900 flex items-center gap-2 tracking-tighter uppercase">
+                    <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2 tracking-tighter uppercase">
                         <History className="w-5 h-5 text-brand-purple" />
                         Log Aktivitas Admin
                     </h1>
-                    <p className="mt-0.5 text-[9px] text-gray-400 font-bold uppercase tracking-tighter">
+                    <p className="mt-0.5 text-[9px] text-gray-400 font-semibold uppercase tracking-tighter">
                         Audit trail seluruh aktivitas manajemen sistem dan inventaris.
                     </p>
                 </div>
-                <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-brand-teal rounded-lg border border-emerald-100 text-[9px] font-black uppercase tracking-tighter">
+                <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-brand-teal rounded-lg border border-emerald-100 text-[9px] font-bold uppercase tracking-tighter">
                     <span className="w-1.5 h-1.5 bg-brand-teal rounded-full animate-ping" />
                     Real-time Audit Active
                 </div>
@@ -91,10 +91,10 @@ export default function AdminLogsPage() {
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-gray-50/50 border-b border-gray-100">
-                                <th className="px-2 py-2 text-[9px] uppercase font-black text-gray-500 tracking-tighter text-left w-[110px]">Waktu Log</th>
-                                <th className="px-2 py-2 text-[9px] uppercase font-black text-gray-500 tracking-tighter text-left w-[140px]">Admin / Operator</th>
-                                <th className="px-2 py-2 text-[9px] uppercase font-black text-gray-500 tracking-tighter text-left">Jenis & Kejadian</th>
-                                <th className="px-2 py-2 text-[9px] uppercase font-black text-gray-500 tracking-tighter text-left">Detail Catatan</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left w-[110px]">Waktu Log</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left w-[140px]">Admin / Operator</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left">Jenis & Kejadian</th>
+                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left">Detail Catatan</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -102,7 +102,7 @@ export default function AdminLogsPage() {
                                 <tr>
                                     <td colSpan={4} className="py-20 text-center">
                                         <Activity className="w-8 h-8 text-gray-100 mx-auto mb-2" />
-                                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">Belum ada aktivitas tercatat</p>
+                                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter italic">Belum ada aktivitas tercatat</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -152,7 +152,7 @@ export default function AdminLogsPage() {
                                             <td className="px-2 py-1.5 tracking-tighter align-top whitespace-nowrap">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className={clsx(
-                                                        "text-[9px] font-black leading-none shrink-0 tracking-tighter",
+                                                        "text-[9px] font-bold leading-none shrink-0 tracking-tighter",
                                                         log.type === "MOVEMENT" ? "text-brand-orange" :
                                                             log.type === "STATUS" ? "text-brand-teal" :
                                                                 log.type === "AUTH" ? "text-brand-teal" :
@@ -160,11 +160,11 @@ export default function AdminLogsPage() {
                                                     )}>
                                                         [{log.type}]
                                                     </span>
-                                                    <span className="font-black text-gray-700 uppercase">
+                                                    <span className="font-bold text-gray-700 uppercase">
                                                         {log.toValue}
                                                     </span>
                                                     {log.assetName && (
-                                                        <span className="text-brand-purple/60 font-black uppercase italic flex items-center gap-1">
+                                                        <span className="text-brand-purple/60 font-bold uppercase italic flex items-center gap-1">
                                                             • {log.assetName}
                                                         </span>
                                                     )}
@@ -194,7 +194,7 @@ export default function AdminLogsPage() {
                 </div>
             </div>
 
-            <footer className="mt-8 pt-4 border-t border-gray-100 flex justify-between items-center text-[9px] text-gray-300 font-black uppercase tracking-tighter">
+            <footer className="mt-8 pt-4 border-t border-gray-100 flex justify-between items-center text-[9px] text-gray-300 font-bold uppercase tracking-tighter">
                 <span>System Security Audit v3.0</span>
                 <span>Security Logging Enabled - {filteredLogs.length} Entries</span>
             </footer>

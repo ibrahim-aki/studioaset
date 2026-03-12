@@ -3,7 +3,9 @@
 import { use, useEffect, useState } from "react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { useAuth } from "@/context/AuthContext";
-import { Video, Loader2, ArrowLeft, CheckCircle2, AlertTriangle, AlertOctagon, Send, Zap, Ban, ClipboardCheck, Flag, Clock, User, History, ChevronDown, ChevronUp, XCircle, Search, Plus, Package } from "lucide-react";
+import { Video, Loader2, ArrowLeft, CheckCircle2, AlertTriangle, AlertOctagon, Send, Zap, Ban, ClipboardCheck, Flag, Clock, User, History, ChevronDown, ChevronUp, XCircle, Search, Plus, Package, Camera, Trash2 } from "lucide-react";
+import { storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -20,6 +22,7 @@ interface ChecklistItem {
     status: "BAIK" | "RUSAK" | "MATI" | "HILANG" | "";
     notes: string;
     movedToRoomId?: string;
+    photoUrl?: string;
 }
 
 export default function ChecklistFormPage({ params }: { params: Promise<{ roomId: string }> }) {
@@ -39,7 +42,22 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
-    const { rooms: rawRooms, roomAssets: rawRoomAssets, addChecklist, assets: rawAssets, updateAsset, moveRoomAsset, addRoomAsset, locations: rawLocations, checklists } = useLocalDb();
+    const [uploadingAssetId, setUploadingAssetId] = useState<string | null>(null);
+    const { 
+        rooms: rawRooms, 
+        roomAssets: rawRoomAssets, 
+        addChecklist, 
+        assets: rawAssets, 
+        updateAsset, 
+        moveRoomAsset, 
+        addRoomAsset, 
+        locations: rawLocations, 
+        checklists,
+        companies 
+    } = useLocalDb();
+    
+    // Ambil preferensi perusahaan
+    const currentCompany = companies.find(c => c.id === user?.companyId);
 
     // Filter checklists for this room to find latest status
     const lastCheck = checklists
@@ -110,6 +128,64 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
         ));
     };
 
+    const compressImage = async (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1200;
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Gagal kompresi"));
+                    }, "image/jpeg", 0.7);
+                };
+            };
+            reader.onerror = (e) => reject(e);
+        });
+    };
+
+    const handlePhotoCapture = async (assetId: string, file: File) => {
+        if (!file) return;
+        setUploadingAssetId(assetId);
+        try {
+            const compressedBlob = await compressImage(file);
+            const fileName = `checklist-photos/${new Date().toISOString().split('T')[0]}/${assetId}_${Date.now()}.jpg`;
+            const storageRef = ref(storage, fileName);
+            await uploadBytes(storageRef, compressedBlob);
+            const url = await getDownloadURL(storageRef);
+            
+            setChecklist(prev => prev.map(item => 
+                item.assetId === assetId ? { ...item, photoUrl: url } : item
+            ));
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("Gagal mengunggah foto. Pastikan koneksi internet stabil.");
+        } finally {
+            setUploadingAssetId(null);
+        }
+    };
+
     const addAssetFromWarehouse = (assetId: string, assetName: string) => {
         // Avoid duplicates
         if (checklist.some(item => item.assetId === assetId)) {
@@ -146,6 +222,15 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
         if (uncompleted) {
             alert("Mohon isi status kondisi untuk semua alat studio sebelum submit.");
             return;
+        }
+
+        // Validasi Foto Kamera (Opsional Berdasarkan Pengaturan Super Admin)
+        if (currentCompany?.requireChecklistPhoto) {
+            const missingPhoto = checklist.find(c => !c.photoUrl);
+            if (missingPhoto) {
+                alert(`PENTING: Perusahaan mewajibkan bukti foto. Aset "${missingPhoto.assetName}" belum difoto. Silakan ambil foto melalui kamera.`);
+                return;
+            }
         }
 
         if (roomStatus === "") {
@@ -500,6 +585,59 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                                                 }
                                             </select>
                                         </div>
+                                    </div>
+
+                                    {/* Action Box: Photo Capture */}
+                                    <div className="mt-2">
+                                        {item.photoUrl ? (
+                                            <div className="relative w-full h-40 rounded-2xl overflow-hidden border-2 border-green-500 shadow-inner group/photo">
+                                                <img src={item.photoUrl} alt="Bukti Foto" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setChecklist(prev => prev.map(i => i.assetId === item.assetId ? { ...i, photoUrl: "" } : i))}
+                                                        className="bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md text-white transition-all"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                                <div className="absolute bottom-2 left-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
+                                                    Foto Tersimpan
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label className={clsx(
+                                                "w-full h-32 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
+                                                uploadingAssetId === item.assetId 
+                                                    ? "bg-gray-50 border-purple-200" 
+                                                    : "bg-purple-50/50 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+                                            )}>
+                                                {uploadingAssetId === item.assetId ? (
+                                                    <div className="flex flex-col items-center animate-pulse">
+                                                        <Loader2 className="w-6 h-6 animate-spin text-purple-600 mb-1" />
+                                                        <span className="text-[10px] font-black text-purple-600 uppercase">Mengompres & Upload...</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                                                            <Camera className="w-6 h-6" />
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-[11px] font-black text-purple-700 uppercase tracking-tight">Ambil Foto Aset</p>
+                                                            <p className="text-[9px] text-purple-400 font-bold uppercase">(Wajib Kamera)</p>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    capture="environment" 
+                                                    className="hidden" 
+                                                    onChange={(e) => e.target.files?.[0] && handlePhotoCapture(item.assetId, e.target.files[0])}
+                                                    disabled={!!uploadingAssetId}
+                                                />
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
                             </div>
