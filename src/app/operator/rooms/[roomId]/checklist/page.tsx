@@ -587,58 +587,60 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                                         </div>
                                     </div>
 
-                                    {/* Action Box: Photo Capture */}
-                                    <div className="mt-2">
-                                        {item.photoUrl ? (
-                                            <div className="relative w-full h-40 rounded-2xl overflow-hidden border-2 border-green-500 shadow-inner group/photo">
-                                                <img src={item.photoUrl} alt="Bukti Foto" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity">
-                                                    <button 
-                                                        type="button"
-                                                        onClick={() => setChecklist(prev => prev.map(i => i.assetId === item.assetId ? { ...i, photoUrl: "" } : i))}
-                                                        className="bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md text-white transition-all"
-                                                    >
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-                                                <div className="absolute bottom-2 left-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
-                                                    Foto Tersimpan
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <label className={clsx(
-                                                "w-full h-32 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
-                                                uploadingAssetId === item.assetId 
-                                                    ? "bg-gray-50 border-purple-200" 
-                                                    : "bg-purple-50/50 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
-                                            )}>
-                                                {uploadingAssetId === item.assetId ? (
-                                                    <div className="flex flex-col items-center animate-pulse">
-                                                        <Loader2 className="w-6 h-6 animate-spin text-purple-600 mb-1" />
-                                                        <span className="text-[10px] font-black text-purple-600 uppercase">Mengompres & Upload...</span>
+                                    {/* Action Box: Photo Capture (Hanya muncul jika diaktifkan di Super Admin) */}
+                                    {currentCompany?.requireChecklistPhoto && (
+                                        <div className="mt-2">
+                                            {item.photoUrl ? (
+                                                <div className="relative w-full h-40 rounded-2xl overflow-hidden border-2 border-green-500 shadow-inner group/photo">
+                                                    <img src={item.photoUrl} alt="Bukti Foto" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group/photo:opacity-100 transition-opacity">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setChecklist(prev => prev.map(i => i.assetId === item.assetId ? { ...i, photoUrl: "" } : i))}
+                                                            className="bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md text-white transition-all"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
                                                     </div>
-                                                ) : (
-                                                    <>
-                                                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                                                            <Camera className="w-6 h-6" />
+                                                    <div className="absolute bottom-2 left-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
+                                                        Foto Tersimpan
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <label className={clsx(
+                                                    "w-full h-32 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
+                                                    uploadingAssetId === item.assetId 
+                                                        ? "bg-gray-50 border-purple-200" 
+                                                        : "bg-purple-50/50 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+                                                )}>
+                                                    {uploadingAssetId === item.assetId ? (
+                                                        <div className="flex flex-col items-center animate-pulse">
+                                                            <Loader2 className="w-6 h-6 animate-spin text-purple-600 mb-1" />
+                                                            <span className="text-[10px] font-black text-purple-600 uppercase">Mengompres & Upload...</span>
                                                         </div>
-                                                        <div className="text-center">
-                                                            <p className="text-[11px] font-black text-purple-700 uppercase tracking-tight">Ambil Foto Aset</p>
-                                                            <p className="text-[9px] text-purple-400 font-bold uppercase">(Wajib Kamera)</p>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*" 
-                                                    capture="environment" 
-                                                    className="hidden" 
-                                                    onChange={(e) => e.target.files?.[0] && handlePhotoCapture(item.assetId, e.target.files[0])}
-                                                    disabled={!!uploadingAssetId}
-                                                />
-                                            </label>
-                                        )}
-                                    </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                                                                <Camera className="w-6 h-6" />
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <p className="text-[11px] font-black text-purple-700 uppercase tracking-tight">Ambil Foto Aset</p>
+                                                                <p className="text-[9px] text-purple-400 font-bold uppercase">(Wajib Kamera)</p>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        capture="environment" 
+                                                        className="hidden" 
+                                                        onChange={(e) => e.target.files?.[0] && handlePhotoCapture(item.assetId, e.target.files[0])}
+                                                        disabled={!!uploadingAssetId}
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))

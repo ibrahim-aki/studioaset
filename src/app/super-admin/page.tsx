@@ -523,7 +523,10 @@ export default function UserManagementPage() {
     const [statsLoading, setStatsLoading] = useState(false);
     const [usageMetrics, setUsageMetrics] = useState({ dailyWrites: 0, monthlyActiveUsers: 0, dailyReadsEstimate: 0 });
 
-    const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, rooms, assets } = useLocalDb();
+    const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, updateCompany, rooms, assets } = useLocalDb();
+
+    // Dapatkan data perusahaan terbaru secara reaktif
+    const liveCompany = companies.find(c => c.id === selectedCompany?.id);
 
     useEffect(() => {
         // Only load users if we are in management view for a specific company
@@ -1709,57 +1712,58 @@ export default function UserManagementPage() {
                                 </div>
                             )}
 
-                                                <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
-                                                                <Camera className="w-4 h-4" />
+                                                {selectedCompany && (
+                                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                                        <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
+                                                                    <Camera className="w-4 h-4" />
+                                                                </div>
+                                                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">
+                                                                    Pengaturan Kamera
+                                                                </h3>
                                                             </div>
-                                                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">
-                                                                Pengaturan Kamera
-                                                            </h3>
                                                         </div>
-                                                    </div>
-                                                    
-                                                    <div className="space-y-6">
-                                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100">
-                                                            <div>
-                                                                <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Wajib Foto Saat Checklist</p>
-                                                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-1">
-                                                                    {selectedCompany.requireChecklistPhoto ? "Status: ON (Wajib Foto Kamera)" : "Status: OFF (Foto Opsional)"}
-                                                                </p>
+                                                        
+                                                        <div className="space-y-6">
+                                                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100">
+                                                                <div>
+                                                                    <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Wajib Foto Saat Checklist</p>
+                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-1">
+                                                                        {liveCompany?.requireChecklistPhoto ? "Status: ON (Wajib Foto Kamera)" : "Status: OFF (Foto Opsional)"}
+                                                                    </p>
+                                                                </div>
+                                                                <button 
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            const currentStatus = liveCompany?.requireChecklistPhoto || false;
+                                                                            console.log("DEBUG UI: Requesting toggle to", !currentStatus);
+                                                                            await updateCompany(selectedCompany.id, {
+                                                                                requireChecklistPhoto: !currentStatus
+                                                                            });
+                                                                        } catch (err: any) {
+                                                                            console.error("CAMERA_TOGGLE_ERROR:", err);
+                                                                            alert(`Gagal: ${err.code === 'permission-denied' ? 'Izin Ditolak (Cek Firestore Rules/Role Anda)' : err.message}`);
+                                                                        }
+                                                                    }}
+                                                                    className={clsx(
+                                                                        "relative w-12 h-6 rounded-full transition-all duration-300 p-1",
+                                                                        liveCompany?.requireChecklistPhoto ? "bg-brand-purple" : "bg-gray-300"
+                                                                    )}
+                                                                >
+                                                                    <div className={clsx(
+                                                                        "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
+                                                                        liveCompany?.requireChecklistPhoto ? "translate-x-6" : "translate-x-0"
+                                                                    )} />
+                                                                </button>
                                                             </div>
-                                                            <button 
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        await updateDoc(doc(db, "companies", selectedCompany.id), {
-                                                                            requireChecklistPhoto: !selectedCompany.requireChecklistPhoto
-                                                                        });
-                                                                        setSelectedCompany((prev: any) => ({
-                                                                            ...prev,
-                                                                            requireChecklistPhoto: !prev.requireChecklistPhoto
-                                                                        }));
-                                                                    } catch (err) {
-                                                                        alert("Gagal memperbarui status foto.");
-                                                                    }
-                                                                }}
-                                                                className={clsx(
-                                                                    "relative w-12 h-6 rounded-full transition-all duration-300 p-1",
-                                                                    selectedCompany.requireChecklistPhoto ? "bg-brand-purple" : "bg-gray-300"
-                                                                )}
-                                                            >
-                                                                <div className={clsx(
-                                                                    "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
-                                                                    selectedCompany.requireChecklistPhoto ? "translate-x-6" : "translate-x-0"
-                                                                )} />
-                                                            </button>
-                                                        </div>
 
-                                                        <p className="text-[9px] text-gray-400 italic font-medium leading-relaxed px-2">
-                                                            * Jika ON, operator wajib mengambil foto kamera untuk setiap aset sebelum bisa menyimpan laporan.
-                                                        </p>
+                                                            <p className="text-[9px] text-gray-400 italic font-medium leading-relaxed px-2">
+                                                                * Jika ON, operator wajib mengambil foto kamera untuk setiap aset sebelum bisa menyimpan laporan.
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                )}
 
                                 {/* Danger Zone & Maintenance */}
                                 <div className="space-y-6">
