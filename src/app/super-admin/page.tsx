@@ -71,6 +71,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                 locationName: selectedLocation ? selectedLocation.name : (locationId === "HQ" ? "Kantor Pusat (HQ)" : "-"),
                 phone,
                 uid: newUser.uid,
+                needsPasswordChange: true,
                 createdAt: new Date().toISOString()
             });
 

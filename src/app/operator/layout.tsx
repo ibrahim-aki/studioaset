@@ -40,8 +40,9 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
         <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
             <div className="min-h-screen bg-gray-50 flex flex-col">
                 <ChangePasswordModal
-                    isOpen={isPasswordModalOpen}
+                    isOpen={isPasswordModalOpen || (user?.role !== 'SUPER_ADMIN' && user?.needsPasswordChange === true)}
                     onClose={() => setIsPasswordModalOpen(false)}
+                    preventClose={user?.role !== 'SUPER_ADMIN' && user?.needsPasswordChange === true}
                 />
 
                 {/* Mobile Header / Topbar */}

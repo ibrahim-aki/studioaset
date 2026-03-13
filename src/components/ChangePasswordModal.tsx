@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { X, Lock, KeyRound, Loader2, CheckCircle2 } from "lucide-react";
+import { auth, db } from "@/lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { X, Lock, KeyRound, Loader2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import clsx from "clsx";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
     onClose: () => void;
+    preventClose?: boolean;
 }
 
-export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+export default function ChangePasswordModal({ isOpen, onClose, preventClose = false }: ChangePasswordModalProps) {
     const { showToast } = useToast();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -49,6 +52,11 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
             // Update password
             await updatePassword(user, newPassword);
+            
+            // Re-sync needsPasswordChange flag in Firestore
+            await updateDoc(doc(db, "users", user.uid), {
+                needsPasswordChange: false
+            });
 
             setSuccess(true);
             setTimeout(() => {
@@ -83,9 +91,11 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Keamanan Akun</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white rounded-lg transition-colors text-gray-400">
-                        <X className="w-5 h-5" />
-                    </button>
+                    {!preventClose && (
+                        <button onClick={onClose} className="p-2 hover:bg-white rounded-lg transition-colors text-gray-400">
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-6">
@@ -99,9 +109,21 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {preventClose && (
+                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-4">
+                                    <div className="flex items-center gap-3 text-amber-900 mb-1">
+                                        <ShieldAlert className="w-5 h-5 shrink-0" />
+                                        <span className="font-bold text-xs uppercase tracking-tight">Wajib Ganti Password</span>
+                                    </div>
+                                    <p className="text-[10px] text-amber-700 leading-relaxed">
+                                        Ini adalah pertama kalinya Anda masuk. Demi keamanan, Anda wajib mengubah password bawaan sebelum dapat melanjutkan penggunaan aplikasi.
+                                    </p>
+                                </div>
+                            )}
+
                             {error && (
-                                <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs font-medium">
-                                    {error}
+                                <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs font-medium flex items-center gap-2">
+                                    <ShieldAlert className="w-4 h-4 shrink-0" /> {error}
                                 </div>
                             )}
 
@@ -157,20 +179,25 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                             </div>
 
                             <div className="pt-4 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="flex-[2] py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                >
-                                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Password"}
-                                </button>
+                                    {!preventClose && (
+                                        <button
+                                            type="button"
+                                            onClick={onClose}
+                                            className="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
+                                        >
+                                            Batal
+                                        </button>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className={clsx(
+                                            "py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50",
+                                            preventClose ? "w-full" : "flex-[2]"
+                                        )}
+                                    >
+                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Password"}
+                                    </button>
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-gray-50 text-center">

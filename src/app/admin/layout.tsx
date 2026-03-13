@@ -63,8 +63,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <ProtectedRoute allowedRoles={["ADMIN", "CLIENT_ADMIN"]}>
             <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
                 <ChangePasswordModal
-                    isOpen={isPasswordModalOpen}
+                    isOpen={isPasswordModalOpen || (user?.role !== 'SUPER_ADMIN' && user?.needsPasswordChange === true)}
                     onClose={() => setIsPasswordModalOpen(false)}
+                    preventClose={user?.role !== 'SUPER_ADMIN' && user?.needsPasswordChange === true}
                 />
 
                 {/* Mobile sidebar backdrop */}

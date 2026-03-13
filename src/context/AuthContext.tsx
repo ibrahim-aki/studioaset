@@ -18,6 +18,7 @@ interface AppUser {
     locationName?: string;
     phone?: string;
     lastSessionId?: string;
+    needsPasswordChange?: boolean;
 }
 
 interface AuthContextType {
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             locationName: data.locationName || "",
                             phone: data.phone || "",
                             lastSessionId: data.lastSessionId || "",
+                            needsPasswordChange: data.needsPasswordChange || false,
                         });
                     } else {
                         setUser({
