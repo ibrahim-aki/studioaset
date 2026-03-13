@@ -14,5 +14,6 @@ Untuk menjaga penggunaan kuota tetap optimal, patuhi aturan berikut:
 7. *To-the-Point:* Berikan penjelasan teknis yang padat. Hindari basa-basi, pengulangan instruksi, atau penjelasan filosofis yang panjang.
 8. *Re-use Context:* Jika kamu sudah membaca suatu file dalam percakapan ini, tidak perlu membacanya lagi di langkah berikutnya kecuali jika file tersebut baru saja diubah.
 9. *Flash Model Preference:* Selalu prioritaskan penyelesaian tugas dengan cara yang paling sederhana cepat dan efektif untuk menghemat token.
-10. *Pengecualian Cangelog aplikasi:* fitur, perbaikan, update atau perubahan apapun yang ada hubungannya dengan super admin serta informasi github atau vercel tidak perlu dicatat atau dimasukkan ke cangelog aplikasi
-11. *Bahasa Cangelog di Aplikasi* khusus di menu Cangelog Aplikasi keterangan Hari Tanggal Jam tulis dalah bahasa Indonesia, untuk deskripsi Cangelog tulis dalam bahasa inggris.
+10. *Pengecualian pesan commit github:* apapun yang ada hubungannya dengansuper admin serta informasi github atau vercel ganti dengan kata lain di pesan commit
+11. *Pengecualian Cangelog aplikasi:* fitur, perbaikan, update atau perubahan apapun yang ada hubungannya dengan super admin serta informasi github atau vercel tidak perlu dicatat atau dimasukkan ke cangelog aplikasi
+12. *Bahasa Cangelog di Aplikasi* khusus di menu Cangelog Aplikasi keterangan Hari Tanggal Jam tulis dalah bahasa Indonesia, untuk deskripsi Cangelog tulis dalam bahasa inggris.

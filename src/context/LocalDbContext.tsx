@@ -29,6 +29,12 @@ export interface Company {
     phone?: string;
     createdAt: string;
     requireChecklistPhoto?: boolean; 
+    retention?: {
+        assetLogsDays?: number;
+        checklistsDays?: number;
+        deletedAssetsDays?: number;
+        assetHistoryDays?: number;
+    };
 }
 
 export interface Location {
@@ -191,6 +197,7 @@ interface LocalDbContextType {
     addChecklist: (checklist: Omit<Checklist, "id" | "isRead" | "companyId">) => Promise<void>;
     markChecklistAsRead: (id: string) => Promise<void>;
     addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName" | "companyId"> & { operatorName?: string; companyId?: string }) => Promise<void>;
+    purgeData: (companyId: string, type: 'LOGS' | 'REPORTS' | 'TRASH' | 'ASSET_HISTORY', days?: number) => Promise<void>;
 
     operatorShifts: OperatorShift[];
     addShift: (shift: Omit<OperatorShift, "id" | "companyId" | "operatorId" | "operatorName" | "operatorPhone" | "status" | "createdAt">) => Promise<string>;
@@ -567,6 +574,44 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             if (!companyId && finalRole !== "SUPER_ADMIN" && finalRole !== "SYSTEM") companyId = localStorage.getItem("last_known_company_id") || "";
             const newLog: AssetLog = { ...log, id, companyId, timestamp, operatorName: finalName, operatorRole: finalRole };
             await setDoc(doc(db, "assetLogs", id), newLog);
+        },
+
+        purgeData: async (companyId, type, days) => {
+            if (!companyId) return;
+            const collectionMapping: Record<string, string> = {
+                'LOGS': 'assetLogs',
+                'ASSET_HISTORY': 'assetLogs',
+                'REPORTS': 'checklists',
+                'TRASH': 'deleted_assets'
+            };
+            const collName = collectionMapping[type];
+            let q = query(collection(db, collName), where("companyId", "==", companyId));
+
+            if (type === 'LOGS') {
+                q = query(q, where("type", "in", ["SYSTEM", "AUTH"]));
+            } else if (type === 'ASSET_HISTORY') {
+                q = query(q, where("type", "in", ["STATUS", "MOVEMENT"]));
+            }
+
+            if (days !== undefined && days > 0) {
+                const threshold = new Date();
+                threshold.setDate(threshold.getDate() - days);
+                const thresholdStr = threshold.toISOString();
+                
+                const timeField = type === 'TRASH' ? 'deleteDate' : 'timestamp';
+                q = query(q, where(timeField, "<", thresholdStr));
+            }
+
+            const snap = await getDocs(q);
+            const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+            await Promise.all(deletePromises);
+            
+            await api.addLog({
+                type: "SYSTEM",
+                toValue: `Pembersihan ${type}`,
+                notes: days ? `Hapus otomatis data > ${days} hari` : `Hapus manual seluruh data`,
+                companyId: companyId
+            });
         },
 
         addShift: async (shiftData) => {

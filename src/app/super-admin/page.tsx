@@ -523,7 +523,7 @@ export default function UserManagementPage() {
     const [statsLoading, setStatsLoading] = useState(false);
     const [usageMetrics, setUsageMetrics] = useState({ dailyWrites: 0, monthlyActiveUsers: 0, dailyReadsEstimate: 0 });
 
-    const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, updateCompany, rooms, assets } = useLocalDb();
+    const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, updateCompany, rooms, assets, purgeData } = useLocalDb();
 
     // Dapatkan data perusahaan terbaru secara reaktif
     const liveCompany = companies.find(c => c.id === selectedCompany?.id);
@@ -574,6 +574,30 @@ export default function UserManagementPage() {
     useEffect(() => {
         setChecklists(contextChecklists);
     }, [contextChecklists]);
+
+    // Auto-cleanup trigger when company is selected
+    useEffect(() => {
+        if (selectedCompany && liveCompany?.retention) {
+            const { retention } = liveCompany;
+            
+            const cleanup = async () => {
+                if (retention.checklistsDays) {
+                    await purgeData(selectedCompany.id, 'REPORTS', retention.checklistsDays);
+                }
+                if (retention.assetHistoryDays) {
+                    await purgeData(selectedCompany.id, 'ASSET_HISTORY', retention.assetHistoryDays);
+                }
+                if (retention.assetLogsDays) {
+                    await purgeData(selectedCompany.id, 'LOGS', retention.assetLogsDays);
+                }
+                if (retention.deletedAssetsDays) {
+                    await purgeData(selectedCompany.id, 'TRASH', retention.deletedAssetsDays);
+                }
+            };
+            
+            cleanup().catch(err => console.error("Auto-cleanup failed:", err));
+        }
+    }, [selectedCompany?.id, liveCompany?.retention]);
 
     useEffect(() => {
         // Global Cloud Health Listener (when no specific company selected)
@@ -744,41 +768,48 @@ export default function UserManagementPage() {
                     onAdd={(data) => addCompany(data)}
                 />
 
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                            <Shield className="w-6 h-6 text-brand-purple" /> Super Admin Portal
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">Global management and company orchestration.</p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
+                                <Shield className="w-4 h-4" />
+                            </div>
+                            <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">
+                                Portal Klien
+                            </h2>
+                        </div>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-10">Global Orchestration</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <div className="relative group/search">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/search:text-brand-purple transition-colors" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-focus-within/search:text-brand-purple transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Cari klien..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs outline-none focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 transition-all w-40 sm:w-64"
+                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-[11px] font-bold outline-none focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/5 transition-all w-40 sm:w-56"
                             />
                         </div>
-                        <button
-                            onClick={() => {
-                                setView("management");
-                                setActiveTab("cloud");
-                                setSelectedCompany(null);
-                            }}
-                            className="bg-gray-900 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-black transition-all shadow-lg shadow-gray-200 flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
-                        >
-                            <Settings2 className="w-4 h-4" /> SYSTEM
-                        </button>
-                        <button
-                            onClick={() => setIsAddCompanyOpen(true)}
-                            className="bg-brand-purple text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-brand-purple transition-all flex items-center gap-2 shadow-lg shadow-brand-purple/20 whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> TAMBAH KLIEN
-                        </button>
+                        <div className="flex items-center p-1 bg-gray-100 rounded-xl border border-gray-200">
+                            <button
+                                onClick={() => {
+                                    setView("management");
+                                    setActiveTab("cloud");
+                                    setSelectedCompany(null);
+                                }}
+                                className="text-gray-500 px-4 py-2 rounded-lg font-black text-[10px] hover:text-gray-900 transition-all flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
+                            >
+                                <Settings2 className="w-3.5 h-3.5" /> SYSTEM
+                            </button>
+                            <button
+                                onClick={() => setIsAddCompanyOpen(true)}
+                                className="bg-white text-brand-purple px-4 py-2 rounded-lg font-black text-[10px] hover:shadow-sm transition-all flex items-center gap-2 shadow-none border border-transparent whitespace-nowrap uppercase tracking-widest"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> TAMBAH KLIEN
+                            </button>
+                        </div>
                     </div>
                 </header>
 
@@ -878,9 +909,8 @@ export default function UserManagementPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <div className="inline-flex items-center gap-1 text-[9px] font-black text-brand-purple uppercase tracking-widest border border-brand-purple/20 bg-brand-purple/10/50 px-3 py-1.5 rounded-full group-hover:bg-brand-purple group-hover:text-white transition-all">
-                                                        Kelola
-                                                        <ArrowLeft className="w-2.5 h-2.5 rotate-180" />
+                                                    <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-brand-purple group-hover:text-white group-hover:border-brand-purple transition-all mx-auto">
+                                                        <ArrowLeft className="w-4 h-4 rotate-180" />
                                                     </div>
                                                 </td>
                                             </tr>
@@ -930,24 +960,24 @@ export default function UserManagementPage() {
                         </div>
                     </div>
 
-                    <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200 shadow-inner">
+                    <div className="flex bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
                         {[
-                            { id: "dashboard", name: "Monitor Dashboard", icon: LayoutDashboard, show: !!selectedCompany },
-                            { id: "users", name: "Tim & Akses", icon: Users, show: !!selectedCompany },
-                            { id: "logs", name: "Audit Log", icon: History, show: !!selectedCompany },
-                            { id: "cloud", name: "Cloud Health", icon: Cloud, show: !selectedCompany },
+                            { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, show: !!selectedCompany },
+                            { id: "users", name: "Tim", icon: Users, show: !!selectedCompany },
+                            { id: "logs", name: "Audit", icon: History, show: !!selectedCompany },
+                            { id: "cloud", name: "Cloud", icon: Cloud, show: !selectedCompany },
                             { id: "settings", name: "System", icon: Settings2, show: true }
                         ].filter(t => t.show).map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={clsx(
-                                    "px-4 py-2 text-[10px] font-black rounded-xl transition-all uppercase flex items-center gap-2 tracking-widest",
-                                    activeTab === tab.id ? "bg-white text-brand-purple shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                    "px-3 py-1.5 text-[9px] font-black rounded-lg transition-all uppercase flex items-center gap-1.5 tracking-widest",
+                                    activeTab === tab.id ? "bg-brand-purple text-white shadow-md shadow-brand-purple/20" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                                 )}
                             >
-                                <tab.icon className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">{tab.name}</span>
+                                <tab.icon className="w-3 h-3" />
+                                <span className="">{tab.name}</span>
                             </button>
                         ))}
                     </div>
@@ -1048,8 +1078,8 @@ export default function UserManagementPage() {
                                 </h3>
                                 <p className="text-sm text-brand-purple/20/80">Kelola Admin dan Operator untuk {selectedCompany?.name || 'perusahaan terpilih'}.</p>
                             </div>
-                            <button onClick={() => setIsAddUserOpen(true)} className="bg-white text-brand-purple px-8 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all shadow-xl">
-                                + TAMBAH USER
+                            <button onClick={() => setIsAddUserOpen(true)} className="bg-white text-brand-purple px-6 py-3 rounded-xl font-black text-[10px] hover:shadow-lg transition-all shadow-md uppercase tracking-widest flex items-center gap-2">
+                                <Plus className="w-3.5 h-3.5" /> Tambah User
                             </button>
                         </div>
 
@@ -1573,10 +1603,10 @@ export default function UserManagementPage() {
 
                 {activeTab === "settings" && (
                     <div id="super-admin-settings-content" className="space-y-8 animate-in fade-in duration-500">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                        <div className="flex flex-col gap-6 max-w-4xl mx-auto">
                             {/* Global Configuration */}
                             {!selectedCompany && (
-                                <div className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                     <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
                                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
                                             <Shield className="w-4 h-4 text-brand-purple" />
@@ -1618,15 +1648,15 @@ export default function UserManagementPage() {
                                             <button
                                                 onClick={handleSaveLoginConfig}
                                                 disabled={savingSettings}
-                                                className="w-full py-4 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-gray-200"
+                                                className="w-full py-3 bg-gray-900 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.1em] rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                             >
-                                                {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN TEKS LOGIN"}
+                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Teks Login"}
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Login Notification Image Settings */}
-                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm md:col-span-2">
                                         <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 bg-brand-orange/10 rounded-lg flex items-center justify-center text-brand-orange">
@@ -1636,7 +1666,7 @@ export default function UserManagementPage() {
                                                     Notification Image
                                                 </h3>
                                             </div>
-                                            <div 
+                                            <div
                                                 onClick={() => setShowNotificationImage(!showNotificationImage)}
                                                 className={clsx(
                                                     "w-12 h-6 rounded-full p-1 cursor-pointer transition-all duration-300",
@@ -1650,7 +1680,7 @@ export default function UserManagementPage() {
                                             </div>
                                         </div>
 
-                                        <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                                             <div className="relative group/upload">
                                                 <div className={clsx(
                                                     "border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center transition-all min-h-[200px] relative overflow-hidden",
@@ -1658,9 +1688,9 @@ export default function UserManagementPage() {
                                                 )}>
                                                     {notificationImageUrl ? (
                                                         <>
-                                                            <img 
-                                                                src={notificationImageUrl} 
-                                                                className="absolute inset-0 w-full h-full object-cover opacity-20" 
+                                                            <img
+                                                                src={notificationImageUrl}
+                                                                className="absolute inset-0 w-full h-full object-cover opacity-20"
                                                                 alt="Preview"
                                                             />
                                                             <div className="relative z-10 flex flex-col items-center">
@@ -1668,7 +1698,7 @@ export default function UserManagementPage() {
                                                                     <Check className="w-7 h-7" />
                                                                 </div>
                                                                 <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Foto Siap Disimpan ke DB</p>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => setNotificationImageUrl("")}
                                                                     className="mt-4 text-[9px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-700 transition-colors"
                                                                 >Hapus Foto</button>
@@ -1681,8 +1711,8 @@ export default function UserManagementPage() {
                                                             </div>
                                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">PROSES FOTO (BASE64)</p>
                                                             <p className="text-[9px] text-gray-400 font-medium text-center px-4">Auto-Compress • Max 800px • Tanpa Storage</p>
-                                                            <input 
-                                                                type="file" 
+                                                            <input
+                                                                type="file"
                                                                 accept="image/*"
                                                                 onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
                                                                 className="absolute inset-0 opacity-0 cursor-pointer"
@@ -1693,98 +1723,173 @@ export default function UserManagementPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-brand-orange/5 border border-brand-orange/10 rounded-2xl p-4 flex items-start gap-3">
-                                                <Info className="w-3.5 h-3.5 text-brand-orange shrink-0 mt-0.5" />
-                                                <p className="text-[9px] text-brand-orange font-bold uppercase tracking-tight leading-relaxed">
-                                                    Foto ini akan muncul menggantikan teks Welcome Back secara otomatis jika ada pesan notifikasi muncul di halaman login.
-                                                </p>
-                                            </div>
+                                            <div className="space-y-6">
+                                                <div className="bg-brand-orange/5 border border-brand-orange/10 rounded-2xl p-4 flex items-start gap-3">
+                                                    <Info className="w-3.5 h-3.5 text-brand-orange shrink-0 mt-0.5" />
+                                                    <p className="text-[9px] text-brand-orange font-bold uppercase tracking-tight leading-relaxed">
+                                                        Foto ini akan muncul menggantikan teks Welcome Back secara otomatis jika ada pesan notifikasi muncul di halaman login.
+                                                    </p>
+                                                </div>
 
-                                            <button
-                                                onClick={handleSaveLoginConfig}
-                                                disabled={savingSettings || uploadingImage}
-                                                className="w-full py-4 bg-brand-purple hover:bg-brand-purple text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-brand-purple/20"
-                                            >
-                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Cloud className="w-4 h-4" /> Update Konfigurasi Foto</>}
-                                            </button>
+                                                <button
+                                                    onClick={handleSaveLoginConfig}
+                                                    disabled={savingSettings || uploadingImage}
+                                                    className="w-full py-3 bg-brand-purple hover:bg-brand-purple text-white font-black text-[10px] uppercase tracking-[0.1em] rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                                >
+                                                    {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Cloud className="w-3.5 h-3.5" /> Update Konfigurasi Foto</>}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                                                {selectedCompany && (
-                                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                                        <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
-                                                                    <Camera className="w-4 h-4" />
-                                                                </div>
-                                                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">
-                                                                    Pengaturan Kamera
-                                                                </h3>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div className="space-y-6">
-                                                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100">
-                                                                <div>
-                                                                    <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Wajib Foto Saat Checklist</p>
-                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-1">
-                                                                        {liveCompany?.requireChecklistPhoto ? "Status: ON (Wajib Foto Kamera)" : "Status: OFF (Foto Opsional)"}
-                                                                    </p>
-                                                                </div>
-                                                                <button 
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            const currentStatus = liveCompany?.requireChecklistPhoto || false;
-                                                                            console.log("DEBUG UI: Requesting toggle to", !currentStatus);
-                                                                            await updateCompany(selectedCompany.id, {
-                                                                                requireChecklistPhoto: !currentStatus
-                                                                            });
-                                                                        } catch (err: any) {
-                                                                            console.error("CAMERA_TOGGLE_ERROR:", err);
-                                                                            alert(`Gagal: ${err.code === 'permission-denied' ? 'Izin Ditolak (Cek Firestore Rules/Role Anda)' : err.message}`);
-                                                                        }
-                                                                    }}
-                                                                    className={clsx(
-                                                                        "relative w-12 h-6 rounded-full transition-all duration-300 p-1",
-                                                                        liveCompany?.requireChecklistPhoto ? "bg-brand-purple" : "bg-gray-300"
-                                                                    )}
-                                                                >
-                                                                    <div className={clsx(
-                                                                        "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
-                                                                        liveCompany?.requireChecklistPhoto ? "translate-x-6" : "translate-x-0"
-                                                                    )} />
-                                                                </button>
-                                                            </div>
+                            {selectedCompany && (
+                                <div className="space-y-6">
+                                    {/* Action 1: Camera Toggle */}
+                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
+                                                    <Camera className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">
+                                                        PENGATURAN KAMERAFOTO (WAJIB)
+                                                    </h3>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">KEBIJAKAN PENGAMBILAN FOTO SAAT CHECKLIST</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const currentStatus = liveCompany?.requireChecklistPhoto || false;
+                                                        await updateCompany(selectedCompany.id, {
+                                                            requireChecklistPhoto: !currentStatus
+                                                        });
+                                                    } catch (err: any) {
+                                                        alert(`Gagal: ${err.message}`);
+                                                    }
+                                                }}
+                                                className={clsx(
+                                                    "relative w-12 h-6 rounded-full transition-all duration-300 p-1",
+                                                    liveCompany?.requireChecklistPhoto ? "bg-brand-purple" : "bg-gray-300"
+                                                )}
+                                            >
+                                                <div className={clsx(
+                                                    "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
+                                                    liveCompany?.requireChecklistPhoto ? "translate-x-6" : "translate-x-0"
+                                                )} />
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                                            <p className="text-[9px] text-gray-400 italic font-medium leading-relaxed px-2">
-                                                                * Jika ON, operator wajib mengambil foto kamera untuk setiap aset sebelum bisa menyimpan laporan.
-                                                            </p>
+                                    {/* Actions 2-5: Data Retention & Purge */}
+                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
+                                            <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
+                                                <Database className="w-4 h-4" />
+                                            </div>
+                                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">
+                                                DATA RETENTION & CLEANUP ACTIONS
+                                            </h3>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {[
+                                                { id: 'ASSET_HISTORY', label: 'RIWAYAT AKTIVITAS ASET', field: 'assetHistoryDays', icon: Activity, type: 'ASSET_HISTORY', desc: 'Hapus total riwayat pergerakan & status aset (BAIK, RUSAK, dll)' },
+                                                { id: 'REPORTS', label: 'LAPORAN CHECKLIST', field: 'checklistsDays', icon: ClipboardCheck, type: 'REPORTS', desc: 'Hapus total data riwayat inspeksi ruangan & checklist harian' },
+                                                { id: 'LOGS', label: 'LOG AKTIVITAS ADMIN', field: 'assetLogsDays', icon: History, type: 'LOGS', desc: 'Hapus total audit penggunaan sistem oleh Admin/Super Admin' },
+                                                { id: 'TRASH', label: 'RIWAYAT HAPUS (TRASH)', field: 'deletedAssetsDays', icon: Trash2, type: 'TRASH', desc: 'Hapus total daftar aset yang sudah masuk tong sampah' },
+                                            ].map((item) => (
+                                                <div key={item.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100">
+                                                            <item.icon className="w-4 h-4 text-brand-purple" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-tight">{item.label}</p>
+                                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">{item.desc}</p>
                                                         </div>
                                                     </div>
-                                                )}
 
-                                {/* Danger Zone & Maintenance */}
-                                <div className="space-y-6">
-                                {selectedCompany && (
+                                                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                                                        <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden h-10 shadow-sm w-full sm:w-auto">
+                                                            <div className="bg-gray-50 px-4 text-[9px] font-black text-gray-400 flex items-center border-r border-gray-100 h-full uppercase tracking-tighter">SIMPAN SELAMA</div>
+                                                            <input 
+                                                                type="number"
+                                                                placeholder="0"
+                                                                min="0"
+                                                                defaultValue={liveCompany?.retention?.[item.field as keyof typeof liveCompany.retention] || ""}
+                                                                onBlur={async (e) => {
+                                                                    const val = parseInt(e.target.value) || 0;
+                                                                    await updateCompany(selectedCompany.id, {
+                                                                        retention: {
+                                                                            ...(liveCompany?.retention || {}),
+                                                                            [item.field]: val
+                                                                        }
+                                                                    });
+                                                                }}
+                                                                className="w-full sm:w-20 px-3 text-[11px] font-black outline-none text-center h-full bg-white"
+                                                            />
+                                                            <span className="bg-gray-50 px-4 text-[9px] font-black text-gray-500 border-l border-gray-100 h-full flex items-center">HARI</span>
+                                                        </div>
+
+                                                        <button 
+                                                            onClick={async () => {
+                                                                if(confirm(`PERINGATAN: Hapus secara keseluruhan (PURGE) data ${item.label} untuk ${liveCompany?.name}? Tindakan ini TIDAK dapat dibatalkan.`)) {
+                                                                    try {
+                                                                        await purgeData(selectedCompany.id, item.type as any);
+                                                                        alert(`Data ${item.label} berhasil dibersihkan secara total.`);
+                                                                    } catch (err: any) {
+                                                                        alert(`Gagal membersihkan data: ${err.message}`);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="h-10 px-6 bg-brand-orange hover:bg-orange-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-md shadow-brand-orange/20 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                            PURGE DATA SEKARANG
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Action 6: Permanent Delete */}
                                     <div className="bg-rose-50 border border-rose-100 rounded-3xl p-8 shadow-sm">
-                                        <h3 className="text-sm font-black text-rose-600 uppercase tracking-widest mb-4">Hapus Perusahaan</h3>
-                                        <p className="text-[10px] text-rose-500 font-bold mb-6 italic">Seluruh data milik {selectedCompany.name} akan dihapus secara permanen.</p>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-8 h-8 bg-rose-600/10 rounded-lg flex items-center justify-center text-rose-600">
+                                                <AlertTriangle className="w-4 h-4" />
+                                            </div>
+                                            <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">
+                                                DANGER ZONE: PENGHAPUSAN PERUSAHAAN
+                                            </h3>
+                                        </div>
+                                        <p className="text-[10px] text-rose-500 font-bold mb-6 italic">
+                                            Seluruh data milik <span className="underline">{liveCompany?.name}</span> akan dihapus selamanya.
+                                        </p>
                                         <button
-                                            onClick={() => deleteCompany(selectedCompany.id)}
-                                            className="w-full py-4 px-4 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-rose-600/20"
+                                            onClick={() => {
+                                                if (confirm(`KONFIRMASI AKHIR: Apakah Anda yakin ingin menghapus ${liveCompany?.name}?`)) {
+                                                    deleteCompany(selectedCompany.id);
+                                                    setView("companies");
+                                                    setSelectedCompany(null);
+                                                }
+                                            }}
+                                            className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
                                         >
-                                            Hapus {selectedCompany.name}
+                                            <Trash2 className="w-4 h-4" />
+                                            HAPUS PERUSAHAAN SECARA PERMANEN
                                         </button>
                                     </div>
-                                )}
-
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
-            </div>
+                </div>
 
             <footer className="mt-12 pt-8 border-t border-gray-50 text-center text-[9px] text-gray-300 font-bold uppercase tracking-widest">
                 Tenant Orchestrator v3.0 • Cloud Ready
