@@ -1801,6 +1801,7 @@ export default function UserManagementPage() {
                                                 { id: 'REPORTS', label: 'LAPORAN CHECKLIST', field: 'checklistsDays', icon: ClipboardCheck, type: 'REPORTS', desc: 'Hapus total data riwayat inspeksi ruangan & checklist harian' },
                                                 { id: 'LOGS', label: 'LOG AKTIVITAS ADMIN', field: 'assetLogsDays', icon: History, type: 'LOGS', desc: 'Hapus total audit penggunaan sistem oleh Admin/Super Admin' },
                                                 { id: 'TRASH', label: 'RIWAYAT HAPUS (TRASH)', field: 'deletedAssetsDays', icon: Trash2, type: 'TRASH', desc: 'Hapus total daftar aset yang sudah masuk tong sampah' },
+                                                { id: 'ACTIVE_ASSETS', label: 'INVENTARIS ASET AKTIF', field: 'activeAssetsDays', icon: Box, type: 'ACTIVE_ASSETS', desc: 'Hapus seluruh daftar aset utama & pemetaan ruangan saat ini' },
                                             ].map((item) => (
                                                 <div key={item.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-4">
                                                     <div className="flex items-center gap-3">
@@ -1813,27 +1814,29 @@ export default function UserManagementPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                                                        <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden h-10 shadow-sm w-full sm:w-auto">
-                                                            <div className="bg-gray-50 px-4 text-[9px] font-black text-gray-400 flex items-center border-r border-gray-100 h-full uppercase tracking-tighter">SIMPAN SELAMA</div>
-                                                            <input 
-                                                                type="number"
-                                                                placeholder="0"
-                                                                min="0"
-                                                                defaultValue={liveCompany?.retention?.[item.field as keyof typeof liveCompany.retention] || ""}
-                                                                onBlur={async (e) => {
-                                                                    const val = parseInt(e.target.value) || 0;
-                                                                    await updateCompany(selectedCompany.id, {
-                                                                        retention: {
-                                                                            ...(liveCompany?.retention || {}),
-                                                                            [item.field]: val
-                                                                        }
-                                                                    });
-                                                                }}
-                                                                className="w-full sm:w-20 px-3 text-[11px] font-black outline-none text-center h-full bg-white"
-                                                            />
-                                                            <span className="bg-gray-50 px-4 text-[9px] font-black text-gray-500 border-l border-gray-100 h-full flex items-center">HARI</span>
-                                                        </div>
+                                                     <div className="flex flex-col sm:flex-row items-center gap-3">
+                                                        {item.id !== 'ACTIVE_ASSETS' && (
+                                                            <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden h-10 shadow-sm w-full sm:w-auto">
+                                                                <div className="bg-gray-50 px-4 text-[9px] font-black text-gray-400 flex items-center border-r border-gray-100 h-full uppercase tracking-tighter">SIMPAN SELAMA</div>
+                                                                <input 
+                                                                    type="number"
+                                                                    placeholder="0"
+                                                                    min="0"
+                                                                    defaultValue={liveCompany?.retention?.[item.field as keyof typeof liveCompany.retention] || ""}
+                                                                    onBlur={async (e) => {
+                                                                        const val = parseInt(e.target.value) || 0;
+                                                                        await updateCompany(selectedCompany.id, {
+                                                                            retention: {
+                                                                                ...(liveCompany?.retention || {}),
+                                                                                [item.field]: val
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    className="w-full sm:w-20 px-3 text-[11px] font-black outline-none text-center h-full bg-white"
+                                                                />
+                                                                <span className="bg-gray-50 px-4 text-[9px] font-black text-gray-500 border-l border-gray-100 h-full flex items-center">HARI</span>
+                                                            </div>
+                                                        )}
 
                                                         <button 
                                                             onClick={async () => {

@@ -96,6 +96,7 @@ function AssetsContent() {
     const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
+    const [importProgress, setImportProgress] = useState<{ current: number; total: number; isImporting: boolean }>({ current: 0, total: 0, isImporting: false });
 
     const {
         assets: rawAssets,
@@ -480,6 +481,18 @@ function AssetsContent() {
                 let currentAssetsList = [...rawAssets];
                 const processedCategories = new Set([...categories]);
 
+                // Hitung valid rows dulu untuk total progress
+                const validRows = (data as any[]).filter(row => {
+                    const getVal = (keys: string[]) => {
+                        const k = Object.keys(row).find(k => keys.some(pk => k.trim().toLowerCase() === pk.toLowerCase()));
+                        const val = k ? row[k] : null;
+                        return val === "-" ? null : val;
+                    };
+                    return getVal(["Nama Barang", "Nama", "name"]) && getVal(["Kategori", "category"]);
+                });
+
+                setImportProgress({ current: 0, total: validRows.length, isImporting: true });
+
                 // Helper Fungsi untuk Parse Tanggal yang Sangat Robust
                 const parseDateRobust = (val: any): string => {
                     if (!val) return new Date().toISOString().split('T')[0];
@@ -620,6 +633,7 @@ function AssetsContent() {
 
                         currentAssetsList.push({ ...newAsset, id: uuidv4() } as any);
                         importedCount++;
+                        setImportProgress(prev => ({ ...prev, current: importedCount }));
                     }
                 }
 
@@ -627,6 +641,8 @@ function AssetsContent() {
             } catch (error) {
                 console.error("Error importing data:", error);
                 alert("Gagal mengimpor data. Pastikan format Excel benar.");
+            } finally {
+                setImportProgress({ current: 0, total: 0, isImporting: false });
             }
             e.target.value = '';
         };
@@ -635,6 +651,47 @@ function AssetsContent() {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto min-h-screen">
+
+            {/* ── IMPORT PROGRESS OVERLAY ─────────────────────── */}
+            {importProgress.isImporting && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-white/60 backdrop-blur-sm">
+                    <div className="w-full max-w-sm mx-4 bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 flex flex-col items-center gap-5">
+                        {/* Icon + Title */}
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-2xl bg-brand-purple/10 flex items-center justify-center">
+                                <Upload className="w-5 h-5 text-brand-purple" />
+                            </div>
+                            <h3 className="text-sm font-black text-gray-900 tracking-tight">Mengimpor Aset...</h3>
+                            <p className="text-[10px] text-gray-400 font-medium">Harap tunggu, jangan tutup halaman ini</p>
+                        </div>
+
+                        {/* Counter */}
+                        <div className="text-center">
+                            <span className="text-4xl font-black text-brand-purple tabular-nums">{importProgress.current}</span>
+                            <span className="text-sm font-bold text-gray-300 mx-1">/</span>
+                            <span className="text-lg font-black text-gray-400 tabular-nums">{importProgress.total}</span>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Aset Berhasil Diimpor</p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full">
+                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-brand-purple to-indigo-400 rounded-full transition-all duration-300 ease-out"
+                                    style={{ width: importProgress.total > 0 ? `${(importProgress.current / importProgress.total) * 100}%` : '0%' }}
+                                />
+                            </div>
+                            <div className="flex justify-between mt-1.5">
+                                <span className="text-[9px] text-gray-400 font-bold">0</span>
+                                <span className="text-[9px] text-brand-purple font-black">
+                                    {importProgress.total > 0 ? Math.round((importProgress.current / importProgress.total) * 100) : 0}%
+                                </span>
+                                <span className="text-[9px] text-gray-400 font-bold">{importProgress.total}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Header section with Tabs */}
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
@@ -718,10 +775,10 @@ function AssetsContent() {
 
                                     <button
                                         onClick={() => openModal()}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand-purple text-white text-[10px] font-black rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-brand-purple/20 uppercase tracking-widest shrink-0"
+                                        className="flex items-center justify-center w-10 h-10 bg-brand-purple text-white rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-brand-purple/20 shrink-0"
+                                        title="Tambah Aset"
                                     >
                                         <Plus className="w-4 h-4" />
-                                        <span>TAMBAH</span>
                                     </button>
 
                                     <button

@@ -14,6 +14,7 @@ import {
     getDocs,
     getDoc
 } from "firebase/firestore";
+import { Activity, Loader2 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "./AuthContext";
@@ -34,6 +35,7 @@ export interface Company {
         checklistsDays?: number;
         deletedAssetsDays?: number;
         assetHistoryDays?: number;
+        activeAssetsDays?: number;
     };
 }
 
@@ -197,11 +199,14 @@ interface LocalDbContextType {
     addChecklist: (checklist: Omit<Checklist, "id" | "isRead" | "companyId">) => Promise<void>;
     markChecklistAsRead: (id: string) => Promise<void>;
     addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName" | "companyId"> & { operatorName?: string; companyId?: string }) => Promise<void>;
-    purgeData: (companyId: string, type: 'LOGS' | 'REPORTS' | 'TRASH' | 'ASSET_HISTORY', days?: number) => Promise<void>;
+    purgeData: (companyId: string, type: 'LOGS' | 'REPORTS' | 'TRASH' | 'ASSET_HISTORY' | 'ACTIVE_ASSETS', days?: number) => Promise<void>;
 
     operatorShifts: OperatorShift[];
     addShift: (shift: Omit<OperatorShift, "id" | "companyId" | "operatorId" | "operatorName" | "operatorPhone" | "status" | "createdAt">) => Promise<string>;
     endShift: (id: string) => Promise<void>;
+
+    // Global UI State
+    isSystemBusy: boolean;
 }
 
 const LocalDbContext = createContext<LocalDbContextType | null>(null);
@@ -230,6 +235,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [deletedAssets, setDeletedAssets] = useState<DeletedAsset[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
     const [initialCategories] = useState(["Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"]);
+    
+    // Global Processing State
+    const [isSystemBusy, setIsSystemBusy] = useState(false);
 
     const resetStates = () => {
         setCompanies([]);
@@ -243,12 +251,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         setOperatorShifts([]);
         setCategories(initialCategories);
         setDeletedAssets([]);
+        setIsSystemBusy(false);
     };
 
     useEffect(() => {
         if (!user) {
             resetStates();
             setIsInitialized(false);
+            setIsSystemBusy(false); // Force clear loading on logout
         }
     }, [user]);
 
@@ -330,6 +340,30 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         return () => unsubs.forEach(unsub => unsub());
     }, [user?.uid, finalCompanyId, isSuperAdmin, initialCategories]);
 
+    // MAGIC HELPER: Auto-Loading with 400ms Threshold
+    // Guard: Tidak tampilkan overlay jika user sudah logout (user === null)
+    const withLoading = async <T,>(action: () => Promise<T>): Promise<T> => {
+        let isDone = false;
+        let overlayShown = false;
+        
+        // Timer: hanya aktif jika user masih login
+        const timer = setTimeout(() => {
+            if (!isDone && user !== null) {
+                setIsSystemBusy(true);
+                overlayShown = true;
+            }
+        }, 200);
+
+        try {
+            const result = await action();
+            return result;
+        } finally {
+            isDone = true;
+            clearTimeout(timer);
+            if (overlayShown) setIsSystemBusy(false);
+        }
+    };
+
     const api: LocalDbContextType = {
         companies,
         locations,
@@ -342,13 +376,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         categories,
         changelogs,
         operatorShifts,
+        isSystemBusy,
 
-        addCompany: async (comp) => {
+        addCompany: async (comp) => withLoading(async () => {
             const id = uuidv4();
             const newComp: Company = { ...comp, id, status: "ACTIVE", createdAt: new Date().toISOString() };
             await setDoc(doc(db, "companies", id), newComp);
-        },
-        updateCompany: async (id, data) => {
+        }),
+        updateCompany: async (id, data) => withLoading(async () => {
             console.log("DEBUG: Updating company", id, data);
             try {
                 await updateDoc(doc(db, "companies", id), data);
@@ -357,27 +392,27 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 console.error("DEBUG: Update failed", err);
                 throw err;
             }
-        },
-        deleteCompany: async (id) => {
+        }),
+        deleteCompany: async (id) => withLoading(async () => {
             await deleteDoc(doc(db, "companies", id));
-        },
+        }),
 
-        addLocation: async (loc) => {
+        addLocation: async (loc) => withLoading(async () => {
             const id = uuidv4();
             const companyId = finalCompanyId;
             const newLoc = { ...loc, id, companyId };
             await setDoc(doc(db, "locations", id), newLoc);
             await api.addLog({ type: "SYSTEM", toValue: `Lokasi Baru: ${loc.name}`, notes: `Menambahkan cabang: ${loc.name}`, companyId });
-        },
-        updateLocation: async (id, data) => {
+        }),
+        updateLocation: async (id, data) => withLoading(async () => {
             await updateDoc(doc(db, "locations", id), data);
             await api.addLog({ type: "SYSTEM", toValue: `Update Lokasi: ${data.name}`, notes: `Update cabang: ${data.name}`, companyId: finalCompanyId });
-        },
-        deleteLocation: async (id) => {
+        }),
+        deleteLocation: async (id) => withLoading(async () => {
             const target = locations.find(l => l.id === id);
             await deleteDoc(doc(db, "locations", id));
             if (target) await api.addLog({ type: "SYSTEM", toValue: `Hapus Lokasi: ${target.name}`, notes: `Hapus cabang`, companyId: finalCompanyId });
-        },
+        }),
 
         addCategory: async (cat) => {
             const trimmed = cat.trim();
@@ -404,38 +439,38 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             setDoc(doc(db, "settings", "categories"), { list: newList });
         },
 
-        addRoom: async (r) => {
+        addRoom: async (r) => withLoading(async () => {
             const id = uuidv4();
             const companyId = finalCompanyId;
             await setDoc(doc(db, "rooms", id), { ...r, id, companyId });
             await api.addLog({ type: "SYSTEM", toValue: `Ruangan Baru: ${r.name}`, notes: `Room added`, companyId });
-        },
-        updateRoom: async (id, data) => {
+        }),
+        updateRoom: async (id, data) => withLoading(async () => {
             await updateDoc(doc(db, "rooms", id), data);
             await api.addLog({ type: "SYSTEM", toValue: `Update Ruangan: ${data.name}`, notes: `Room updated`, companyId: finalCompanyId });
-        },
-        deleteRoom: async (id) => {
+        }),
+        deleteRoom: async (id) => withLoading(async () => {
             const target = rooms.find(r => r.id === id);
             await deleteDoc(doc(db, "rooms", id));
             if (target) await api.addLog({ type: "SYSTEM", toValue: `Hapus Ruangan: ${target.name}`, notes: `Room deleted`, companyId: finalCompanyId });
-        },
+        }),
 
         addChangelog: async (entry) => {
             const id = uuidv4();
             await setDoc(doc(db, "changelogs", id), { ...entry, id });
         },
 
-        addAsset: async (a) => {
+        addAsset: async (a) => withLoading(async () => {
             const id = uuidv4();
             const companyId = finalCompanyId;
             if (!isSuperAdmin && !companyId) throw new Error("ID Perusahaan tidak ditemukan.");
             await setDoc(doc(db, "assets", id), { ...a, id, companyId });
             await api.addLog({ assetId: id, assetName: a.name, type: "SYSTEM", toValue: `Aset Baru`, notes: `Asset: ${a.name}`, companyId });
-        },
-        updateAsset: async (id, data) => {
+        }),
+        updateAsset: async (id, data) => withLoading(async () => {
             await updateDoc(doc(db, "assets", id), data as any);
-        },
-        deleteAsset: async (id, reason = "Dihapus oleh admin") => {
+        }),
+        deleteAsset: async (id, reason = "Dihapus oleh admin") => withLoading(async () => {
             const asset = assets.find(a => a.id === id);
             const companyId = finalCompanyId;
             const operatorName = user?.name || user?.email || "Unknown";
@@ -477,14 +512,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             }
 
             await api.addLog({ assetId: id, assetName: asset?.name || "Unknown Asset", type: "SYSTEM", toValue: "DELETED", operatorName, notes: `Reason: ${reason}`, companyId });
-        },
-        bulkAddAssets: async (newAssets) => {
+        }),
+        bulkAddAssets: async (newAssets) => withLoading(async () => {
             const companyId = finalCompanyId;
             for (const a of newAssets) {
                 const id = uuidv4();
                 await setDoc(doc(db, "assets", id), { ...a, id, companyId });
             }
-        },
+        }),
 
         addRoomAsset: async (ra, opName) => {
             const id = uuidv4();
@@ -547,7 +582,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             }
         },
 
-        addChecklist: async (c) => {
+        addChecklist: async (c) => withLoading(async () => {
             const id = uuidv4();
             const companyId = finalCompanyId;
             await setDoc(doc(db, "checklists", id), { ...c, id, companyId, isRead: false });
@@ -560,11 +595,13 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 }
             }
             await api.addLog({ type: "SYSTEM", toValue: `Audit Room: ${c.roomStatus || "SELESAI"}`, operatorName: c.operatorName, companyId, notes: `Checklist submitted for ${c.roomName}` });
-        },
+        }),
+        // Internal helper - tidak perlu loading UI
         markChecklistAsRead: async (id) => {
             await updateDoc(doc(db, "checklists", id), { isRead: true });
         },
 
+        // Internal helper - dipanggil background oleh semua fungsi lain, tidak perlu loading UI
         addLog: async (log) => {
             const id = uuidv4();
             const timestamp = new Date().toISOString();
@@ -576,13 +613,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await setDoc(doc(db, "assetLogs", id), newLog);
         },
 
-        purgeData: async (companyId, type, days) => {
+        purgeData: async (companyId, type, days) => withLoading(async () => {
             if (!companyId) return;
             const collectionMapping: Record<string, string> = {
                 'LOGS': 'assetLogs',
                 'ASSET_HISTORY': 'assetLogs',
                 'REPORTS': 'checklists',
-                'TRASH': 'deleted_assets'
+                'TRASH': 'deleted_assets',
+                'ACTIVE_ASSETS': 'assets'
             };
             const collName = collectionMapping[type];
             let q = query(collection(db, collName), where("companyId", "==", companyId));
@@ -605,6 +643,14 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const snap = await getDocs(q);
             const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
             await Promise.all(deletePromises);
+
+            // Clean up related data if purging active assets
+            if (type === 'ACTIVE_ASSETS') {
+                const raQuery = query(collection(db, "roomAssets"), where("companyId", "==", companyId));
+                const raSnap = await getDocs(raQuery);
+                const raDeletePromises = raSnap.docs.map(d => deleteDoc(d.ref));
+                await Promise.all(raDeletePromises);
+            }
             
             await api.addLog({
                 type: "SYSTEM",
@@ -612,9 +658,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 notes: days ? `Hapus otomatis data > ${days} hari` : `Hapus manual seluruh data`,
                 companyId: companyId
             });
-        },
+        }),
 
-        addShift: async (shiftData) => {
+        addShift: async (shiftData) => withLoading(async () => {
             const companyId = user?.companyId || "";
             const operatorId = user?.uid || "";
             if (operatorShifts.find(s => s.operatorId === operatorId && s.status === "ACTIVE")) throw new Error("Active shift exists.");
@@ -626,17 +672,36 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await setDoc(doc(db, "operatorShifts", id), newShift);
             await api.addLog({ type: "AUTH", toValue: "Mulai Tugas", operatorName, companyId, notes: `Start shift: ${shiftData.locationName}` });
             return id;
-        },
-        endShift: async (id) => {
+        }),
+        endShift: async (id) => withLoading(async () => {
             const target = operatorShifts.find(s => s.id === id);
             await updateDoc(doc(db, "operatorShifts", id), { status: "COMPLETED" });
             if (target) await api.addLog({ type: "AUTH", toValue: "Selesai Tugas", operatorName: target.operatorName, companyId: target.companyId, notes: `End shift` });
-        }
+        })
     };
 
     return (
         <LocalDbContext.Provider value={api}>
             {children}
+            {/* Global Processing Overlay - Minimalist & Professional */}
+            {isSystemBusy && (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/10 backdrop-blur-[2px] animate-in fade-in duration-500">
+                    {/* Top Progress Bar Part */}
+                    <div className="fixed top-0 left-0 right-0 h-0.5 bg-gray-100 overflow-hidden">
+                        <div className="h-full bg-brand-purple w-1/3 animate-[shimmer_1.5s_infinite_linear] shadow-[0_0_10px_rgba(124,77,255,0.5)]"></div>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                            <div className="w-10 h-10 border-2 border-brand-purple/10 border-t-brand-purple rounded-full animate-spin"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Activity className="w-4 h-4 text-brand-purple opacity-40 animate-pulse" />
+                            </div>
+                        </div>
+                        <p className="text-[9px] font-black text-brand-purple/60 uppercase tracking-[0.3em] ml-1">System Working</p>
+                    </div>
+                </div>
+            )}
         </LocalDbContext.Provider>
     );
 }
