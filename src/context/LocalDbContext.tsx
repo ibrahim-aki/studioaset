@@ -14,7 +14,7 @@ import {
     getDocs,
     getDoc
 } from "firebase/firestore";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, Loader2, X } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "./AuthContext";
@@ -68,6 +68,7 @@ export interface MasterAsset {
     entryDate?: string;
     lastModifiedBy?: string;
     updatedAt?: string;
+    initialPhotoUrl?: string; // Foto pertama kali aset didaftarkan
 }
 
 export interface RoomAsset {
@@ -99,6 +100,7 @@ export interface AssetLog {
     operatorRole?: string;
     timestamp: string;
     notes?: string;
+    photoUrl?: string; // Menambahkan foto ke log
 }
 
 export interface Checklist {
@@ -207,6 +209,8 @@ interface LocalDbContextType {
 
     // Global UI State
     isSystemBusy: boolean;
+    previewImage: string | null;
+    setPreviewImage: (url: string | null) => void;
 }
 
 const LocalDbContext = createContext<LocalDbContextType | null>(null);
@@ -227,6 +231,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [roomAssets, setRoomAssets] = useState<RoomAsset[]>([]);
     const [checklists, setChecklists] = useState<Checklist[]>([]);
     const [assetLogs, setAssetLogs] = useState<AssetLog[]>([]);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [changelogs, setChangelogs] = useState<ChangelogEntry[]>([]);
     const [operatorShifts, setOperatorShifts] = useState<OperatorShift[]>([]);
     const [categories, setCategories] = useState<string[]>([
@@ -377,6 +382,8 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         changelogs,
         operatorShifts,
         isSystemBusy,
+        previewImage,
+        setPreviewImage,
 
         addCompany: async (comp) => withLoading(async () => {
             const id = uuidv4();
@@ -589,9 +596,24 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
             for (const item of c.items) {
                 const currentAsset = assets.find(a => a.id === item.assetId);
-                await api.addLog({ assetId: item.assetId, assetName: item.assetName, type: "STATUS", fromValue: currentAsset?.status || "BAIK", toValue: item.status, operatorName: c.operatorName, companyId, notes: item.notes || `Audit in ${c.roomName}` });
+                await api.addLog({ 
+                    assetId: item.assetId, 
+                    assetName: item.assetName, 
+                    type: "STATUS", 
+                    fromValue: currentAsset?.status || "BAIK", 
+                    toValue: item.status, 
+                    operatorName: c.operatorName, 
+                    companyId, 
+                    notes: item.notes || `Audit in ${c.roomName}`,
+                    photoUrl: item.photoUrl // Link foto Cloudinary masuk ke log
+                });
                 if (item.status) {
-                    await updateDoc(doc(db, "assets", item.assetId), { status: item.status, conditionNotes: item.notes, companyId, updatedAt: new Date().toISOString() });
+                    await updateDoc(doc(db, "assets", item.assetId), { 
+                        status: item.status, 
+                        conditionNotes: item.notes, 
+                        companyId, 
+                        updatedAt: new Date().toISOString() 
+                    });
                 }
             }
             await api.addLog({ type: "SYSTEM", toValue: `Audit Room: ${c.roomStatus || "SELESAI"}`, operatorName: c.operatorName, companyId, notes: `Checklist submitted for ${c.roomName}` });
@@ -699,6 +721,41 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                             </div>
                         </div>
                         <p className="text-[9px] font-black text-brand-purple/60 uppercase tracking-[0.3em] ml-1">System Working</p>
+                    </div>
+                </div>
+            )}
+            {/* Global Image Preview Modal - Modern, Sleek, Secure */}
+            {previewImage && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+                    <div 
+                        className="fixed inset-0 bg-gray-900/90 backdrop-blur-md cursor-zoom-out"
+                        onClick={() => setPreviewImage(null)}
+                    ></div>
+                    
+                    <div className="relative max-w-5xl w-full max-h-full flex items-center justify-center animate-in zoom-in-95 duration-300">
+                        {/* Close Button */}
+                        <button 
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute -top-12 right-0 p-2 text-white/60 hover:text-white transition-colors group flex items-center gap-2"
+                        >
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">Tutup</span>
+                            <X className="w-6 h-6" />
+                        </button>
+                        
+                        <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
+                            <img 
+                                src={previewImage} 
+                                alt="Preview" 
+                                className="max-w-full max-h-[80vh] object-contain select-none"
+                                onContextMenu={(e) => e.preventDefault()} // Mencegah klik kanan simpan gambar
+                            />
+                            
+                            {/* Overlay Info */}
+                            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Internal Asset Documentation</p>
+                                <p className="text-xs text-white/40 font-medium italic">Protected by Studio Aset Security System</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

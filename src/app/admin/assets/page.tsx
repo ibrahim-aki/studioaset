@@ -12,7 +12,7 @@ import {
     Plus, Edit2, Trash2, Video, X, Loader2, Tag, Download,
     Upload, Clock, MapPin, Calendar, User, Search, Filter,
     History, CheckCircle2, AlertTriangle, AlertOctagon, XCircle, MoreVertical,
-    ChevronDown, ChevronUp, Box, Settings, Lock
+    ChevronDown, ChevronUp, Box, Settings, Lock, Camera, Image as ImageIcon
 } from "lucide-react";
 
 // Helper function to calculate asset age precisely
@@ -73,7 +73,7 @@ function AssetsContent() {
     const [assets, setAssets] = useState<Asset[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ id: "", locationId: "", name: "", category: "", status: "BAIK", conditionNotes: "", description: "", entryDate: new Date().toISOString().split('T')[0], position: "", assetCode: "" });
+    const [formData, setFormData] = useState({ id: "", locationId: "", name: "", category: "", status: "BAIK", conditionNotes: "", description: "", entryDate: new Date().toISOString().split('T')[0], position: "", assetCode: "", initialPhotoUrl: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAddingCategory, setIsAddingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState("");
@@ -88,6 +88,7 @@ function AssetsContent() {
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
+    const [compareAsset, setCompareAsset] = useState<Asset | null>(null);
     const [showDeleted, setShowDeleted] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
@@ -112,7 +113,8 @@ function AssetsContent() {
         deletedAssets,
         addCategory,
         bulkAddCategories,
-        deleteCategory
+        deleteCategory,
+        setPreviewImage
     } = useLocalDb();
 
     const adminName = user?.name || user?.email || "Admin";
@@ -167,10 +169,10 @@ function AssetsContent() {
                 ...asset,
                 entryDate: asset.entryDate || new Date().toISOString().split('T')[0],
                 status: asset.status || "BAIK",
-                conditionNotes: asset.conditionNotes || "",
                 description: asset.description || "",
                 position: asset.position || "",
-                assetCode: asset.assetCode || ""
+                assetCode: asset.assetCode || "",
+                initialPhotoUrl: asset.initialPhotoUrl || ""
             } as any);
         } else {
             setFormData({
@@ -183,7 +185,8 @@ function AssetsContent() {
                 description: "",
                 entryDate: new Date().toISOString().split('T')[0],
                 position: "",
-                assetCode: ""
+                assetCode: "",
+                initialPhotoUrl: ""
             });
         }
         setIsModalOpen(true);
@@ -253,6 +256,29 @@ function AssetsContent() {
 
         return { assetCode, finalName };
     };
+    
+    const handleInitialPhotoUpload = async (file: File) => {
+        const CLOUD_NAME = "dsbryri1d";
+        const UPLOAD_PRESET = "studioaset_asetawal";
+
+        const formDataCloud = new FormData();
+        formDataCloud.append("file", file);
+        formDataCloud.append("upload_preset", UPLOAD_PRESET);
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                method: "POST",
+                body: formDataCloud,
+            });
+            const data = await response.json();
+            if (data.secure_url) {
+                setFormData(prev => ({ ...prev, initialPhotoUrl: data.secure_url }));
+            }
+        } catch (error) {
+            console.error("Cloudinary upload error:", error);
+            alert("Gagal mengunggah foto ke Cloudinary.");
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -285,6 +311,7 @@ function AssetsContent() {
                 description: formData.description,
                 entryDate: formData.entryDate,
                 position: formData.position,
+                initialPhotoUrl: formData.initialPhotoUrl,
                 lastModifiedBy: adminName,
                 updatedAt: new Date().toISOString()
             };
@@ -895,6 +922,7 @@ function AssetsContent() {
                                                 <th scope="col" className="py-3 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[40px] bg-gray-100">No</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Kode</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[180px] bg-gray-100">Identitas Aset</th>
+                                                <th scope="col" className="py-3 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[50px] bg-gray-100">Foto</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[110px] bg-gray-100">Kategori</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px] bg-gray-100">Tgl Masuk</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[75px] bg-gray-100">Umur Aset</th>
@@ -942,6 +970,14 @@ function AssetsContent() {
                                                         </td>
                                                         <td className="py-1 px-2 truncate">
                                                             <span className="text-[10px] font-semibold text-gray-900 whitespace-nowrap" title={asset.name}>{asset.name}</span>
+                                                        </td>
+                                                        <td className="py-1 px-2 text-center">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setCompareAsset(asset); }}
+                                                                className="p-1.5 rounded-lg transition-all border text-gray-400 border-gray-100 hover:border-brand-purple/50 bg-white hover:text-brand-purple"
+                                                            >
+                                                                <Camera className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </td>
                                                         <td className="py-1 px-2 text-[10px] font-medium text-gray-500 whitespace-nowrap truncate">
                                                             {asset.category}
@@ -1035,9 +1071,9 @@ function AssetsContent() {
                                     </table>
                                 </div>
 
-                                {/* Click-outside overlay for action menu */}
-                                {activeActionMenu && (
-                                    <div className="fixed inset-0 z-30" onClick={() => setActiveActionMenu(null)} />
+                                {/* Click-outside overlay for action and comparison menus */}
+                                {(activeActionMenu || compareAsset) && (
+                                    <div className="fixed inset-0 z-30" onClick={() => { setActiveActionMenu(null); setCompareAsset(null); }} />
                                 )}
 
                                 {/* Mobile Grid View */}
@@ -1346,6 +1382,52 @@ function AssetsContent() {
                                             />
                                         </div>
                                     )}
+
+                                    <div className="pt-2">
+                                        <div className="h-px bg-gray-100 mb-4"></div>
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Foto Kondisi Awal (Cloudinary)</label>
+                                        
+                                        <div className="flex items-start gap-4">
+                                            {formData.initialPhotoUrl ? (
+                                                <div className="relative group w-24 h-24 rounded-2xl overflow-hidden border-2 border-brand-purple shadow-lg shadow-brand-purple/10">
+                                                    <img src={formData.initialPhotoUrl} alt="Initial" className="w-full h-full object-cover" />
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, initialPhotoUrl: "" }))}
+                                                        className="absolute inset-0 bg-rose-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                                    >
+                                                        <Trash2 className="w-6 h-6 text-white" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 hover:border-brand-purple hover:bg-brand-purple/5 transition-all cursor-pointer">
+                                                    <Camera className="w-6 h-6 text-gray-300" />
+                                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Upload</span>
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        className="hidden" 
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) handleInitialPhotoUpload(file);
+                                                        }}
+                                                    />
+                                                </label>
+                                            )}
+                                            
+                                            <div className="flex-1 space-y-2">
+                                                <p className="text-[10px] text-gray-500 leading-relaxed italic">
+                                                    * Unggah foto kondisi fisik barang saat pertama kali didaftarkan.
+                                                </p>
+                                                {formData.initialPhotoUrl && (
+                                                    <div className="flex items-center gap-1.5 text-emerald-600">
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest">Foto Siap Disimpan ✓</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 flex justify-end gap-3">
@@ -1374,6 +1456,124 @@ function AssetsContent() {
                     </div>
                 )
             }
+
+            {/* Photo Comparison Modal */}
+            {compareAsset && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md" onClick={() => setCompareAsset(null)}></div>
+                    <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                                    <Camera className="w-5 h-5 text-brand-purple" />
+                                    Perbandingan Kondisi Fisik
+                                </h3>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                    {compareAsset.name} • {compareAsset.assetCode}
+                                </p>
+                            </div>
+                            <button onClick={() => setCompareAsset(null)} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-white transition-all shadow-sm">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Comparison Body */}
+                        <div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 bg-white text-center">
+                            {/* LEFT: Initial Photo */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-[11px] font-black text-brand-purple uppercase tracking-[0.2em]">Kondisi Awal</span>
+                                    <ImageIcon className="w-4 h-4 text-brand-purple/30" />
+                                </div>
+                                <div className="aspect-square rounded-3xl overflow-hidden border-2 border-gray-100 bg-gray-50 flex items-center justify-center group relative shadow-inner">
+                                    {compareAsset.initialPhotoUrl ? (
+                                        <>
+                                            <img 
+                                                src={compareAsset.initialPhotoUrl} 
+                                                alt="Initial" 
+                                                className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-110 cursor-zoom-in" 
+                                                onContextMenu={(e) => e.preventDefault()}
+                                                onClick={() => setPreviewImage(compareAsset.initialPhotoUrl || null)}
+                                            />
+                                            <div className="absolute inset-0 bg-brand-purple/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                                <div className="bg-white/90 backdrop-blur-sm p-3 rounded-2xl shadow-xl">
+                                                    <Plus className="w-6 h-6 text-brand-purple" />
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center p-8">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
+                                                <ImageIcon className="w-8 h-8" />
+                                            </div>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tidak ada foto</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-[9px] text-center text-gray-400 font-medium italic">Foto saat pertama kali didaftarkan</p>
+                            </div>
+
+                            {/* RIGHT: Last Audit Photo */}
+                            <div className="space-y-4 text-center">
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-[11px] font-black text-brand-teal uppercase tracking-[0.2em]">Kondisi Terakhir</span>
+                                    <History className="w-4 h-4 text-brand-teal/30" />
+                                </div>
+                                <div className="aspect-square rounded-3xl overflow-hidden border-2 border-gray-100 bg-gray-50 flex items-center justify-center group relative shadow-inner">
+                                    {(() => {
+                                        const lastAudit = assetLogs
+                                            .filter(l => l.assetId === compareAsset.id && l.photoUrl)
+                                            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+                                        
+                                        if (lastAudit?.photoUrl) {
+                                            return (
+                                                <>
+                                                    <img 
+                                                        src={lastAudit.photoUrl} 
+                                                        alt="Last Audit" 
+                                                        className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-110 cursor-zoom-in" 
+                                                        onContextMenu={(e) => e.preventDefault()}
+                                                        onClick={() => setPreviewImage(lastAudit.photoUrl || null)}
+                                                    />
+                                                    <div className="absolute inset-0 bg-brand-teal/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                                        <div className="bg-white/90 backdrop-blur-sm p-3 rounded-2xl shadow-xl">
+                                                            <Plus className="w-6 h-6 text-brand-teal" />
+                                                        </div>
+                                                    </div>
+                                                    {/* Timestamp Badge */}
+                                                    <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-left">
+                                                        <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Oleh {lastAudit.operatorName}</p>
+                                                        <p className="text-[10px] text-white font-bold">{new Date(lastAudit.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
+                                                    </div>
+                                                </>
+                                            );
+                                        }
+                                        return (
+                                            <div className="text-center p-8">
+                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
+                                                    <History className="w-8 h-8" />
+                                                </div>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tidak ada foto</p>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                                <p className="text-[9px] text-center text-gray-400 font-medium italic">Hasil audit terakhir operator</p>
+                            </div>
+                        </div>
+
+                        {/* Footer Info */}
+                        <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-left">
+                                <div className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></div>
+                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Visual Audit System</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-medium italic text-right">Klik foto untuk memperbesar</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* History Modal */}
             {
@@ -1460,6 +1660,20 @@ function AssetsContent() {
                                                     {h.notes}
                                                 </div>
                                             )}
+                                            {h.photoUrl && (
+                                                <div className="mb-3">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Evidence Photo</p>
+                                                    <div 
+                                                        className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm cursor-zoom-in group/thumb"
+                                                        onClick={() => setPreviewImage(h.photoUrl || null)}
+                                                    >
+                                                        <img src={h.photoUrl} alt="Log Photo" className="w-full h-full object-cover transition-transform group-hover/thumb:scale-110" />
+                                                        <div className="absolute inset-0 bg-brand-purple/20 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <Plus className="w-5 h-5 text-white" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                             <div className="text-xs text-gray-500 flex items-center gap-1">
                                                 <User className="w-3 h-3" /> Oleh: {h.operatorName}
                                             </div>
@@ -1544,7 +1758,8 @@ function AssetsContent() {
                     </div>
                 )
             }
-            {/* Filter Modal - rendered at root level to escape all stacking contexts */}
+
+            {/* Filter Modal */}
             {
                 isFilterMenuOpen && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
@@ -1568,7 +1783,7 @@ function AssetsContent() {
 
                             {/* Body */}
                             <div className="px-6 py-5 space-y-4">
-                                <div className="group">
+                                <div className="group text-left">
                                     <label className="block text-[9px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Cabang / Lokasi</label>
                                     <div className="relative">
                                         <select
@@ -1587,7 +1802,7 @@ function AssetsContent() {
                                     </div>
                                 </div>
 
-                                <div className="group">
+                                <div className="group text-left">
                                     <label className="block text-[9px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Kategori Aset</label>
                                     <div className="relative">
                                         <select
@@ -1606,7 +1821,7 @@ function AssetsContent() {
                                     </div>
                                 </div>
 
-                                <div className="group">
+                                <div className="group text-left">
                                     <label className="block text-[9px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Kondisi / Status</label>
                                     <div className="relative">
                                         <select
@@ -1641,7 +1856,7 @@ function AssetsContent() {
                                     onClick={() => setIsFilterMenuOpen(false)}
                                     className="flex-[2] py-3 bg-brand-purple text-white text-sm font-bold rounded-2xl hover:bg-indigo-700 shadow-lg shadow-brand-purple/25 transition-all"
                                 >
-                                    Terapkan Filter
+                                    Terapkan
                                 </button>
                             </div>
                         </div>
@@ -1656,7 +1871,7 @@ function AssetsContent() {
                         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsCategoryModalOpen(false)}></div>
                         <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 text-left">
                                     <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
                                         <Tag className="w-5 h-5" />
                                     </div>
@@ -1670,13 +1885,12 @@ function AssetsContent() {
                                                     const missing = allAssetCats.filter(c => !categories.some(pc => pc.toLowerCase() === c.toLowerCase()));
                                                     if (missing.length > 0) {
                                                         await bulkAddCategories(missing);
-                                                        alert(`Berhasil mendaftarkan ${missing.length} kategori baru dari data aset!`);
+                                                        alert(`Berhasil mendaftarkan ${missing.length} kategori baru!`);
                                                     } else {
-                                                        alert("Semua kategori aset sudah terdaftar di sistem.");
+                                                        alert("Semua kategori sudah terdaftar.");
                                                     }
                                                 }}
                                                 className="text-[9px] font-black text-white bg-brand-purple hover:bg-brand-purple px-1.5 py-0.5 rounded uppercase tracking-tighter transition-all"
-                                                title="Sinkronisasi kategori dari data aset yang sudah ada"
                                             >
                                                 Sinkronisasi
                                             </button>
@@ -1738,7 +1952,7 @@ function AssetsContent() {
                                                 <button
                                                     onClick={() => {
                                                         const msg = isUsed
-                                                            ? `Peringatan: Kategori "${cat}" sedang digunakan oleh ${usageCount} aset. Jika Anda menghapus kategori ini, aset tersebut akan tetap ada tetapi kategorinya tidak akan terdaftar di pilihan sistem. Lanjutkan hapus?`
+                                                            ? `Kategori "${cat}" digunakan oleh ${usageCount} aset. Tetap hapus?`
                                                             : `Hapus kategori "${cat}"?`;
                                                         if (confirm(msg)) {
                                                             deleteCategory(cat);
@@ -1750,7 +1964,6 @@ function AssetsContent() {
                                                             ? "text-gray-300 hover:text-rose-600 hover:bg-rose-50 opacity-0 group-hover:opacity-100"
                                                             : "text-rose-400 hover:text-rose-600 hover:bg-rose-50"
                                                     )}
-                                                    title={isUsed ? "Kategori Masih Digunakan" : "Hapus Kategori"}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -1759,17 +1972,11 @@ function AssetsContent() {
                                     })}
                                 </div>
                             </div>
-
-                            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-                                <p className="text-[10px] text-gray-400 font-medium italic">
-                                    * Kategori baru akan otomatis terdaftar saat Anda mengetik manual di form aset atau mengimpor file Excel.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 )
             }
-        </div >
+        </div>
     );
 }
 

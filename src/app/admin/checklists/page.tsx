@@ -11,7 +11,7 @@ export default function ChecklistHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
-    const { checklists: rawChecklists, rooms: rawRooms, locations: rawLocations, markChecklistAsRead } = useLocalDb();
+    const { checklists: rawChecklists, rooms: rawRooms, locations: rawLocations, markChecklistAsRead, setPreviewImage } = useLocalDb();
 
     useEffect(() => {
         const data = [...rawChecklists].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -253,13 +253,12 @@ export default function ChecklistHistoryPage() {
                                                                                 )}
                                                                             </div>
                                                                         </div>
-
-                                                                        {item.photoUrl && (
+                                                                         {item.photoUrl && (
                                                                             <button
-                                                                                onClick={() => window.open(item.photoUrl, '_blank')}
+                                                                                onClick={() => setPreviewImage(item.photoUrl || null)}
                                                                                 className="shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 border-brand-purple/20 hover:border-brand-purple transition-all relative group"
                                                                             >
-                                                                                <img src={item.photoUrl} alt={item.assetName} className="w-full h-full object-cover" />
+                                                                                <img src={item.photoUrl} alt={item.assetName} className="w-full h-full object-cover select-none" onContextMenu={(e) => e.preventDefault()} />
                                                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                                                                     <Camera className="w-5 h-5 text-white" />
                                                                                 </div>
