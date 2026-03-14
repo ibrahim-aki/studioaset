@@ -4,8 +4,9 @@ import { use, useEffect, useState } from "react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { useAuth } from "@/context/AuthContext";
 import { Video, Loader2, ArrowLeft, CheckCircle2, AlertTriangle, AlertOctagon, Send, Zap, Ban, ClipboardCheck, Flag, Clock, User, History, ChevronDown, ChevronUp, XCircle, Search, Plus, Package, Camera, Trash2 } from "lucide-react";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+// Cloudinary config
+const CLOUDINARY_CLOUD_NAME = "dsbryri1d";
+const CLOUDINARY_UPLOAD_PRESET = "studioaset_checklist";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -169,18 +170,31 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
         if (!file) return;
         setUploadingAssetId(assetId);
         try {
+            // Kompresi dulu sebelum upload ke Cloudinary
             const compressedBlob = await compressImage(file);
-            const fileName = `checklist-photos/${new Date().toISOString().split('T')[0]}/${assetId}_${Date.now()}.jpg`;
-            const storageRef = ref(storage, fileName);
-            await uploadBytes(storageRef, compressedBlob);
-            const url = await getDownloadURL(storageRef);
-            
-            setChecklist(prev => prev.map(item => 
-                item.assetId === assetId ? { ...item, photoUrl: url } : item
+            const compressedFile = new File([compressedBlob], `${assetId}_${Date.now()}.jpg`, { type: "image/jpeg" });
+
+            const formData = new FormData();
+            formData.append("file", compressedFile);
+            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+            const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                { method: "POST", body: formData }
+            );
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error?.message || "Upload ke Cloudinary gagal");
+            }
+
+            const data = await res.json();
+            setChecklist(prev => prev.map(item =>
+                item.assetId === assetId ? { ...item, photoUrl: data.secure_url } : item
             ));
-        } catch (error) {
+        } catch (error: any) {
             console.error("Upload error:", error);
-            alert("Gagal mengunggah foto. Pastikan koneksi internet stabil.");
+            alert("Gagal mengunggah foto: " + error.message);
         } finally {
             setUploadingAssetId(null);
         }

@@ -669,57 +669,33 @@ export default function UserManagementPage() {
         }
     };
 
-    // FUNGSI KOMPRESI & KONVERSI BASE64 (Pengganti Storage)
+    // FUNGSI UPLOAD GAMBAR KE CLOUDINARY
     const handleImageUpload = async (file: File) => {
         setUploadingImage(true);
         try {
-            // ─── KOMPRESI GAMBAR VIA CANVAS ───
-            const compressImageToBase64 = async (file: File): Promise<string> => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (event) => {
-                        const img = new Image();
-                        img.src = event.target?.result as string;
-                        img.onload = () => {
-                            const canvas = document.createElement("canvas");
-                            const ctx = canvas.getContext("2d");
-                            
-                            // Max dimensions (Standar Website)
-                            let width = img.width;
-                            let height = img.height;
-                            const maxSize = 800; // Perkecil lagi agar database super ringan
-                            
-                            if (width > height) {
-                                if (width > maxSize) {
-                                    height *= maxSize / width;
-                                    width = maxSize;
-                                }
-                            } else {
-                                if (height > maxSize) {
-                                    width *= maxSize / height;
-                                    height = maxSize;
-                                }
-                            }
-                            
-                            canvas.width = width;
-                            canvas.height = height;
-                            ctx?.drawImage(img, 0, 0, width, height);
-                            
-                            // Convert to WebP format with 70% quality (Sangat hemat data)
-                            const base64String = canvas.toDataURL("image/webp", 0.7);
-                            resolve(base64String);
-                        };
-                    };
-                });
-            };
+            const CLOUD_NAME = "dsbryri1d";
+            const UPLOAD_PRESET = "studioaset_notif";
 
-            const base64Result = await compressImageToBase64(file);
-            setNotificationImageUrl(base64Result);
-            alert("Foto berhasil diproses & dikompresi!");
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", UPLOAD_PRESET);
+
+            const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+                { method: "POST", body: formData }
+            );
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error?.message || "Upload gagal");
+            }
+
+            const data = await res.json();
+            setNotificationImageUrl(data.secure_url);
+            alert("Foto berhasil diupload ke Cloudinary!");
         } catch (err: any) {
-            console.error("Processing failed:", err);
-            alert("Gagal memproses gambar: " + err.message);
+            console.error("Cloudinary upload failed:", err);
+            alert("Gagal mengupload gambar: " + err.message);
         } finally {
             setUploadingImage(false);
         }
@@ -1698,7 +1674,7 @@ export default function UserManagementPage() {
                                                                 <div className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4 text-emerald-500">
                                                                     <Check className="w-7 h-7" />
                                                                 </div>
-                                                                <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Foto Siap Disimpan ke DB</p>
+                                                                <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Foto Tersimpan di Cloudinary ✓</p>
                                                                 <button
                                                                     onClick={() => setNotificationImageUrl("")}
                                                                     className="mt-4 text-[9px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-700 transition-colors"
@@ -1710,8 +1686,8 @@ export default function UserManagementPage() {
                                                             <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-4 text-gray-300 group-hover/upload:text-brand-purple transition-colors">
                                                                 {uploadingImage ? <Loader2 className="w-7 h-7 animate-spin" /> : <Upload className="w-7 h-7" />}
                                                             </div>
-                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">PROSES FOTO (BASE64)</p>
-                                                            <p className="text-[9px] text-gray-400 font-medium text-center px-4">Auto-Compress • Max 800px • Tanpa Storage</p>
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">UPLOAD KE CLOUDINARY</p>
+                                                            <p className="text-[9px] text-gray-400 font-medium text-center px-4">CDN Global • Full Quality • Tanpa Limit DB</p>
                                                             <input
                                                                 type="file"
                                                                 accept="image/*"
