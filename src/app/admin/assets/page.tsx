@@ -2,7 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo, memo } from "react";
 import { useLocalDb, MasterAsset as Asset } from "@/context/LocalDbContext";
 import { useSearchParams } from "next/navigation";
 import clsx from "clsx";
@@ -117,14 +117,60 @@ function AssetsContent() {
         setPreviewImage
     } = useLocalDb();
 
+    // Optimasi: Mapping data agar lookup lebih cepat
+    const roomsMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        rawRooms.forEach(r => { map[r.id] = r; });
+        return map;
+    }, [rawRooms]);
+
+    const locationsMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        rawLocations.forEach(l => { map[l.id] = l; });
+        return map;
+    }, [rawLocations]);
+
+    const roomAssetsMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        rawRoomAssets.forEach(ra => { map[ra.assetId] = ra; });
+        return map;
+    }, [rawRoomAssets]);
+
+    // Pre-calculate service counts for all assets to avoid filtering in every row
+    const serviceCountsMap = useMemo(() => {
+        const counts: Record<string, number> = {};
+        assetLogs.forEach(log => {
+            if (log.assetId && (log.toValue === "SERVIS" || (log.notes && log.notes.toLowerCase().includes("servis")))) {
+                counts[log.assetId] = (counts[log.assetId] || 0) + 1;
+            }
+        });
+        return counts;
+    }, [assetLogs]);
+
+    const memoizedUniqueNames = useMemo(() => 
+        Array.from(new Set(rawAssets.map(a => a.name))).sort()
+    , [rawAssets]);
+
+    const filteredCategories = useMemo(() => {
+        return categories.filter(c => {
+            if (user?.role === "ADMIN") {
+                const lower = c.toLowerCase();
+                return !lower.includes("client asset") && !lower.includes("client aset");
+            }
+            return true;
+        });
+    }, [categories, user?.role]);
+
     const adminName = user?.name || user?.email || "Admin";
 
     const canManageInfrastructure = () => {
         return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
     };
 
-    const uniqueNames = Array.from(new Set(rawAssets.map(a => a.name))).sort();
-    const uniquePositions = Array.from(new Set(rawAssets.filter(a => a.position).map(a => a.position))).sort();
+    const uniqueNames = memoizedUniqueNames;
+    const uniquePositions = useMemo(() => 
+        Array.from(new Set(rawAssets.filter(a => a.position).map(a => a.position))).sort()
+    , [rawAssets]);
 
     useEffect(() => {
         let assetsData = [...rawAssets];
@@ -257,26 +303,77 @@ function AssetsContent() {
         return { assetCode, finalName };
     };
     
+    const compressImage = async (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1200;
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Gagal kompresi"));
+                    }, "image/jpeg", 0.7);
+                };
+            };
+            reader.onerror = (e) => reject(e);
+        });
+    };
+
     const handleInitialPhotoUpload = async (file: File) => {
         const CLOUD_NAME = "dsbryri1d";
         const UPLOAD_PRESET = "studioaset_asetawal";
 
-        const formDataCloud = new FormData();
-        formDataCloud.append("file", file);
-        formDataCloud.append("upload_preset", UPLOAD_PRESET);
-
+        setIsSubmitting(true);
         try {
+            // 1. Kompresi gambar di sisi klien
+            const compressedBlob = await compressImage(file);
+            const compressedFile = new File([compressedBlob], `initial_${Date.now()}.jpg`, { type: "image/jpeg" });
+
+            // 2. Persiapkan data untuk Cloudinary
+            const formDataCloud = new FormData();
+            formDataCloud.append("file", compressedFile);
+            formDataCloud.append("upload_preset", UPLOAD_PRESET);
+
             const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
                 method: "POST",
                 body: formDataCloud,
             });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || "Upload gagal");
+            }
+
             const data = await response.json();
             if (data.secure_url) {
                 setFormData(prev => ({ ...prev, initialPhotoUrl: data.secure_url }));
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Cloudinary upload error:", error);
-            alert("Gagal mengunggah foto ke Cloudinary.");
+            alert("Gagal mengunggah foto: " + (error.message || "Pastikan koneksi internet stabil."));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -385,10 +482,10 @@ function AssetsContent() {
             const code = (deleteError.code || "").toString();
             if (code.includes("permission-denied")) {
                 alert(
-                    `Gagal: Firebase menolak permintaan penghapusan.\n\n` +
+                    `Gagal: Sistem menolak permintaan penghapusan.\n\n` +
                     `Role Anda: ${user?.role}\n` +
                     `Kategori aset: ${assetToDelete?.category}\n\n` +
-                    `Pastikan Firebase Rules sudah dipublish dengan versi terbaru.`
+                    `Pastikan konfigurasi keamanan sudah diperbarui.`
                 );
             } else {
                 alert("Gagal menghapus aset: " + (deleteError.message || "Terjadi kesalahan sistem."));
@@ -1290,17 +1387,7 @@ function AssetsContent() {
                                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all text-sm font-medium shadow-sm"
                                             >
-                                                {categories
-                                                    // ADMIN STUDIO tidak dapat menggunakan kategori Client Asset/Aset
-                                                    .filter(c => {
-                                                        if (user?.role === "ADMIN") {
-                                                            const lower = c.toLowerCase();
-                                                            return !lower.includes("client asset") && !lower.includes("client aset");
-                                                        }
-                                                        return true;
-                                                    })
-                                                    .map(c => <option key={c} value={c}>{c}</option>)
-                                                }
+                                                {filteredCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
                                         )}
                                     </div>
@@ -1385,7 +1472,7 @@ function AssetsContent() {
 
                                     <div className="pt-2">
                                         <div className="h-px bg-gray-100 mb-4"></div>
-                                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Foto Kondisi Awal (Cloudinary)</label>
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Foto Kondisi Awal</label>
                                         
                                         <div className="flex items-start gap-4">
                                             {formData.initialPhotoUrl ? (
@@ -1441,14 +1528,16 @@ function AssetsContent() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-[#303348] hover:bg-[#404358] transition-colors"
+                                        className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-[#303348] hover:bg-[#404358] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? (
                                             <div className="flex items-center justify-center gap-2">
                                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                                <span>Menyimpan...</span>
+                                                <span>Memproses...</span>
                                             </div>
-                                        ) : (formData.id ? "Simpan Perubahan" : "Simpan Aset")}
+                                        ) : (
+                                            formData.id ? "Update Aset" : "Simpan Aset"
+                                        )}
                                     </button>
                                 </div>
                             </form>

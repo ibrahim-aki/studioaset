@@ -185,7 +185,7 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.error?.message || "Upload ke Cloudinary gagal");
+                throw new Error(errData.error?.message || "Gagal mengirim foto ke server");
             }
 
             const data = await res.json();
