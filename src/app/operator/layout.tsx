@@ -3,9 +3,9 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { LogOut, UserCircle, Key } from "lucide-react";
+import { LogOut, Key, Camera, CameraOff, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
@@ -14,8 +14,46 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const router = useRouter();
 
+    // Lapisan 3: Deteksi jenis perangkat (User-Agent)
+    const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        const ua = navigator.userAgent.toLowerCase();
+        const isMobile = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua);
+        // iPad modern kadang melaporkan sebagai macOS, cek tambahan via touch
+        const isIpadOS = navigator.maxTouchPoints > 1 && /mac/i.test(ua);
+        setIsDesktop(!isMobile && !isIpadOS);
+    }, []);
+
+    // Pengecekan ketersediaan kamera
+    const [cameraStatus, setCameraStatus] = useState<"checking" | "allowed" | "no-camera" | "denied">("checking");
+
+    useEffect(() => {
+        const checkCamera = async () => {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                    setCameraStatus("no-camera");
+                    return;
+                }
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const hasCamera = devices.some(device => device.kind === "videoinput");
+                if (!hasCamera) {
+                    setCameraStatus("no-camera");
+                    return;
+                }
+                // Perangkat punya kamera, coba minta izin
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                stream.getTracks().forEach(t => t.stop());
+                setCameraStatus("allowed");
+            } catch (err: any) {
+                // Kamera ada tapi izin ditolak user
+                setCameraStatus("denied");
+            }
+        };
+        checkCamera();
+    }, []);
+
     const handleLogout = async () => {
-        // Otomatis akhiri shift jika masih ada yang aktif
         const activeShift = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
         if (activeShift) {
             try {
@@ -29,13 +67,176 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
             type: "AUTH",
             toValue: "Logout",
             operatorName: user?.name || user?.email || "Unknown",
-            companyId: user?.companyId || "", // Pastikan ID perusahaan terkirim
+            companyId: user?.companyId || "",
             notes: "Role: OPERATOR (Shift Berakhir Otomatis)"
         });
         logout();
         router.push("/login");
     };
 
+    // --- Lapisan 3: Layar Blokir Desktop ---
+    if (isDesktop === true) {
+        return (
+            <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
+                <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6">
+                    <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+                        <div className="bg-gray-900 px-6 pt-10 pb-12 text-center text-white">
+                            <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CameraOff className="w-9 h-9 text-gray-400" />
+                            </div>
+                            <h1 className="text-lg font-black tracking-tight text-white">Perangkat Tidak Didukung</h1>
+                            <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+                                Aplikasi Operator hanya dapat digunakan melalui <span className="text-white font-bold">HP atau Tablet</span>.
+                            </p>
+                        </div>
+                        <div className="px-6 py-6 space-y-4">
+                            <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4">
+                                <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2">Perangkat yang Diizinkan</p>
+                                <div className="space-y-1.5">
+                                    {["📱 HP Android", "🍎 iPhone (iOS)", "📲 iPad"].map(item => (
+                                        <div key={item} className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                            <p className="text-xs text-amber-800 font-medium">{item}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-3">
+                                <p className="text-[10px] text-gray-500 leading-relaxed text-center">
+                                    Kebijakan ini diterapkan untuk memastikan foto aset diambil secara langsung menggunakan kamera perangkat.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center gap-1.5 py-3 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition-all active:scale-95"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                Keluar dari Aplikasi
+                            </button>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-6 text-center">
+                        Studio Aset • Akses Operator Hanya via HP/Tablet
+                    </p>
+                </div>
+            </ProtectedRoute>
+        );
+    }
+
+    // --- Lapisan Pengecekan Kamera (loading): isDesktop masih null = belum tahu jenisnya ---
+    if (isDesktop === null || cameraStatus === "checking") {
+        return (
+            <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
+                <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+                    <div className="text-center space-y-4">
+                        <div className="w-16 h-16 bg-brand-purple/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                            <Camera className="w-8 h-8 text-brand-purple" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-700">Memeriksa akses kamera...</p>
+                        <p className="text-xs text-gray-400">Harap izinkan akses kamera jika ada permintaan dari browser.</p>
+                    </div>
+                </div>
+            </ProtectedRoute>
+        );
+    }
+
+    // --- Layar Blokir: Tidak Ada Kamera ---
+    if (cameraStatus === "no-camera") {
+        return (
+            <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
+                <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+                    <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="bg-gray-800 px-6 pt-8 pb-10 text-center text-white">
+                            <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CameraOff className="w-8 h-8 text-white" />
+                            </div>
+                            <h1 className="text-lg font-black tracking-tight">Tidak Ada Kamera Terdeteksi</h1>
+                            <p className="text-sm text-gray-300 mt-2 leading-relaxed">
+                                Harap login menggunakan device yang dilengkapi kamera.
+                            </p>
+                        </div>
+                        <div className="px-6 py-6 space-y-4 -mt-4">
+                            <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4">
+                                <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-1">Device yang Diizinkan</p>
+                                <p className="text-xs text-amber-800 leading-relaxed">
+                                    Gunakan <span className="font-bold">HP Android, iPhone, atau iPad</span> yang memiliki kamera untuk mengakses aplikasi ini.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center gap-1.5 py-3 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all active:scale-95"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                Keluar dari Aplikasi
+                            </button>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-6 text-center">
+                        Studio Aset • Keamanan Data Wajib Menggunakan Kamera
+                    </p>
+                </div>
+            </ProtectedRoute>
+        );
+    }
+
+    // --- Layar Blokir: Izin Kamera Ditolak ---
+    if (cameraStatus === "denied") {
+        return (
+            <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
+                <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+                    <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="bg-rose-500 px-6 pt-8 pb-10 text-center text-white">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CameraOff className="w-8 h-8 text-white" />
+                            </div>
+                            <h1 className="text-lg font-black tracking-tight">Akses Kamera Ditolak</h1>
+                            <p className="text-sm text-rose-100 mt-1 leading-relaxed">
+                                Anda memblokir izin kamera. Aplikasi tidak dapat berfungsi.
+                            </p>
+                        </div>
+                        <div className="px-6 py-6 space-y-4 -mt-4">
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Cara Mengizinkan Kamera</p>
+                                <div className="flex items-start gap-2.5">
+                                    <div className="w-5 h-5 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <span className="text-[10px] font-black text-rose-500">1</span>
+                                    </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">Buka pengaturan browser Anda dan izinkan akses kamera untuk situs ini.</p>
+                                </div>
+                                <div className="flex items-start gap-2.5">
+                                    <div className="w-5 h-5 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <span className="text-[10px] font-black text-rose-500">2</span>
+                                    </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">Setelah diizinkan, tekan tombol <span className="font-bold text-gray-900">"Coba Lagi"</span> di bawah ini.</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="flex items-center justify-center gap-1.5 py-3 bg-brand-purple text-white rounded-xl text-xs font-bold hover:bg-brand-purple/90 transition-all active:scale-95"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                    Coba Lagi
+                                </button>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-center gap-1.5 py-3 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all active:scale-95"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" />
+                                    Keluar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-6 text-center">
+                        Studio Aset • Keamanan Data Wajib Menggunakan Kamera
+                    </p>
+                </div>
+            </ProtectedRoute>
+        );
+    }
+
+    // --- Tampilan Normal (Kamera Tersedia & Diizinkan) ---
     return (
         <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
             <div className="min-h-screen bg-gray-50 flex flex-col">
