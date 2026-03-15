@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera, RefreshCcw } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import clsx from "clsx";
@@ -577,28 +577,7 @@ export default function UserManagementPage() {
     }, [contextChecklists]);
 
     // Auto-cleanup trigger when company is selected
-    useEffect(() => {
-        if (selectedCompany && liveCompany?.retention) {
-            const { retention } = liveCompany;
-            
-            const cleanup = async () => {
-                if (retention.checklistsDays) {
-                    await purgeData(selectedCompany.id, 'REPORTS', retention.checklistsDays);
-                }
-                if (retention.assetHistoryDays) {
-                    await purgeData(selectedCompany.id, 'ASSET_HISTORY', retention.assetHistoryDays);
-                }
-                if (retention.assetLogsDays) {
-                    await purgeData(selectedCompany.id, 'LOGS', retention.assetLogsDays);
-                }
-                if (retention.deletedAssetsDays) {
-                    await purgeData(selectedCompany.id, 'TRASH', retention.deletedAssetsDays);
-                }
-            };
-            
-            cleanup().catch(err => console.error("Auto-cleanup failed:", err));
-        }
-    }, [selectedCompany?.id, liveCompany?.retention]);
+    // Auto-cleanup trigger has been moved to LocalDbContext to ensure it runs globally
 
     useEffect(() => {
         // Global Cloud Health Listener (when no specific company selected)
@@ -1521,33 +1500,33 @@ export default function UserManagementPage() {
                                     </h6>
                                     <div className="space-y-4">
                                         {[
-                                            { 
-                                                label: "Bandwidth", 
-                                                val: (usageMetrics.monthlyActiveUsers * 0.05).toFixed(2), 
-                                                limit: 100, 
-                                                unit: "GB", 
-                                                reset: "Monthly" 
+                                            {
+                                                label: "Bandwidth",
+                                                val: (usageMetrics.monthlyActiveUsers * 0.05).toFixed(2),
+                                                limit: 100,
+                                                unit: "GB",
+                                                reset: "Monthly"
                                             },
-                                            { 
-                                                label: "Function Inv.", 
-                                                val: usageMetrics.dailyWrites * 5, 
-                                                limit: 100000, 
-                                                unit: "Inv", 
-                                                reset: "Monthly" 
+                                            {
+                                                label: "Function Inv.",
+                                                val: usageMetrics.dailyWrites * 5,
+                                                limit: 100000,
+                                                unit: "Inv",
+                                                reset: "Monthly"
                                             },
-                                            { 
-                                                label: "Execution", 
-                                                val: (usageMetrics.dailyWrites * 0.001).toFixed(3), 
-                                                limit: 100, 
-                                                unit: "Hrs", 
-                                                reset: "Monthly" 
+                                            {
+                                                label: "Execution",
+                                                val: (usageMetrics.dailyWrites * 0.001).toFixed(3),
+                                                limit: 100,
+                                                unit: "Hrs",
+                                                reset: "Monthly"
                                             },
-                                            { 
-                                                label: "Image Opt.", 
-                                                val: cloudStats.assets, 
-                                                limit: 1000, 
-                                                unit: "Doc", 
-                                                reset: "Monthly" 
+                                            {
+                                                label: "Image Opt.",
+                                                val: cloudStats.assets,
+                                                limit: 1000,
+                                                unit: "Doc",
+                                                reset: "Monthly"
                                             }
                                         ].map((item, i) => {
                                             const valNum = Number(item.val);
@@ -1759,117 +1738,129 @@ export default function UserManagementPage() {
                                                 )} />
                                             </button>
                                         </div>
-                                    </div>
-
-                                    {/* Actions 2-5: Data Retention & Purge */}
-                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-                                            <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
-                                                <Database className="w-4 h-4" />
+                                        {/* Actions 2-5: Data Cleanup (Minimalist Design) */}
+                                        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
+                                                    <Database className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">DATABASE CLEANUP</h3>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Manual Purge Controls</p>
+                                                </div>
                                             </div>
-                                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">
-                                                DATA RETENTION & CLEANUP ACTIONS
-                                            </h3>
-                                        </div>
 
-                                        <div className="space-y-4">
-                                            {[
-                                                { id: 'ASSET_HISTORY', label: 'RIWAYAT AKTIVITAS ASET', field: 'assetHistoryDays', icon: Activity, type: 'ASSET_HISTORY', desc: 'Hapus total riwayat pergerakan & status aset (BAIK, RUSAK, dll)' },
-                                                { id: 'REPORTS', label: 'LAPORAN CHECKLIST', field: 'checklistsDays', icon: ClipboardCheck, type: 'REPORTS', desc: 'Hapus total data riwayat inspeksi ruangan & checklist harian' },
-                                                { id: 'LOGS', label: 'LOG AKTIVITAS ADMIN', field: 'assetLogsDays', icon: History, type: 'LOGS', desc: 'Hapus total audit penggunaan sistem oleh Admin/Super Admin' },
-                                                { id: 'TRASH', label: 'RIWAYAT HAPUS (TRASH)', field: 'deletedAssetsDays', icon: Trash2, type: 'TRASH', desc: 'Hapus total daftar aset yang sudah masuk tong sampah' },
-                                                { id: 'ACTIVE_ASSETS', label: 'INVENTARIS ASET AKTIF', field: 'activeAssetsDays', icon: Box, type: 'ACTIVE_ASSETS', desc: 'Hapus seluruh daftar aset utama & pemetaan ruangan saat ini' },
-                                            ].map((item) => (
-                                                <div key={item.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100">
-                                                            <item.icon className="w-4 h-4 text-brand-purple" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-tight">{item.label}</p>
-                                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">{item.desc}</p>
-                                                        </div>
-                                                    </div>
-
-                                                     <div className="flex flex-col sm:flex-row items-center gap-3">
-                                                        {item.id !== 'ACTIVE_ASSETS' && (
-                                                            <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden h-10 shadow-sm w-full sm:w-auto">
-                                                                <div className="bg-gray-50 px-4 text-[9px] font-black text-gray-400 flex items-center border-r border-gray-100 h-full uppercase tracking-tighter">SIMPAN SELAMA</div>
-                                                                <input 
-                                                                    type="number"
-                                                                    placeholder="0"
-                                                                    min="0"
-                                                                    defaultValue={liveCompany?.retention?.[item.field as keyof typeof liveCompany.retention] || ""}
-                                                                    onBlur={async (e) => {
-                                                                        const val = parseInt(e.target.value) || 0;
-                                                                        await updateCompany(selectedCompany.id, {
-                                                                            retention: {
-                                                                                ...(liveCompany?.retention || {}),
-                                                                                [item.field]: val
-                                                                            }
-                                                                        });
-                                                                    }}
-                                                                    className="w-full sm:w-20 px-3 text-[11px] font-black outline-none text-center h-full bg-white"
-                                                                />
-                                                                <span className="bg-gray-50 px-4 text-[9px] font-black text-gray-500 border-l border-gray-100 h-full flex items-center">HARI</span>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {[
+                                                    { id: 'LOGS_COMBINED', label: 'RIWAYAT AKTIVITAS', icon: History, type: 'LOGS', desc: 'Log Admin & Changelog Aset' },
+                                                    { id: 'REPORTS', label: 'LAPORAN CHECKLIST', icon: ClipboardCheck, type: 'REPORTS', desc: 'Riwayat inspeksi & checklist harian' },
+                                                    { id: 'TRASH', label: 'RIWAYAT HAPUS', icon: Trash2, type: 'TRASH', desc: 'Daftar aset yang telah dihapus' },
+                                                ].map((item) => (
+                                                    <div key={item.id} className="p-3 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-between group hover:border-brand-purple/20 transition-all">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 rounded-xl border border-gray-100 shadow-sm bg-white">
+                                                                <item.icon className="w-3.5 h-3.5 text-brand-purple" />
                                                             </div>
-                                                        )}
-
-                                                        <button 
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[9px] font-black text-gray-900 uppercase tracking-tight leading-none mb-1">{item.label}</span>
+                                                                <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter leading-none">{item.desc}</span>
+                                                            </div>
+                                                        </div>
+                                                        <button
                                                             onClick={async () => {
-                                                                if(confirm(`PERINGATAN: Hapus secara keseluruhan (PURGE) data ${item.label} untuk ${liveCompany?.name}? Tindakan ini TIDAK dapat dibatalkan.`)) {
+                                                                if (confirm(`Konfirmasi: Hapus seluruh (PURGE) data ${item.label}?`)) {
                                                                     try {
                                                                         await purgeData(selectedCompany.id, item.type as any);
-                                                                        alert(`Data ${item.label} berhasil dibersihkan secara total.`);
+                                                                        alert(`${item.label} berhasil dikosongkan.`);
                                                                     } catch (err: any) {
-                                                                        alert(`Gagal membersihkan data: ${err.message}`);
+                                                                        alert(`Error: ${err.message}`);
                                                                     }
                                                                 }
                                                             }}
-                                                            className="h-10 px-6 bg-brand-orange hover:bg-orange-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-md shadow-brand-orange/20 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                            className="p-2 rounded-lg transition-all shadow-sm flex items-center justify-center bg-white text-gray-400 border border-gray-200 hover:text-brand-orange hover:border-brand-orange/50"
+                                                            title="Purge Now"
                                                         >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                            PURGE DATA SEKARANG
+                                                            <Trash2 className="w-3 h-3" />
                                                         </button>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>    </div>
 
                                     {/* Action 6: Permanent Delete */}
                                     <div className="bg-rose-50 border border-rose-100 rounded-3xl p-8 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-4">
+                                        <div className="flex items-center gap-3 mb-8">
                                             <div className="w-8 h-8 bg-rose-600/10 rounded-lg flex items-center justify-center text-rose-600">
                                                 <AlertTriangle className="w-4 h-4" />
                                             </div>
                                             <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">
-                                                DANGER ZONE: PENGHAPUSAN PERUSAHAAN
+                                                DANGER ZONE: TINDAKAN KRITIS
                                             </h3>
                                         </div>
-                                        <p className="text-[10px] text-rose-500 font-bold mb-6 italic">
-                                            Seluruh data milik <span className="underline">{liveCompany?.name}</span> akan dihapus selamanya.
-                                        </p>
-                                        <button
-                                            onClick={() => {
-                                                if (confirm(`KONFIRMASI AKHIR: Apakah Anda yakin ingin menghapus ${liveCompany?.name}?`)) {
-                                                    deleteCompany(selectedCompany.id);
-                                                    setView("companies");
-                                                    setSelectedCompany(null);
-                                                }
-                                            }}
-                                            className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                            HAPUS PERUSAHAAN SECARA PERMANEN
-                                        </button>
+
+                                        {/* Master Assets Reset */}
+                                        <div className="mb-8">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 bg-rose-600/10 rounded-lg flex items-center justify-center text-rose-600">
+                                                    <Box className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">MASTER ASSETS (INVENTARIS)</h3>
+                                                    <p className="text-[9px] text-rose-400 font-bold uppercase tracking-tight italic">Tindakan ini akan menghapus seluruh daftar aset utama dan pemetaan ruangan.</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm(`KRITIS: Anda akan menghapus SELURUH MASTER ASSETS ${liveCompany?.name}. Data ini tidak bisa dikembalikan. Lanjutkan?`)) {
+                                                        try {
+                                                            await purgeData(selectedCompany.id, 'ACTIVE_ASSETS');
+                                                            alert(`Master Assets ${liveCompany?.name} berhasil dikosongkan total.`);
+                                                        } catch (err: any) {
+                                                            alert(`Error: ${err.message}`);
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full py-4 bg-white border-2 border-rose-200 hover:border-rose-600 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 group"
+                                            >
+                                                <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                                HAPUS & RESET SEMUA MASTER ASSETS
+                                            </button>
+                                        </div>
+
+                                        {/* Permanent Company Delete */}
+                                        <div className="mt-8 pt-8 border-t border-rose-200/50">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 bg-rose-600/10 rounded-lg flex items-center justify-center text-rose-600">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">PENGHAPUSAN PERUSAHAAN</h3>
+                                                    <p className="text-[9px] text-rose-400 font-bold uppercase tracking-tight italic">
+                                                        Seluruh data milik <span className="underline">{liveCompany?.name}</span> akan dihapus selamanya.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm(`KONFIRMASI AKHIR: Apakah Anda yakin ingin menghapus ${liveCompany?.name}?`)) {
+                                                        deleteCompany(selectedCompany.id);
+                                                        setView("companies");
+                                                        setSelectedCompany(null);
+                                                    }
+                                                }}
+                                                className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                HAPUS PERUSAHAAN SECARA PERMANEN
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
-                </div>
+            </div>
 
             <footer className="mt-12 pt-8 border-t border-gray-50 text-center text-[9px] text-gray-300 font-bold uppercase tracking-widest">
                 Tenant Orchestrator v3.0 • Cloud Ready

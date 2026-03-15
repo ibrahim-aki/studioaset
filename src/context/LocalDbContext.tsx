@@ -12,7 +12,8 @@ import {
     orderBy,
     where,
     getDocs,
-    getDoc
+    getDoc,
+    writeBatch
 } from "firebase/firestore";
 import { Activity, Loader2, X } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -29,14 +30,7 @@ export interface Company {
     email?: string;
     phone?: string;
     createdAt: string;
-    requireChecklistPhoto?: boolean; 
-    retention?: {
-        assetLogsDays?: number;
-        checklistsDays?: number;
-        deletedAssetsDays?: number;
-        assetHistoryDays?: number;
-        activeAssetsDays?: number;
-    };
+    requireChecklistPhoto?: boolean;
 }
 
 export interface Location {
@@ -201,7 +195,7 @@ interface LocalDbContextType {
     addChecklist: (checklist: Omit<Checklist, "id" | "isRead" | "companyId">) => Promise<void>;
     markChecklistAsRead: (id: string) => Promise<void>;
     addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName" | "companyId"> & { operatorName?: string; companyId?: string }) => Promise<void>;
-    purgeData: (companyId: string, type: 'LOGS' | 'REPORTS' | 'TRASH' | 'ASSET_HISTORY' | 'ACTIVE_ASSETS', days?: number) => Promise<void>;
+    purgeData: (companyId: string, type: 'LOGS' | 'REPORTS' | 'TRASH' | 'ASSET_HISTORY' | 'ACTIVE_ASSETS') => Promise<void>;
 
     operatorShifts: OperatorShift[];
     addShift: (shift: Omit<OperatorShift, "id" | "companyId" | "operatorId" | "operatorName" | "operatorPhone" | "status" | "createdAt">) => Promise<string>;
@@ -240,7 +234,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [deletedAssets, setDeletedAssets] = useState<DeletedAsset[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
     const [initialCategories] = useState(["Kamera", "Audio / Mic", "Lighting", "PC / Laptop", "Monitor", "Aksesoris", "Kabel", "Inventaris", "Atk", "Lainnya"]);
-    
+
     // Global Processing State
     const [isSystemBusy, setIsSystemBusy] = useState(false);
 
@@ -350,7 +344,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const withLoading = async <T,>(action: () => Promise<T>): Promise<T> => {
         let isDone = false;
         let overlayShown = false;
-        
+
         // Timer: hanya aktif jika user masih login
         const timer = setTimeout(() => {
             if (!isDone && user !== null) {
@@ -596,23 +590,23 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
             for (const item of c.items) {
                 const currentAsset = assets.find(a => a.id === item.assetId);
-                await api.addLog({ 
-                    assetId: item.assetId, 
-                    assetName: item.assetName, 
-                    type: "STATUS", 
-                    fromValue: currentAsset?.status || "BAIK", 
-                    toValue: item.status, 
-                    operatorName: c.operatorName, 
-                    companyId, 
+                await api.addLog({
+                    assetId: item.assetId,
+                    assetName: item.assetName,
+                    type: "STATUS",
+                    fromValue: currentAsset?.status || "BAIK",
+                    toValue: item.status,
+                    operatorName: c.operatorName,
+                    companyId,
                     notes: item.notes || `Audit in ${c.roomName}`,
                     photoUrl: item.photoUrl // Link foto Cloudinary masuk ke log
                 });
                 if (item.status) {
-                    await updateDoc(doc(db, "assets", item.assetId), { 
-                        status: item.status, 
-                        conditionNotes: item.notes, 
-                        companyId, 
-                        updatedAt: new Date().toISOString() 
+                    await updateDoc(doc(db, "assets", item.assetId), {
+                        status: item.status,
+                        conditionNotes: item.notes,
+                        companyId,
+                        updatedAt: new Date().toISOString()
                     });
                 }
             }
@@ -635,8 +629,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await setDoc(doc(db, "assetLogs", id), newLog);
         },
 
-        purgeData: async (companyId, type, days) => withLoading(async () => {
+        purgeData: async (companyId, type) => withLoading(async () => {
             if (!companyId) return;
+
             const collectionMapping: Record<string, string> = {
                 'LOGS': 'assetLogs',
                 'ASSET_HISTORY': 'assetLogs',
@@ -645,41 +640,63 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 'ACTIVE_ASSETS': 'assets'
             };
             const collName = collectionMapping[type];
-            let q = query(collection(db, collName), where("companyId", "==", companyId));
 
-            if (type === 'LOGS') {
-                q = query(q, where("type", "in", ["SYSTEM", "AUTH"]));
-            } else if (type === 'ASSET_HISTORY') {
-                q = query(q, where("type", "in", ["STATUS", "MOVEMENT"]));
+            // Query seluruh data milik perusahaan ini
+            let queries: any[] = [];
+            if (type === 'LOGS' || type === 'ASSET_HISTORY') {
+                // Untuk log admin dan changelog aset, kita hapus seluruhnya dari koleksi assetLogs milik perusahaan ini
+                queries.push(query(collection(db, collName), where("companyId", "==", companyId)));
+            } else {
+                queries.push(query(collection(db, collName), where("companyId", "==", companyId)));
             }
 
-            if (days !== undefined && days > 0) {
-                const threshold = new Date();
-                threshold.setDate(threshold.getDate() - days);
-                const thresholdStr = threshold.toISOString();
-                
-                const timeField = type === 'TRASH' ? 'deleteDate' : 'timestamp';
-                q = query(q, where(timeField, "<", thresholdStr));
+            const allDocs: any[] = [];
+            for (const q of queries) {
+                const snap = await getDocs(q);
+                snap.docs.forEach(doc => allDocs.push(doc));
             }
 
-            const snap = await getDocs(q);
-            const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
-            await Promise.all(deletePromises);
+            if (allDocs.length === 0) return;
 
-            // Clean up related data if purging active assets
-            if (type === 'ACTIVE_ASSETS') {
-                const raQuery = query(collection(db, "roomAssets"), where("companyId", "==", companyId));
-                const raSnap = await getDocs(raQuery);
-                const raDeletePromises = raSnap.docs.map(d => deleteDoc(d.ref));
-                await Promise.all(raDeletePromises);
-            }
-            
-            await api.addLog({
-                type: "SYSTEM",
-                toValue: `Pembersihan ${type}`,
-                notes: days ? `Hapus otomatis data > ${days} hari` : `Hapus manual seluruh data`,
-                companyId: companyId
+            // Hapus foto Cloudinary yang terlampir
+            const urlsToDelete: string[] = [];
+            allDocs.forEach(doc => {
+                const data = doc.data();
+                if (type === 'REPORTS' && data.items && Array.isArray(data.items)) {
+                    data.items.forEach((item: any) => {
+                        if (item.photoUrl && item.photoUrl.includes('res.cloudinary.com')) {
+                            urlsToDelete.push(item.photoUrl);
+                        }
+                    });
+                }
             });
+
+            if (urlsToDelete.length > 0) {
+                try {
+                    await fetch('/api/cloudinary/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ urls: urlsToDelete })
+                    });
+                } catch (err) {
+                    console.error("Gagal menghapus foto dari Cloudinary:", err);
+                }
+            }
+
+            // Hapus data related jika purge active assets
+            if (type === 'ACTIVE_ASSETS') {
+                const raSnap = await getDocs(query(collection(db, "roomAssets"), where("companyId", "==", companyId)));
+                await Promise.all(raSnap.docs.map((d: any) => deleteDoc(d.ref)));
+            }
+
+            // Hapus semua dokumen dengan batch (maks 500 per batch)
+            const chunkSize = 500;
+            for (let i = 0; i < allDocs.length; i += chunkSize) {
+                const batch = writeBatch(db);
+                const chunk = allDocs.slice(i, i + chunkSize);
+                chunk.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            }
         }),
 
         addShift: async (shiftData) => withLoading(async () => {
@@ -727,29 +744,29 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             {/* Global Image Preview Modal - Modern, Sleek, Secure */}
             {previewImage && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
-                    <div 
+                    <div
                         className="fixed inset-0 bg-gray-900/90 backdrop-blur-md cursor-zoom-out"
                         onClick={() => setPreviewImage(null)}
                     ></div>
-                    
+
                     <div className="relative max-w-5xl w-full max-h-full flex items-center justify-center animate-in zoom-in-95 duration-300">
                         {/* Close Button */}
-                        <button 
+                        <button
                             onClick={() => setPreviewImage(null)}
                             className="absolute -top-12 right-0 p-2 text-white/60 hover:text-white transition-colors group flex items-center gap-2"
                         >
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">Tutup</span>
                             <X className="w-6 h-6" />
                         </button>
-                        
+
                         <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
-                            <img 
-                                src={previewImage} 
-                                alt="Preview" 
+                            <img
+                                src={previewImage}
+                                alt="Preview"
                                 className="max-w-full max-h-[80vh] object-contain select-none"
                                 onContextMenu={(e) => e.preventDefault()} // Mencegah klik kanan simpan gambar
                             />
-                            
+
                             {/* Overlay Info */}
                             <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Internal Asset Documentation</p>

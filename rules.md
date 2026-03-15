@@ -15,5 +15,7 @@ Untuk menjaga penggunaan kuota tetap optimal, patuhi aturan berikut:
 8. *Re-use Context:* Jika kamu sudah membaca suatu file dalam percakapan ini, tidak perlu membacanya lagi di langkah berikutnya kecuali jika file tersebut baru saja diubah.
 9. *Flash Model Preference:* Selalu prioritaskan penyelesaian tugas dengan cara yang paling sederhana cepat dan efektif untuk menghemat token.
 10. *Pengecualian pesan commit github:* apapun yang ada hubungannya dengansuper admin serta informasi github atau vercel ganti dengan kata lain di pesan commit
-11. *Pengecualian Cangelog aplikasi:* fitur, perbaikan, update atau perubahan apapun yang ada hubungannya dengan super admin serta informasi github atau vercel tidak perlu dicatat atau dimasukkan ke cangelog aplikasi
+11. *Pengecualian Cangelog aplikasi:* fitur, perbaikan, update atau perubahan apapun yang ada hubungannya dengan super admin serta informasi github atau vercel atau cloudinary tidak perlu dicatat atau dimasukkan ke cangelog aplikasi
 12. *Bahasa Cangelog di Aplikasi* khusus di menu Cangelog Aplikasi keterangan Hari Tanggal Jam tulis dalah bahasa Indonesia, untuk deskripsi Cangelog tulis dalam bahasa inggris.
+13. *Folder Terlarang* tidak perlu membaca folder node_modules di setiap pekerjaan, jika harus membacanya harus meminta ijin terlebih dahulu kepada saya dan beri saya alasan kenapa kamu harus membacanya
+14. *Bahasa Wajib* Gunakan bahasa indonesia di saat melakukan apapun tanpa terkecuai !!!.

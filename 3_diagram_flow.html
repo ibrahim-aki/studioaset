@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitemap Blueprint - Logika Sistem Otoritas & Arus Data</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1a202c;
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: #4a5568;
+            font-size: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Container Pembungkus Scroll */
+        .canvas-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 20px 0; /* Hapus padding samping agar margin auto berfungsi pas */
+            height: 1500px; 
+            box-sizing: border-box;
+        }
+
+        /* Container Diagram yang Dipusatkan di Tengah Layar Ultra Wide */
+        .diagram-container {
+            position: relative;
+            width: 2100px;
+            height: 100%;
+            margin: 0 auto; /* Memastikan diagram rata tengah sejajar dengan judul jika layar lebar */
+        }
+
+        /* ----- STYLING BOX ENTITAS ----- */
+        .box {
+            position: absolute;
+            width: 240px;
+            height: 80px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 10;
+            font-weight: 700;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .box span {
+            font-size: 11.5px;
+            font-weight: 400;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
+        /* Warna Identitas Modul (Sitemap Logic) */
+        .infra { border-top: 6px solid #475569; }
+        .ts { border-top: 6px solid #a855f7; }
+        .adm { border-top: 6px solid #3b82f6; }
+        .opr { border-top: 6px solid #10b981; }
+
+        .db { 
+            border-top: 8px solid #ef4444; 
+            width: 400px; 
+            height: 120px; 
+            font-size: 18px; 
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.15);
+        }
+        
+        .cdn { 
+            border-top: 8px solid #f59e0b; 
+            width: 240px; 
+            height: 120px; 
+            font-size: 16px; 
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.15);
+        }
+
+        /* ----- STYLING GARIS (SVG) ----- */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .line-flow { stroke: #cbd5e1; stroke-width: 3px; fill: none; }
+        .line-write { stroke: #a855f7; stroke-width: 4px; stroke-dasharray: 6 6; fill: none; }
+        .line-read { stroke: #3b82f6; stroke-width: 4px; stroke-dasharray: 6 6; fill: none; }
+        .line-upload { stroke: #f59e0b; stroke-width: 4px; stroke-dasharray: 6 6; fill: none; }
+
+        /* ----- STYLING LABEL PENJELASAN GARIS ----- */
+        .label {
+            position: absolute;
+            background: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 20;
+            border: 1px solid #e2e8f0;
+            max-width: 250px;
+        }
+
+        .l-flow { color: #64748b; border-left: 4px solid #cbd5e1; }
+        .l-write { color: #9333ea; border-left: 4px solid #a855f7; }
+        .l-read { color: #2563eb; border-left: 4px solid #3b82f6; }
+        .l-upload { color: #d97706; border-left: 4px solid #f59e0b; }
+
+        /* Khusus panel Legenda */
+        .legend-box {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            z-index: 30;
+            font-size: 13px;
+        }
+        .legend-box h3 { margin: 0 0 15px 0; font-size: 15px; color: #1e293b; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 10px; color: #475569; font-weight: 600; }
+        .legend-color { width: 30px; height: 4px; margin-right: 12px; border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Arsitektur Menu (Sitemap) & Lalu Lintas Data Silang</h1>
+    </div>
+
+    <div class="canvas-wrapper">
+        <div class="diagram-container">
+            <!-- ======================= LEGENDA ======================= -->
+            <div class="legend-box">
+                <h3>Peta Warna Jalur Logika Cetak Biru</h3>
+                <div class="legend-item"><div class="legend-color" style="background:#cbd5e1;"></div> Penjalaran Sitemap Menu Biasa / Hirarki Layar</div>
+                <div class="legend-item"><div class="legend-color" style="border-top:4px dashed #a855f7;"></div> Operasi WRITE: Mengubah / Mendorong Data ke Database</div>
+                <div class="legend-item"><div class="legend-color" style="border-top:4px dashed #3b82f6;"></div> Operasi READ: Menarik / Membaca Data Lintas Halaman</div>
+                <div class="legend-item"><div class="legend-color" style="border-top:4px dashed #f59e0b;"></div> Upload Media: Mengirim File Beban Tinggi</div>
+            </div>
+
+            <!-- ======================= KOMPONEN BOX HTML ======================= -->
+            <!-- LEVEL 1: INFRASTRUKTUR -->
+            <div class="box infra" style="left: 180px; top: 60px;">Repositories Github<br/><span>Penyedia Kode (Source API)</span></div>
+            <div class="box infra" style="left: 880px; top: 60px;">Node Vercel Edge Server<br/><span>Hosting & Front-End Peladen</span></div>
+            
+            <!-- LEVEL 2: ENTRY / MIDDLEWARE -->
+            <div class="box infra" style="left: 880px; top: 210px;">Auth Guard / Mesin Validasi<br/><span>Mengamankan Akses URL & Role</span></div>
+
+            <!-- LEVEL 3: ROOT PORTALS (3 JALUR) -->
+            <div class="box ts" style="left: 180px; top: 360px;">Tech Support<br/><span>Ruang Lingkup: Hak Akar Klien</span></div>
+            <div class="box adm" style="left: 880px; top: 360px;">Portal Administrator<br/><span>Ruang Lingkup: Hak Infrastruktur Aset</span></div>
+            <div class="box opr" style="left: 1580px; top: 360px;">Portal Operator<br/><span>Ruang Lingkup: Input Laporan Lapangan</span></div>
+
+            <!-- LEVEL 4: MENU SUB ACTIONS -->
+            <!-- TS MEnus -->
+            <div class="box ts" style="left: 30px; top: 510px;">Menu: Keamanan Hardware Klien<br/><span>Tombol Pemaksaan Sensor Kamera</span></div>
+            <div class="box ts" style="left: 330px; top: 510px;">Menu: Pemeliharaan Ekstrem<br/><span>Operasi Menghapus Log & Aset</span></div>
+            
+            <!-- ADM Menus -->
+            <div class="box adm" style="left: 630px; top: 510px;">Modul Induk Master Infrastruktur<br/><span>Membangun Cabang, Gedung & Master Alat</span></div>
+            <div class="box adm" style="left: 1130px; top: 510px;">Modul Penilaian & Jejak (Audit)<br/><span>Terminal Meja Penyelia CCTVs Laporan</span></div>
+            
+            <div class="box adm" style="left: 1130px; top: 660px;">Masa Pantau Laporan Realtime<br/><span>Inspeksi Ceklist Barang & Log Kehadiran</span></div>
+
+            <!-- OPR Menus -->
+            <div class="box opr" style="left: 1580px; top: 510px;">Verifikator Batasan Alat<br/><span>Wajib Terbuka Di Handphone (Menolak Desktop)</span></div>
+            <div class="box opr" style="left: 1580px; top: 660px;">Pintu Memilih Ruangan Inspeksi<br/><span>Membuka Form Ceklist (Borang) Spesifik Ruang</span></div>
+
+            <!-- LEVEL 5: OPR INSIDE FORM -->
+            <div class="box opr" style="left: 1330px; top: 810px;">Tahap A: In-App Camera<br/><span>Jepret Bukti Lensa Terkunci (Non-Galeri)</span></div>
+            <div class="box opr" style="left: 1580px; top: 810px;">Tahap B: Identifikasi Barang<br/><span>Menentukan Baik / Rusak / Hilang</span></div>
+            <div class="box opr" style="left: 1830px; top: 810px;">Tahap C: Plang Live Session<br/><span>Mengganti Pintu Ruangan Live/Standby</span></div>
+
+            <div class="box opr" style="left: 1580px; top: 960px;">Finalisasi Pengajuan<br/><span>Sistem Menandatangani Submisi Ceklist</span></div>
+
+            <!-- LEVEL 6: DATABASES / SILOS -->
+            <div class="box db" style="left: 700px; top: 1240px;">DATABASE<br/><span>Menyimpan Rekaman Keras Database Secara Realtime: Logika Ceklis, Relasi Gedung - Kamera, Akun, dan Historis Operator.</span></div>
+            
+            <div class="box cdn" style="left: 1330px; top: 1240px;">MEDIA SERVER<br/><span>Gudang Laporan Media Beban Resolusi Tinggi untuk Menampung Blob File Foto Sang Operator.</span></div>
+
+
+            <!-- ======================= GARIS SVGS KONEKTOR ======================= -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1500" viewBox="0 0 2100 1500">
+                <defs>
+                    <!-- Arrow Heads -->
+                    <marker id="arr-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#cbd5e1" />
+                    </marker>
+                    <marker id="arr-write" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#a855f7" />
+                    </marker>
+                    <marker id="arr-read" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+                    </marker>
+                    <marker id="arr-upload" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" />
+                    </marker>
+                </defs>
+
+                <!-- ================= SITEMAP HIRARKI FLOW (ABU-ABU) ================= -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 420 100 L 870 100" /> <!-- Git ke Vercel -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1000 140 L 1000 200" /> <!-- Vercel ke Middleware -->
+
+                <!-- Splitting Branch dari Middleware (Y=290) turun lalu horizontal lalu ke Portals -->
+                <path class="line-flow" d="M 1000 290 L 1000 320" />
+                <path class="line-flow" d="M 300 320 L 1700 320" />
+                
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 300 320 L 300 350" /> <!-- Ke TS -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1000 320 L 1000 350" /> <!-- Ke ADM -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1700 320 L 1700 350" /> <!-- Ke OPR -->
+
+                <!-- TS Portal turun ke cabang sub-menu (Y=440 down to Y=480 horizontal) -->
+                <path class="line-flow" d="M 300 440 L 300 480" />
+                <path class="line-flow" d="M 150 480 L 450 480" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 150 480 L 150 500" /> <!-- Ke TS Sec -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 450 480 L 450 500" /> <!-- Ke TS Wipe -->
+
+                <!-- ADM Portal turun ke cabang sub-menu -->
+                <path class="line-flow" d="M 1000 440 L 1000 480" />
+                <path class="line-flow" d="M 750 480 L 1250 480" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 750 480 L 750 500" /> <!-- Ke ADM Build -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1250 480 L 1250 500" /> <!-- Ke ADM Audit -->
+
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1250 590 L 1250 650" /> <!-- ADM Audit turun Laporan -->
+
+                <!-- OPR Portal lurus turun ke bawah (Y=440 > 500 > 590 > 650 > 740 > 780) -->
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1700 440 L 1700 500" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1700 590 L 1700 650" />
+                
+                <!-- Tahap 3 Form Opr Cabang 3 -->
+                <path class="line-flow" d="M 1700 740 L 1700 780" />
+                <path class="line-flow" d="M 1450 780 L 1950 780" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1450 780 L 1450 800" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1700 780 L 1700 800" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1950 780 L 1950 800" />
+
+                <!-- Dari ke-3 tahapan Submit ke 1 Tombol -->
+                <path class="line-flow" d="M 1450 890 L 1450 930" />
+                <path class="line-flow" d="M 1700 890 L 1700 930" />
+                <path class="line-flow" d="M 1950 890 L 1950 930" />
+                <path class="line-flow" d="M 1450 930 L 1950 930" />
+                <path class="line-flow" marker-end="url(#arr-flow)" d="M 1700 930 L 1700 950" />
+
+
+                <!-- ================= JALUR KONEKSI DATABASE LINTAS MODUL ================= -->
+                
+                <!-- 1. TS Sec Menulis DB (Ungu) -->
+                <!-- Muter lewat pinggir turun ke bawah, masuk DB di titik (750, 1230) -->
+                <path class="line-write" marker-end="url(#arr-write)" d="M 150 590 L 150 1140 L 750 1140 L 750 1230" />
+
+                <!-- 2. TS Wipe Menulis DB (Ungu) -->
+                <path class="line-write" marker-end="url(#arr-write)" d="M 450 590 L 450 1110 L 800 1110 L 800 1230" />
+
+                <!-- 3. ADM Build Menulis DB (Ungu) -->
+                <path class="line-write" marker-end="url(#arr-write)" d="M 750 590 L 750 1180 L 850 1180 L 850 1230" />
+
+                <!-- 4a. OPR Foto Mengupload Blob File HD ke Cloudinary (Orange)  -->
+                <path class="line-upload" marker-end="url(#arr-upload)" d="M 1450 890 L 1450 1230" />
+
+                <!-- 4b. Cloudinary Membalas Link ke Form Submit Operator (Biru/Read-Return) -->
+                <!-- Pantul via M 1450 -->
+                <path class="line-read" marker-end="url(#arr-read)" d="M 1560 1300 L 1630 1300 L 1630 1000 L 1590 1000" />
+
+                <!-- 5. OPR Submit Laporan Mentransfer Paket Akhir ke Data (Ungu/Write) -->
+                <path class="line-write" marker-end="url(#arr-write)" d="M 1700 1040 L 1700 1170 L 1050 1170 L 1050 1230" />
+
+                <!-- 6. DB Mendorong Layar Sinkronisasi Inspeksi Baru ke ADM Monitor (Biru/Read) -->
+                <path class="line-read" marker-end="url(#arr-read)" d="M 1000 1240 L 1000 1200 L 1250 1200 L 1250 750" />
+
+                <!-- 7. (Bonus Logika) DB Menyajikan Daftar Benda saat Operator Membuka Layar Room (Biru/Read) -->
+                <path class="line-read" marker-end="url(#arr-read)" d="M 1100 1300 L 1320 1300 L 1320 700 L 1570 700" />
+
+            </svg>
+
+            <!-- ======================= LABEL KETERANGAN JALUR (HTML FLOAT OVERLAY) ======================= -->
+            
+            <div class="label l-flow" style="left: 450px; top: 110px;">CI/CD Auto Deploy Trigger</div>
+
+            <!-- Jalur Label Penjelasan Databse (Cetak Biru Engineering) -->
+            <div class="label l-write" style="left: 170px; top: 1110px;">(Aksi I.) Override Rules Keamanan Device secara Absolut</div>
+            <div class="label l-write" style="left: 470px; top: 1080px;">(Aksi II.) Memusnahkan Collection Logging</div>
+            <div class="label l-write" style="left: 630px; top: 1150px;">(Aksi III.) Pendaftaran Form Bangunan & Master Studio Berhasil</div>
+
+            <div class="label l-upload" style="left: 1465px; top: 1120px;">(Proses IVa.) Upload File Foto Berkapasitas Ratusan Megabyte</div>
+            <div class="label l-read" style="left: 1640px; top: 1180px;">(Proses IVb.) Mendapatkan Kembali URL Awan Tersebut</div>
+            <div class="label l-write" style="left: 1715px; top: 1140px;">(Aksi FINAL V.) Operator Menulis Hasil Status Log Kehadirannya</div>
+
+            <div class="label l-read" style="left: 1265px; top: 960px;">(Notifikasi VI.) Server DB Mendorong Stream Data Jejak Masuk Sang Pekerja</div>
+            <div class="label l-read" style="left: 1335px; top: 780px;">(Suplai Otomatis) Baca Barang Berdasarkan Ruangan Filter</div>
+
+        </div> <!-- Akhir dari diagram-container -->
+    </div> <!-- Akhir dari canvas-wrapper -->
+</body>
+</html>

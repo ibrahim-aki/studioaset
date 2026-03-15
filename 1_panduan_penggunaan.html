@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Panduan Lengkap: Admin & Operator Studio</title>
+    <style>
+        :root {
+            --admin-color: #2b6cb0;
+            --op-color: #38a169;
+            --auth-color: #7c4dff;
+            --bg-light: #f7fafc;
+            --text-main: #2d3748;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.7;
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            background: #edf2f7;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 30px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a202c;
+            border-bottom: 3px solid var(--admin-color);
+            padding-bottom: 20px;
+            font-size: 2.2rem;
+        }
+
+        h2 {
+            margin-top: 40px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2.auth {
+            background: var(--auth-color);
+        }
+
+        h2.admin {
+            background: var(--admin-color);
+        }
+
+        h2.operator {
+            background: var(--op-color);
+        }
+
+        h3 {
+            color: #4a5568;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+
+        .feature-box {
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn-ref {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+            margin: 0 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-auth {
+            background: linear-gradient(135deg, rgba(124, 77, 255, 0.8) 0%, rgba(58, 190, 249, 0.8) 100%);
+        }
+
+        .btn-add {
+            background: #4299e1;
+        }
+
+        .btn-edit {
+            background: #718096;
+        }
+
+        .btn-del {
+            background: #e53e3e;
+        }
+
+        .btn-action {
+            background: #1a202c;
+        }
+
+        .btn-status-good {
+            background: #48bb78;
+        }
+
+        .btn-status-broken {
+            border: 2px solid #ed8936;
+            color: #ed8936;
+            background: transparent;
+        }
+
+        ol li {
+            margin-bottom: 15px;
+        }
+
+        .warning {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            padding: 15px;
+            border-radius: 4px;
+            color: #c05621;
+            font-weight: 500;
+        }
+
+        .blocked {
+            background: #FEF2F2;
+            border-left: 4px solid #EF4444;
+            padding: 15px;
+            border-radius: 4px;
+            color: #991B1B;
+            font-weight: bold;
+        }
+
+        .tip {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 15px;
+            border-radius: 4px;
+            color: #2b6cb0;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #edf2f7;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Buku Panduan Operasional Lengkap</h1>
+        <p style="text-align: center; color: #718096;">Panduan <i>End-to-End</i> mulai dari Autentikasi Sistem hingga
+            alur kerja Administrator manajemen dan kru Operator lapangan.</p>
+
+        <!-- BAGIAN AUTENTIKASI: LOGIN AWAL -->
+        <h2 class="auth">Langkah 1: Masuk (Sign In) ke Sistem</h2>
+        <p>Aplikasi Studio Aset memiliki satu gerbang masuk yang sama untuk semua pengguna baik Admin maupun Operator.
+            Sistem akan dengan cerdas mengenali siapa Anda dan mengarahkan ke halaman yang tepat.</p>
+
+        <div class="feature-box">
+            <h3>A. Proses Login Standar</h3>
+            <ol>
+                <li>Buka halaman web utama studio dari mesin pencari atau *link* yang diberikan atasan Anda.</li>
+                <li>Anda akan melihat halaman dengan gradien biru-ungu (berlatar belakang bintang interaktif).</li>
+                <li>Masukkan **Email / Username** dan **Password** yang valid yang sudah didaftarkan pada kolom yang
+                    tersedia.</li>
+                <li>Klik tombol <span class="btn-ref btn-auth">SIGN IN</span>.</li>
+                <li><i>Catatan Keamanan:</i> Sistem akan memvalidasi *role* (peran) Anda. Jika Anda **Admin**, Anda akan
+                    dialihkan ke layar Dashboard Manajemen. Jika Anda **Operator**, Anda akan diarahkan ke layar
+                    Pekerjaan Lapangan.</li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>B. Masalah Login Umum (Lupa Sandi)</h3>
+            <p>Jika sandi yang Anda masukkan selalu dianggap salah, gunakan fitur <b>Lupa Sandi / Forgot password?</b>.
+            </p>
+            <ul>
+                <li>Isi kolom Email dengan email aktif Anda. Boleh mengosongkan kolom password.</li>
+                <li>Klik tombol teks kecil <i>"Forgot password?"</i> di sudut kanan form.</li>
+                <li>Sistem otomatis mengecek basis data. Jika email benar terdaftar, sistem akan mengirim *link*
+                    pemulihan ke kotak masuk <i>(Inbox)</i> email Anda. Segera periksa email untuk mengganti sandi Anda.
+                </li>
+            </ul>
+        </div>
+
+
+        <!-- BAGIAN ADMIN -->
+        <h2 class="admin">Langkah 2: Panduan Khusus Administrator Studio</h2>
+        <p>Sebagai Admin (baik tingkat manajemen lokal maupun regional), Anda bertanggung jawab mengatur kerangka kerja
+            berupa data aset, letak ruangan, dan mengawasi hasil pemeriksaan harian.</p>
+
+        <div class="warning" style="margin-bottom: 20px;">
+            <b>PENTING: HIRARKI SISTEM</b><br />
+            Sistem ini memiliki urutan logika yang absolut dan ketat. Anda <b>TIDAK AKAN BISA</b> membuat Ruangan apapun
+            maupun mendistribusikan aset jika Anda belum menetapkan <b>Lokasi Cabang</b> terlebih dahulu. Berikut adalah
+            urutan kerja wajib sistem:<br />
+            <i>1. Buat Cabang &rarr; 2. Buat Aset Induk &rarr; 3. Buat Ruangan pada Cabang &rarr; 4. Masukkan Aset ke
+                Ruangan.</i>
+        </div>
+
+        <div class="feature-box">
+            <h3>A. Manajemen Lokasi Cabang (Tahap Wajib Pertama)</h3>
+            <p>Menu <b>Lokasi Cabang</b> digunakan untuk mendaftarkan gedung dan cabang fisik studio secara keseluruhan.
+            </p>
+            <ol>
+                <li>Buka menu <b>Lokasi Cabang</b> di navigasi kiri.</li>
+                <li>Klik tombol <span class="btn-ref btn-action">+ Tambah Lokasi Baru</span> di kanan atas.</li>
+                <li>Isi <b>Nama Cabang</b> (Contoh: "Jakarta Selatan" atau "Cabang Pusat") dan isi detail <b>Alamat
+                        Lengkap</b>, lalu klik Simpan.</li>
+                <li><b>Pencegahan Kesalahan (Error Prevention):</b> Sistem sangat aman. Jika di kemudian hari Anda
+                    mencoba menghapus Cabang tersebut, padahal di dalamnya sudah ada "Ruang Podcast", sistem akan
+                    otomatis memblokir Anda untuk menghapusnya demi mencegah data menggantung (orphan data). Anda harus
+                    memindahkan/menghapus ruangannya terlebih dahulu.</li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>B. Manajemen Master Aset (Gudang Data Pusat)</h3>
+            <p>Setelah Cabang berdiri, Anda bisa ke Menu <b>Master Assets</b> untuk mendata semua barang fisik.</p>
+
+            <ol>
+                <li><b>Menambahkan Barang Baru:</b>
+                    <ul>
+                        <li>Klik tombol biru <span class="btn-ref btn-add">+ Tambah Aset</span> di pojok kanan atas.
+                        </li>
+                        <li>Isi formulir yang muncul: Pilih Lokasi Cabang, tentukan Kategori Barang (Kamera, Lighting,
+                            dll), dan ketik Nama Aset.</li>
+                        <li><i>Otomasi:</i> Sistem akan secara cerdas <b>membuat Kode Aset</b> secara otomatis jika Anda
+                            membiarkannya kosong.</li>
+                        <li>Anda juga bisa langsung mengunggah "Foto Awal Aset" sebagai referensi kondisi barang pertama
+                            kali dibeli/dicatat.</li>
+                        <li>Klik <span class="btn-ref btn-action">Simpan Aset</span>.</li>
+                    </ul>
+                </li>
+                <li><b>Menggunakan Tombol Aksi di Tabel:</b>
+                    <ul>
+                        <li><span class="btn-ref btn-edit">Edit</span>: Digunakan jika Anda salah ketik nama barang atau
+                            ingin merubah deskripsi spesifikasi.</li>
+                        <li><span class="btn-ref btn-del">Hapus</span>: Jika barang hilang atau dibuang secara permanen.
+                            <i>Catatan: Menghapus wajib memasukkan password akun Anda sebagai bentuk verifikasi keamanan
+                                admin.</i>
+                        </li>
+                        <li><span class="btn-ref" style="background: #38b2ac;">Riwayat (Jam)</span>: Klik ikon
+                            jam/history di baris aset untuk melihat daftar kapan saja alat ini rusak, kapan diservis,
+                            dan oleh operator siapa.</li>
+                    </ul>
+                </li>
+                <li><b>Export & Import Massal (Excel):</b>
+                    <p>Jika Anda punya ratusan barang, gunakan tombol <span class="btn-ref"
+                            style="background:#10b981;">Import Excel</span> di area filter untuk memasukkan data
+                        sekaligus sesuai format. Tombol <span class="btn-ref" style="background:#047857;">Export</span>
+                        digunakan untuk mencetak laporan ke dalam <i>spreadsheet</i> untuk pelaporan akhir bulan.</p>
+                </li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>C. Membuat Ruangan Studio (Ditetapkan Pada Cabang)</h3>
+            <p>Pergi ke menu <b>Rooms</b> untuk membuat ruang fisik studio harian.</p>
+            <ol>
+                <li>Klik tombol <span class="btn-ref btn-add">+ Tambah Ruangan</span>. Masukkan cabang dan Ketik
+                    misalnya "Studio A" atau "Ruang Podcast 1". Simpan.</li>
+                <li>Setelah ruangan berhasil dibuat, di baris tabel pada kolom aksi, tekan tombol <b>Ikon Kamera Video
+                        (Aset Ruangan)</b> untuk masuk ke mode Distribusi Aset.</li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>D. Distribusi: Memasukkan Aset ke Ruangan Spesifik</h3>
+            <p>Ini adalah langkah krusial. Alat yang belum dialokasikan akan dianggap masih berada di "Gudang", namun
+                fungsi alokasi ini yang akan membentuk barang (form) untuk diisi oleh Operator.</p>
+            <ol>
+                <li>Buka menu halaman detail aset ruangan dengan menekan ikon Kamera Video pada baris daftar ruangan.
+                </li>
+                <li>Pada formulir "Cari & Pilih Master Aset", ketik nama kamera atau lighting yang ingin ditaruh di
+                    studio ini.</li>
+                <li>Daftar barang akan muncul <i>(dropdown)</i>. Klik barang tersebut.</li>
+                <li>Tekan tombol besar <span class="btn-ref btn-action">+ Alokasikan</span>.</li>
+                <li>
+                    <div class="tip">
+                        <b>Peringatan Pemindahan:</b> Jika Anda memasukkan properti "Kamera Sony 1" padahal alat
+                        tersebut sudah tercatat berada di "Studio B", sistem akan memperingatkan Anda: <i>"Aset ini
+                            berada di Ruangan Lain, Yakin Pindah?"</i>. Cukup konfirmasi <b>Ya</b>, dan alat otomatis
+                        tercabut dari Studio B dan berpindah ke studio pilihan Anda.
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>E. Instrumen Investigasi & Pengawasan Admin (SUPER DETAIL)</h3>
+            <p>Ini adalah fitur paling fundamental bagi Admin untuk melacak jejak digital dan mencari tahu siapa yang
+                bertanggung jawab saat barang hilang/rusak. Terdapat 3 instrumen pengawasan di menu kiri Anda:</p>
+
+            <ol>
+                <li><b>Menu "Laporan" (Inspeksi Harian & Riwayat Ruangan):</b>
+                    <ul>
+                        <li>Di sini masuk semua hasil jepretan/borang dari Operator lapangan.</li>
+                        <li><b>Deteksi Otomatis:</b> Laporan baru yang belum Anda baca akan memiliki tanda <span
+                                class="btn-ref btn-auth" style="font-size:10px;">BARU</span>.</li>
+                        <li><b>Ringkasan Kondisi Cepat:</b> Tanpa perlu membuka detail, Anda bisa melihat tulisan <span
+                                class="btn-ref btn-status-broken">1 Rusak, 2 Mati</span> pada baris tabel jika ada alat
+                            bermasalah.</li>
+                        <li><b>Detail Investigasi:</b> Klik tombol <span class="btn-ref"
+                                style="background:#e2e8f0;color:#4a5568">Detail</span>. Anda akan bisa melihat <b>Jam
+                                menit detik persis</b> pengecekan, nama alat yang cacat, **Foto Bukti Riil** jepretan
+                            kamera, Catatan keluhan operator, serta status kemana alat itu digeser (Misal: <span
+                                class="btn-ref" style="background:#f3e8ff;color:#9333ea;border:1px solid #d8b4fe">Pindah
+                                Ke: GUDANG</span>).</li>
+                        <li><b>Pelacakan Status Live:</b> Anda bisa melihat status ruangan saat itu ditinggalkan,
+                            misalnya: <i>LIVE NOW</i>, <i>NOT READY</i>, atau <i>STANDBY</i>.</li>
+                    </ul>
+                </li>
+                <br />
+                <li><b>Menu "Log Admin" (Audit Jejak Digital Real-Time):</b>
+                    <p>Fasilitas intelijen sistem. Ini merekam SEMUA klik yang dikerjakan siapapun (Admin lain /
+                        Operator). Menu ini tidak bisa dihapus atau dimanipulasi oleh Admin biasa.</p>
+                    <ul>
+                        <li><b>Filter Kategori:</b> Anda dapat menyaring data berdasarkan <i>Sistem & Master</i>
+                            (pembuatan aset), <i>Perpindahan Barang</i> (log alat dipindah ke ruang lain), <i>Perubahan
+                                Status</i> (kerusakan alat), atau <i>Akses & Login</i> (mendeteksi jam masuk/keluar
+                            pegawai).</li>
+                        <li><b>Pelacakan Pencuri/Kehilangan:</b> Ketik nama alat (misal "Lensa 50mm") di kolom
+                            pencarian. Sistem akan memunculkan rentetan waktu (Timeline) jam berapa lensa itu
+                            diciptakan, kapan dipindah ke Studio A, siapa operator terakhir yang memindahkannya, hingga
+                            pada jam berapa saksi melaporkan HILANG.</li>
+                    </ul>
+                </li>
+                <br />
+                <li><b>Menu "Changelog" (Sistem Log Pembaruan Infrastruktur):</b>
+                    <p>Tempat Anda melihat sejarah perombakan fondasi aplikasi beserta jam dan tanggal pengerjaannya
+                        (Update Aplikasi / Bug Fixes / Fitur Baru) langsung dari <i>Pusat Repository Data</i>.</p>
+                </li>
+            </ol>
+        </div>
+
+
+        <!-- BAGIAN OPERATOR -->
+        <h2 class="operator">Langkah 3: Panduan Khusus Kru Operator Lapangan</h2>
+        <p>Sebagai Operator, tugas utama Anda adalah menyalakan dan mengecek seluruh peralatan di studio sebelum acara
+            <i>live</i> dimulai, serta mematikannya kembali dengan aman seusai <i>live</i>.
+        </p>
+
+        <div class="blocked">
+            <b>BLOKIR PERANGKAT (KEAMANAN KHUSUS OPERATOR):</b><br />
+            - Anda hanya bisa login dan menggunakan panel operator jika membukanya melalui <b>Ponsel Biasa, Ponsel Lipat
+                Android, sistem operasi iPhone (iOS), maupun Tablet / iPad</b>.<br />
+            - Jika Anda membuka aplikasi ini dari <b>Laptop / PC Komputer</b>, layar akan menampilkan gembok raksasa
+            berwarna hitam, bertitel "Perangkat Tidak Didukung" dan Anda akan <b>diblokir total (tidak bisa
+                ngapa-ngapain)</b> hingga Anda mematikan laptop dan pindah membuka web ini kembali dari HP Anda.
+        </div>
+        <div class="warning" style="margin-top: 15px;">
+            <b>Wajib Akses Kamera:</b> Setelah Anda masuk ke aplikasi dari HP, Browser Anda akan menanyakan pop-up:
+            <i>"Studio Aset ingin menggunakan kamera Anda"</i>. Anda wajib menekan tombol <b>Izinkan / Allow</b>. Jika
+            tidak, aplikasi tidak bisa berlanjut. Ini karena foto aset wajib dijepret riil/langsung. Mengambil gambar
+            pura-pura dari Galeri / <i>Camera Roll</i> HP dinonaktifkan sepenuhnya.
+        </div>
+
+        <div class="feature-box">
+            <h3>A. Memulai Pekerjaan Harian</h3>
+            <ol>
+                <li>Pilih lokasi (cabang) tempat Anda ditugaskan. Layar akan menampilkan <i>Grid</i> (kumpulan kotak)
+                    ruangan-ruangan studio.</li>
+                <li>Pilih ruangan studio mana yang menjadi tanggung jawab Anda hari ini.</li>
+                <li>Layar akan menampilkan daftar panjang barang alat-alat (seperti Kamera, Tripod, Lampu, Mikrofon,
+                    dll) yang sebelumnya sudah disusun oleh Admin.</li>
+                <li>Tugas Anda memeriksa kondisi fisiknya satu-per-satu dari daftar no. 1 sampai ke bawah.</li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>B. Mengisi Form Checklist (Detail Tombol & Opsi)</h3>
+            <p>Pada setiap blok alat yang terdaftar di layar HP Anda, ikuti langkah-langkah kritis ini:</p>
+
+            <ol>
+                <li><b>Memilih Status Fisik (Wajib Milih Salah Satu):</b>
+                    <table>
+                        <tr>
+                            <th>Tombol Interaktif</th>
+                            <th>Kapan Menggunakan Ini?</th>
+                        </tr>
+                        <tr>
+                            <td><span class="btn-ref btn-status-good">BAIK</span></td>
+                            <td>Alat menyala dengan normal, kondisi fisik sempurna, atau goresan sangat minor namun
+                                tidak mengganggu fungsi.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="btn-ref" style="background:#d97706;">RUSAK</span></td>
+                            <td>Alat masih bisa menyala, namun cacat fungsi signifikan atau tombol ada yang copot.
+                                <i>(Wajib ketik penjelasan di kolom catatan tambahan).</i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="btn-ref" style="background:#e11d48;">MATI</span></td>
+                            <td>Alat tidak menyala total, berasap, atau kabel putus. <b>PERHATIAN:</b> Memilih "Mati"
+                                mengharuskan Anda memindahkan barang ini ke Gudang.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="btn-ref btn-edit">HILANG</span></td>
+                            <td>Anda tidak dapat menemukan alat ini di studio padahal terdata di sistem. Admin akan
+                                memverifikasinya.</td>
+                        </tr>
+                    </table>
+                </li>
+
+                <li><b>Kolom Catatan (Notes):</b>
+                    <p>Wajib diisi apabila Anda menekan tombol RUSAK, MATI, atau HILANG. Cukup jelaskan singkat:
+                        <i>"Lensa depan buram tidak bisa fokus"</i>.
+                    </p>
+                </li>
+
+                <li><b>Menu Geser (Pindahkan Alat):</b>
+                    <p>Di sebelah kolom catatan, terdapat opsi <i>dropdown</i> bertanda panah ke bawah.</p>
+                    <ul>
+                        <li><b>&rarr; Tetap di Studio Ini:</b> Adalah bawaan <i>(default)</i>.</li>
+                        <li><b>&larr; Kembalikan ke Gudang:</b> Wajib dipilih jika alat sudah <b>MATI</b> agar
+                            admin/teknisi bisa menservisnya di belakang.</li>
+                        <li><b>Geser ke: Studio B:</b> Dipilih apabila Anda meminjamkan mic Studio A kepada teman
+                            operator di Studio B saat itu juga.</li>
+                    </ul>
+                </li>
+
+                <li><b>Tombol Ambil Foto <i>(Opsional - Diaktifkan Manajemen Pusat)</i>:</b>
+                    <p>Klik kotak putus-putus berikon kamera tebal bertuliskan "Ambil Foto Aset". Layar HP Anda akan
+                        masuk mode siaga potret tanpa masuk ke folder Galeri. Arahkan ke alat bersangkutan, potret! Foto
+                        akan dikunci masuk aplikasi dan diupload dalam ukuran rahasia agar kuota internet Anda lebih
+                        awet.</p>
+                </li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>C. Menarik Aset Dadakan dari Gudang</h3>
+            <p>Bagaimana jika di tengah pekerjaan Anda butuh mikrofon tambahan yang tadinya dirasa tidak perlu, lalu
+                tidak ada di aplikasi ruangan?</p>
+            <ol>
+                <li>Geser layar Menu Anda ke bagian paling atas.</li>
+                <li>Klik tombol berbingkai garis putus-putus warna Ungu <b>"Tarik Aset dari Gudang"</b>. Muncul
+                    <i>bar</i> pencarian (kaca pembesar).
+                </li>
+                <li>Ketik nama mikrofon sasaran, tekan logo (+) Plus warna ungu disebelah kanannya.</li>
+                <li>Barang tersebut kini resmi masuk sementara ke daftar laporan ruangan Anda dan Anda harus tetap
+                    memberi nilai Status fisiknya.</li>
+            </ol>
+        </div>
+
+        <div class="feature-box">
+            <h3>D. Mengunci Status Akhir Ruangan & Kirim</h3>
+            <p>Ini adalah proses final di halaman boris bawah HP Anda.</p>
+            <ol>
+                <li>Pilih status pamungkas studio saat ini:<br>
+                    • <span class="btn-ref" style="background:#10b981;">LIVE SEKARANG</span> : Acara sedang dimulai.<br>
+                    • <span class="btn-ref" style="background:#3b82f6;">SELESAI LIVE</span> : Jika sebelumnya Anda
+                    menandai "Live Sekarang", Anda <b>wajib</b> merubahnya menjadi "Selesai Live" jika hari raya
+                    <i>shift</i> telah tutup; agar kru besok subuh bisa men-checklist.<br>
+                    • <span class="btn-ref btn-status-broken">TIDAK BISA LIVE</span> : Jika kamera utama atau komputer
+                    fatal kerusakannya.<br />
+                    • <span class="btn-ref" style="background:#f59e0b;">STANDBY</span> : Jika Anda masuk ruang sekadar
+                    mengecek santai dan ruangan akan digunakan entah kapan.
+                </li>
+                <li>Terakhir, klik tombol warna Hijau paling besar di blok bawah layar bertuliskan <b>Kirim
+                        Laporan</b>. Data akan tersimpan dan tersinkronisasi awan. Tugas shift tuntas.
+                </li>
+            </ol>
+        </div>
+
+
+        <!-- BAGIAN LOGOUT & SHIFT END -->
+        <h2 class="auth" style="background: #e53e3e;">Langkah Terakhir: Selesai Shift (Keluar / Sign Out)</h2>
+        <p>Setelah seluruh tugas selesai di satu sesi yang dijadwalkan:</p>
+
+        <div class="feature-box">
+            <h3>Mematikan Aplikasi</h3>
+            <ol>
+                <li><b>Untuk Admin:</b> Klik ikon Profil (Avatar Bulat) Anda yang terletak pada bagian paling kanan menu
+                    garis atas layarnya (Bisa juga melalui sidebar navigasi kiri bawah "Logout" - Ikon tanda panah arah
+                    keluar pintu). Jika ditanya peringatan, klik Setuju Putuskan Koneksi.</li>
+
+                <li><b>Untuk Operator Lapangan:</b> Cukup tekan Tab strip bergaris tiga / ikon *Hamburger Menu* di
+                    bagian sudut kanan atas Ponsel/Tablet Anda. Akan muncul daftar panjang menu menu profil.<br /><br />
+                    Kemudian sentuh huruf warna merah mencolok yang bertuliskan: <span class="btn-ref btn-del">Keluar
+                        dari Akun (Logout)</span>.
+                </li>
+                <li>
+                    <p class="tip"><i>Bagi Role Operator:</i> Saat Anda menekan tulisan Keluar, tidak hanya Anda sekadar
+                        *Log out* dan menutup aplikasi, tetapi sistem awan (Cloud Server) secara otomatis juga akan
+                        mengkalkulasi dan mencatat status <b>"Selesai Shift" (End Shift)</b> Anda hari itu sebagai
+                        catatan rekaman harian kedisiplinan HRD.</p>
+                </li>
+                <li>Halaman Anda akan dipulihkan secara instan kembali ke layar awal Login <i>(Background Bintang)</i>
+                    yang berarti Anda telah sangat aman meninggalkan HP aplikasi tanpa bisa dibuka orang asing.</li>
+            </ol>
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Fitur Aplikasi Studio Aset</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #2d3748; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f7fafc; }
+        h1 { color: #2c5282; border-bottom: 2px solid #cbd5e0; padding-bottom: 15px; text-align: center; }
+        .feature-block { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid #4299e1; }
+        .feature-block.operator { border-left-color: #48bb78; }
+        .feature-block.global { border-left-color: #9f7aea; }
+        h2 { color: #2a4365; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        ul { margin-top: 10px; padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .badge { font-size: 12px; padding: 4px 8px; border-radius: 12px; font-weight: bold; color: white; }
+        .badge.admin { background: #4299e1; }
+        .badge.operator { background: #48bb78; }
+        .badge.global { background: #9f7aea; }
+    </style>
+</head>
+<body>
+
+    <h1>Katalog Fitur Aplikasi Studio Aset</h1>
+    <p style="text-align: center; color: #718096; margin-bottom: 30px;">Dokumen ini menjabarkan kemampuan struktural dan fitur rinci dari sistem aplikasi.</p>
+
+    <!-- Global / System Features -->
+    <div class="feature-block global">
+        <h2><span class="badge global">UMUM</span> Modul Autentikasi & Keamanan</h2>
+        <ul>
+            <li><strong>Login System:</strong> Otentikasi berlapis berdasarkan peran kredensial dengan rute navigasi terproteksi otomatis.</li>
+            <li><strong>Enkripsi Otomatis:</strong> Sesi pengguna dijaga oleh manajemen state Next.js dan Firestore backend.</li>
+            <li><strong>Pembaruan Akun Wajib:</strong> Fitur wajib ganti password (Change Password Modal) yang mencegat pengguna di layar mana pun jika terdeteksi bahwa password tersebut membutuhkan pembaruan.</li>
+        </ul>
+    </div>
+
+    <!-- Admin Features -->
+    <div class="feature-block">
+        <h2><span class="badge admin">ADMIN</span> Modul Manajemen Struktural</h2>
+        <ul>
+            <li><strong>Dashboard Analytics:</strong> Menyajikan panel informasi holistik tentang jumlah aset, laporan hari ini, dan rangkuman aktivitas.</li>
+            <li><strong>Manajemen Lokasi Cabang:</strong> Mendata lokasi-lokasi bisnis (CRUD - Create, Read, Update, Delete).</li>
+            <li><strong>Manajemen Ruangan (Rooms):</strong> Organisasi tata letak ruang per area cabang. Admin dapat mengatur ruang untuk diinspeksi.</li>
+            <li><strong>Manajemen Master Assets:</strong> Inventarisasi alat-alat studio yang dipetakan pada setiap ruang (misal: Kamera, Lensa, Lampu).</li>
+            <li><strong>Investigasi Audit Log (Logs Track):</strong> Panel pengawasan jejak digital <i>real-time</i> tak terhapuskan. Admin bisa memfilter kejadian berdasarkan: Sistem (aset/cabang baru), Perpindahan (alat digeser antaruang), Status (alat rusak), maupun Akses (jam login/logout). Sangat krusial untuk investigasi kehilangan barang.</li>
+            <li><strong>Laporan & Inspeksi Harian (Checklists View):</strong> Gudang data hasil inspeksi Operator. Dilengkapi peringatan otomatis jika ada laporan <b>"BARU"</b>. Admin dapat melihat jam pasti inspeksi, mengecek kondisi <i>(Baik/Rusak/Mati/Hilang)</i>, membaca keluhan catatan, mengunduh foto bukti asli dari lapangan, serta memantau letak perpindahan terakhir alat tersebut.</li>
+            <li><strong>Pemantauan Status Live Ruangan:</strong> Admin dapat melihat plang status <i>Live Now</i>, <i>Ready For Live</i>, <i>Stadby</i>, atau <i>Not Ready</i> pada masing-masing studio dari jarak jauh berdasarkan submission laporan terakhir.</li>
+            <li><strong>Akses Sistem Changelog:</strong> Halaman transparan untuk melihat riwayat <i>commit</i> pembaruan perangkat lunak, <i>bug fixes</i>, dan penambahan fitur langsung dari Repository Pusat, lengkap dengan konversi zona waktu lokal.</li>
+    </div>
+
+    <!-- Operator Features -->
+    <div class="feature-block operator">
+        <h2><span class="badge operator">OPERATOR</span> Modul Inspeksi & Laporan Lapangan</h2>
+        <ul>
+            <li><strong>Blokir Desktop & Validasi Perangkat:</strong> Sistem secara proaktif memblokir akses pengguna jika dicurigai berasal dari Personal Computer (Desktop). Hanya ponsel/tablet yang diizinkan untuk operasional cek aset.</li>
+            <li><strong>Sensor Kamera Paksa:</strong> Validasi ketat perangkat keras pengguna. Fitur tidak akan mengizinkan pekerja memulai tugas jika tidak ada perangkat kamera atau izin kamera dimatikan.</li>
+            <li><strong>Modul Shift Kerja:</strong> Tombol interaktif untuk "Mulai Shift" dan "Selesai Shift" sebagai indikator operasional real-time.</li>
+            <li><strong>Akses Kamera Terintegrasi (In-App Camera):</strong> Pengambilan foto barang dilakukan <em>pure</em> di dalam browser tanpa perlu membuka aplikasi kamera bawaan HP, menghindari manipulasi galeri.</li>
+            <li><strong>Daftar Penilaian (Checklists Form):</strong> Daftar aset siap di-scan mata oleh operator, dilapisi dengan form status cepat (Baik, Rusak, atau Perlu Perawatan) dan keterangan catatan.</li>
+            <li><strong>Sinkronisasi Laporan Instan:</strong> Data inspeksi diformat lengkap dengan waktu dan pelaksana, lalu otomatis terlempar ke database untuk langsung bisa diawasi Admin.</li>
+        </ul>
+    </div>
+
+</body>
+</html>
