@@ -4,11 +4,296 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera, RefreshCcw } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
+import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc, addDoc, Timestamp, serverTimestamp } from "firebase/firestore";
 import clsx from "clsx";
 import { initializeApp, getApps, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, inMemoryPersistence } from "firebase/auth";
 import { UserRole } from "@/context/AuthContext";
+
+// --- ANTIGRAVITY MONITOR COMPONENTS ---
+function QuotaItem({ quota, onDelete }: { quota: any, onDelete: (id: string) => void }) {
+    const [timeLeft, setTimeLeft] = useState("");
+    const [statusColor, setStatusColor] = useState("text-gray-400");
+    const [barGradient, setBarGradient] = useState("from-gray-200 to-gray-300");
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            if (!quota.resetAt) return;
+            const now = new Date().getTime();
+            const resetTime = quota.resetAt.toDate().getTime();
+            const diff = resetTime - now;
+
+            if (diff <= 0) {
+                setTimeLeft("RESET READY");
+                setStatusColor("text-emerald-500");
+                setBarGradient("from-emerald-400 to-emerald-600");
+                return;
+            }
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+
+            if (diff > 12 * 60 * 60 * 1000) {
+                setStatusColor("text-rose-500");
+                setBarGradient("from-rose-500 to-rose-600");
+            } else if (diff > 2 * 60 * 60 * 1000) {
+                setStatusColor("text-amber-500");
+                setBarGradient("from-amber-400 to-amber-600 shadow-amber-200");
+            } else {
+                setStatusColor("text-emerald-500");
+                setBarGradient("from-emerald-400 to-emerald-600 shadow-emerald-200");
+            }
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [quota.resetAt]);
+
+    return (
+        <div className="group/item relative bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 rounded-xl p-3 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-white shadow-sm border border-gray-100 rounded flex items-center justify-center text-gray-400 group-hover/item:text-brand-purple transition-colors">
+                        <Activity className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-medium text-gray-900 uppercase tracking-tight">{quota.model}</h4>
+                        <div className="flex items-center gap-1 mt-0.5">
+                            <Clock className={clsx("w-2 h-2 opacity-60", statusColor)} />
+                            <span className={clsx("text-[8.5px] font-normal tracking-wide font-mono", statusColor)}>{timeLeft}</span>
+                        </div>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => onDelete(quota.id)}
+                    className="opacity-0 group-hover/item:opacity-100 p-1.5 text-gray-300 hover:text-rose-500 transition-all active:scale-90"
+                >
+                    <Trash2 className="w-3 h-3" />
+                </button>
+            </div>
+            
+            <div className="space-y-1">
+                <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[7px] font-medium text-gray-400 uppercase tracking-[0.1em]">REMAINING</span>
+                    <span className="text-[8px] font-medium text-gray-600">{quota.currentUsage}%</span>
+                </div>
+                <div className="h-1 w-full bg-gray-200/50 rounded-full overflow-hidden">
+                    <div 
+                        className={clsx("h-full rounded-full transition-all duration-1000 bg-gradient-to-r shadow-sm", barGradient)}
+                        style={{ width: `${quota.currentUsage}%` }}
+                    ></div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function QuotaCard({ email, quotas, onDelete }: { email: string, quotas: any[], onDelete: (id: string) => void }) {
+    return (
+        <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-brand-purple/5 transition-colors">
+                    <Mail className="w-4 h-4 text-gray-400 group-hover:text-brand-purple" />
+                </div>
+                <div>
+                    <h3 className="text-[11px] font-medium text-gray-900 tracking-tight lowercase">{email}</h3>
+                </div>
+            </div>
+            
+            <div className="space-y-3">
+                {quotas.map(q => <QuotaItem key={q.id} quota={q} onDelete={onDelete} />)}
+            </div>
+        </div>
+    );
+}
+
+function AntigravityView({ quotas, onAdd, onDelete }: { quotas: any[], onAdd: () => void, onDelete: (id: string) => void }) {
+    const grouped = quotas.reduce((acc: any, curr: any) => {
+        const email = curr.email || "Unknown";
+        if (!acc[email]) acc[email] = [];
+        acc[email].push(curr);
+        return acc;
+    }, {});
+
+    const emailList = Object.keys(grouped).sort();
+
+    return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[600px]">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 bg-gray-900 rounded-2xl flex items-center justify-center text-white">
+                        <Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-900 uppercase tracking-tight leading-none">Monitor AGEN</h2>
+                    </div>
+                </div>
+                <button 
+                    onClick={onAdd}
+                    className="px-5 py-2.5 bg-white border border-gray-200 hover:border-brand-purple text-gray-700 rounded-xl transition-all flex items-center gap-2 group shadow-sm active:scale-95"
+                >
+                    <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+                    <span className="text-[10px] font-medium uppercase tracking-widest">New Monitor</span>
+                </button>
+            </div>
+
+            {emailList.length === 0 ? (
+                <div className="bg-white border border-gray-50 rounded-[2rem] py-32 flex flex-col items-center justify-center text-gray-300">
+                    <Activity className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="text-[10px] font-normal uppercase mt-1 text-gray-400">Belum ada akun yang dimonitor.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {emailList.map(email => (
+                        <QuotaCard 
+                            key={email} 
+                            email={email} 
+                            quotas={grouped[email]} 
+                            onDelete={onDelete} 
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boolean, onClose: () => void, onAdd: (data: any) => void, existingQuotas: any[] }) {
+    const [email, setEmail] = useState("");
+    const [model, setModel] = useState("Gemini 3.1 Pro");
+    const [days, setDays] = useState(0);
+    const [hours, setHours] = useState(0);
+    const [minutes, setMinutes] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const now = new Date();
+            const resetTime = new Date(now.getTime() + 
+                (Number(days) * 24 * 60 * 60 * 1000) + 
+                (Number(hours) * 60 * 60 * 1000) + 
+                (Number(minutes) * 60 * 1000)
+            );
+            
+            await onAdd({
+                email,
+                model,
+                currentUsage: 100,
+                resetAt: Timestamp.fromDate(resetTime),
+                updatedAt: serverTimestamp()
+            });
+            onClose();
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+            <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+                <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">ADD AGEN</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors group">
+                        <X className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    <div className="space-y-1">
+                        <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">EMAIL</label>
+                        <input
+                            required
+                            type="email"
+                            list="existing-emails"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none"
+                            placeholder="account@mail.com"
+                        />
+                        <datalist id="existing-emails">
+                            {Array.from(new Set(existingQuotas.map(q => q.email))).map(email => (
+                                <option key={email} value={email} />
+                            ))}
+                        </datalist>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">Model Selection</label>
+                        <select
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none appearance-none"
+                        >
+                            <option>Gemini 3.1 Pro</option>
+                            <option>Gemini 3 Flash</option>
+                            <option>Claude Sonnet 4.6</option>
+                            <option>Claude Opus 4.6</option>
+                            <option>GPT-OSS 120B</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">Reset Duration</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={days}
+                                    onChange={(e) => setDays(Number(e.target.value))}
+                                    className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none text-center"
+                                />
+                                <span className="block text-[7px] text-gray-400 text-center uppercase tracking-tighter">Days</span>
+                            </div>
+                            <div className="space-y-1">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="23"
+                                    value={hours}
+                                    onChange={(e) => setHours(Number(e.target.value))}
+                                    className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none text-center"
+                                />
+                                <span className="block text-[7px] text-gray-400 text-center uppercase tracking-tighter">Hours</span>
+                            </div>
+                            <div className="space-y-1">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="59"
+                                    value={minutes}
+                                    onChange={(e) => setMinutes(Number(e.target.value))}
+                                    className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none text-center"
+                                />
+                                <span className="block text-[7px] text-gray-400 text-center uppercase tracking-tighter">Mins</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3 bg-brand-purple hover:bg-brand-purple/90 text-white text-[10px] font-semibold rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 uppercase tracking-[0.2em]"
+                        >
+                            {loading ? "INITIALIZING..." : "ACTIVATE MONITOR"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 // Komponen Modal Tambah User
 function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; companyId?: string; companyName?: string }) {
@@ -523,6 +808,9 @@ export default function UserManagementPage() {
     const [cloudStats, setCloudStats] = useState({ users: 0, companies: 0, assets: 0, logs: 0 });
     const [statsLoading, setStatsLoading] = useState(false);
     const [usageMetrics, setUsageMetrics] = useState({ dailyWrites: 0, monthlyActiveUsers: 0, dailyReadsEstimate: 0 });
+    const [agentQuotas, setAgentQuotas] = useState<any[]>([]);
+    const [isAddQuotaOpen, setIsAddQuotaOpen] = useState(false);
+    const [portalTab, setPortalTab] = useState<"clients" | "antigravity">("clients");
 
     const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, updateCompany, rooms, assets, purgeData } = useLocalDb();
 
@@ -611,7 +899,17 @@ export default function UserManagementPage() {
                     setStatsLoading(false);
                 })
             ];
-            return () => unsubs.forEach(unsub => unsub());
+
+            // Agent Quotas Listener
+            const unsubAgent = onSnapshot(collection(db, "agentQuotas"), (snap) => {
+                const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAgentQuotas(list);
+            });
+
+            return () => {
+                unsubs.forEach(u => u());
+                unsubAgent();
+            };
         }
     }, [selectedCompany?.id]);
 
@@ -699,6 +997,24 @@ export default function UserManagementPage() {
         }
     };
 
+    const handleAddQuota = async (data: any) => {
+        try {
+            await addDoc(collection(db, "agentQuotas"), data);
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
+    };
+
+    const handleDeleteQuota = async (id: string) => {
+        if (confirm("Confirm: Hapus data monitoring email ini?")) {
+            try {
+                await deleteDoc(doc(db, "agentQuotas", id));
+            } catch (err: any) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+    };
+
 
     if (loading) {
         return (
@@ -724,17 +1040,23 @@ export default function UserManagementPage() {
                     onAdd={(data) => addCompany(data)}
                 />
 
+                <AddQuotaModal 
+                    isOpen={isAddQuotaOpen}
+                    onClose={() => setIsAddQuotaOpen(false)}
+                    onAdd={handleAddQuota}
+                    existingQuotas={agentQuotas}
+                />
+
                 <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple">
                                 <Shield className="w-4 h-4" />
                             </div>
-                            <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">
+                            <h2 className="text-xl font-semibold text-gray-900 tracking-tight uppercase">
                                 Portal Klien
                             </h2>
                         </div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-10">Global Orchestration</p>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -755,13 +1077,22 @@ export default function UserManagementPage() {
                                     setActiveTab("cloud");
                                     setSelectedCompany(null);
                                 }}
-                                className="text-gray-500 px-4 py-2 rounded-lg font-black text-[10px] hover:text-gray-900 transition-all flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
+                                className="text-gray-500 px-4 py-2 rounded-lg font-semibold text-[10px] hover:text-gray-900 transition-all flex items-center gap-2 whitespace-nowrap uppercase tracking-widest"
                             >
                                 <Settings2 className="w-3.5 h-3.5" /> SYSTEM
                             </button>
                             <button
+                                onClick={() => setPortalTab("antigravity")}
+                                className={clsx(
+                                    "px-4 py-2 rounded-lg font-semibold text-[10px] transition-all flex items-center gap-2 whitespace-nowrap uppercase tracking-widest",
+                                    portalTab === "antigravity" ? "bg-brand-purple text-white shadow-sm" : "text-gray-500 hover:text-gray-900"
+                                )}
+                            >
+                                <Zap className="w-3.5 h-3.5" /> AGEN
+                            </button>
+                            <button
                                 onClick={() => setIsAddCompanyOpen(true)}
-                                className="bg-white text-brand-purple px-4 py-2 rounded-lg font-black text-[10px] hover:shadow-sm transition-all flex items-center gap-2 shadow-none border border-transparent whitespace-nowrap uppercase tracking-widest"
+                                className="bg-white text-brand-purple px-4 py-2 rounded-lg font-semibold text-[10px] hover:shadow-sm transition-all flex items-center gap-2 shadow-none border border-transparent whitespace-nowrap uppercase tracking-widest"
                             >
                                 <Plus className="w-3.5 h-3.5" /> TAMBAH KLIEN
                             </button>
@@ -769,114 +1100,130 @@ export default function UserManagementPage() {
                     </div>
                 </header>
 
-                <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                    {companies.length === 0 ? (
-                        <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-                            <Building2 className="w-12 h-12 mb-4 opacity-20" />
-                            <p className="font-bold">Belum ada perusahaan terdaftar</p>
-                            <p className="text-xs">Klik Tambah Klien untuk memulai.</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50/50 border-b border-gray-100">
-                                        <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] w-12 text-center">No</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Perusahaan</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Kontak</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Umur</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Tgl Daftar</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Akses</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {filteredCompanies.map((company, index) => {
-                                        // Hitung umur perusahaan
-                                        const start = new Date(company.createdAt);
-                                        const now = new Date();
-                                        const diffTime = Math.abs(now.getTime() - start.getTime());
-                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                {portalTab === "clients" ? (
+                    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                        {companies.length === 0 ? (
+                            <div className="py-20 flex flex-col items-center justify-center text-gray-400">
+                                <Building2 className="w-12 h-12 mb-4 opacity-20" />
+                                <p className="font-bold">Belum ada perusahaan terdaftar</p>
+                                <p className="text-xs">Klik Tambah Klien untuk memulai.</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50/50 border-b border-gray-100">
+                                            <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] w-12 text-center">No</th>
+                                            <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Perusahaan</th>
+                                            <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Kontak</th>
+                                            <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Umur</th>
+                                            <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Tgl Daftar</th>
+                                            <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Akses</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {filteredCompanies.map((company, index) => {
+                                            // Hitung umur perusahaan
+                                            const start = new Date(company.createdAt);
+                                            const now = new Date();
+                                            const diffTime = Math.abs(now.getTime() - start.getTime());
+                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                                        let ageStr = `${diffDays} hari`;
-                                        if (diffDays > 365) {
-                                            const years = Math.floor(diffDays / 365);
-                                            const months = Math.floor((diffDays % 365) / 30);
-                                            ageStr = `${years} thn ${months} bln`;
-                                        } else if (diffDays > 30) {
-                                            const months = Math.floor(diffDays / 30);
-                                            const days = diffDays % 30;
-                                            ageStr = `${months} bln ${days} hari`;
-                                        }
+                                            let ageStr = `${diffDays} hari`;
+                                            if (diffDays > 365) {
+                                                const years = Math.floor(diffDays / 365);
+                                                const months = Math.floor((diffDays % 365) / 30);
+                                                ageStr = `${years} thn ${months} bln`;
+                                            } else if (diffDays > 30) {
+                                                const months = Math.floor(diffDays / 30);
+                                                const days = diffDays % 30;
+                                                ageStr = `${months} bln ${days} hari`;
+                                            }
 
-                                        return (
-                                            <tr
-                                                key={company.id}
-                                                onClick={() => {
-                                                    setSelectedCompany(company);
-                                                    setView("management");
-                                                    setActiveTab("dashboard");
-                                                }}
-                                                className="hover:bg-brand-purple/10/30 transition-colors cursor-pointer group"
-                                            >
-                                                <td className="px-6 py-4 text-[10px] font-bold text-gray-400 text-center">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
-                                                            <Building2 className="w-4 h-4" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight group-hover:text-brand-purple transition-colors">
-                                                                {company.name}
-                                                            </p>
-                                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-                                                                ID: {company.id.slice(0, 8)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="space-y-1">
-                                                        {company.phone && (
-                                                            <div className="flex items-center gap-1.5 text-[9px] text-gray-500 font-bold uppercase">
-                                                                <Tag className="w-2.5 h-2.5 text-brand-purple/50" /> {company.phone}
+                                            return (
+                                                <tr
+                                                    key={company.id}
+                                                    onClick={() => {
+                                                        setSelectedCompany(company);
+                                                        setView("management");
+                                                        setActiveTab("dashboard");
+                                                    }}
+                                                    className="hover:bg-brand-purple/10/30 transition-colors cursor-pointer group"
+                                                >
+                                                    <td className="px-6 py-4 text-[10px] font-bold text-gray-400 text-center">
+                                                        {index + 1}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-brand-purple/10 rounded-lg flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
+                                                                <Building2 className="w-4 h-4" />
                                                             </div>
-                                                        )}
-                                                        {company.email && (
-                                                            <div className="flex items-center gap-1.5 text-[9px] text-gray-500 font-bold lowercase">
-                                                                <Mail className="w-2.5 h-2.5 text-brand-purple/50" /> {company.email}
+                                                            <div>
+                                                                <p className="text-xs font-black text-gray-900 uppercase tracking-tight group-hover:text-brand-purple transition-colors">
+                                                                    {company.name}
+                                                                </p>
+                                                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                                                                    ID: {company.id.slice(0, 8)}
+                                                                </p>
                                                             </div>
-                                                        )}
-                                                        {!company.phone && !company.email && (
-                                                            <span className="text-[9px] text-gray-300 italic">No contact</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black text-brand-purple uppercase tracking-tighter">{ageStr}</span>
-                                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none">Berlangganan</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="text-[10px] font-bold text-gray-600">
-                                                        {new Date(company.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-brand-purple group-hover:text-white group-hover:border-brand-purple transition-all mx-auto">
-                                                        <ArrowLeft className="w-4 h-4 rotate-180" />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="space-y-1">
+                                                            {company.phone && (
+                                                                <div className="flex items-center gap-1.5 text-[9px] text-gray-500 font-bold uppercase">
+                                                                    <Tag className="w-2.5 h-2.5 text-brand-purple/50" /> {company.phone}
+                                                                </div>
+                                                            )}
+                                                            {company.email && (
+                                                                <div className="flex items-center gap-1.5 text-[9px] text-gray-500 font-bold lowercase">
+                                                                    <Mail className="w-2.5 h-2.5 text-brand-purple/50" /> {company.email}
+                                                                </div>
+                                                            )}
+                                                            {!company.phone && !company.email && (
+                                                                <span className="text-[9px] text-gray-300 italic">No contact</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-black text-brand-purple uppercase tracking-tighter">{ageStr}</span>
+                                                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none">Berlangganan</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="text-[10px] font-bold text-gray-600">
+                                                            {new Date(company.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-brand-purple group-hover:text-white group-hover:border-brand-purple transition-all mx-auto">
+                                                            <ArrowLeft className="w-4 h-4 rotate-180" />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        <button
+                            onClick={() => setPortalTab("clients")}
+                            className="flex items-center gap-2 text-[10px] font-black text-brand-purple uppercase tracking-widest hover:gap-3 transition-all group"
+                        >
+                            <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> Kembali ke Portal
+                        </button>
+                        <AntigravityView
+                            quotas={agentQuotas}
+                            onAdd={() => setIsAddQuotaOpen(true)}
+                            onDelete={handleDeleteQuota}
+                        />
+                    </div>
+                )}
             </div>
         );
     }
@@ -890,6 +1237,13 @@ export default function UserManagementPage() {
                 onRefresh={() => { }}
                 companyId={selectedCompany?.id}
                 companyName={selectedCompany?.name}
+            />
+
+            <AddQuotaModal 
+                isOpen={isAddQuotaOpen}
+                onClose={() => setIsAddQuotaOpen(false)}
+                onAdd={handleAddQuota}
+                existingQuotas={agentQuotas}
             />
 
             <header className="mb-8 space-y-4">
@@ -922,7 +1276,7 @@ export default function UserManagementPage() {
                             { id: "users", name: "Tim", icon: Users, show: !!selectedCompany },
                             { id: "logs", name: "Audit", icon: History, show: !!selectedCompany },
                             { id: "cloud", name: "Cloud", icon: Cloud, show: !selectedCompany },
-                            { id: "settings", name: "System", icon: Settings2, show: true }
+                            { id: "settings", name: "Edit", icon: Settings2, show: true }
                         ].filter(t => t.show).map((tab) => (
                             <button
                                 key={tab.id}
@@ -1711,9 +2065,9 @@ export default function UserManagementPage() {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">
-                                                        PENGATURAN KAMERAFOTO (WAJIB)
+                                                        PENGATURAN KAMERA
                                                     </h3>
-                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">KEBIJAKAN PENGAMBILAN FOTO SAAT CHECKLIST</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">KEBIJAKAN FOTO CHECKLIST</p>
                                                 </div>
                                             </div>
                                             <button
@@ -1745,16 +2099,15 @@ export default function UserManagementPage() {
                                                     <Database className="w-4 h-4" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">DATABASE CLEANUP</h3>
-                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Manual Purge Controls</p>
+                                                    <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">PEMBERSIHAN DATA</h3>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                 {[
-                                                    { id: 'LOGS_COMBINED', label: 'RIWAYAT AKTIVITAS', icon: History, type: 'LOGS', desc: 'Log Admin & Changelog Aset' },
-                                                    { id: 'REPORTS', label: 'LAPORAN CHECKLIST', icon: ClipboardCheck, type: 'REPORTS', desc: 'Riwayat inspeksi & checklist harian' },
-                                                    { id: 'TRASH', label: 'RIWAYAT HAPUS', icon: Trash2, type: 'TRASH', desc: 'Daftar aset yang telah dihapus' },
+                                                    { id: 'LOGS_COMBINED', label: 'LOG AKTIVITAS', icon: History, type: 'LOGS', desc: 'Audit log & changelog' },
+                                                    { id: 'REPORTS', label: 'LAPORAN HARIAN', icon: ClipboardCheck, type: 'REPORTS', desc: 'Checklist harian' },
+                                                    { id: 'TRASH', label: 'TEMPAT SAMPAH', icon: Trash2, type: 'TRASH', desc: 'Aset yang dihapus' },
                                                 ].map((item) => (
                                                     <div key={item.id} className="p-3 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-between group hover:border-brand-purple/20 transition-all">
                                                         <div className="flex items-center gap-3">
@@ -1794,65 +2147,63 @@ export default function UserManagementPage() {
                                                 <AlertTriangle className="w-4 h-4" />
                                             </div>
                                             <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">
-                                                DANGER ZONE: TINDAKAN KRITIS
+                                                ZONA BAHAYA
                                             </h3>
                                         </div>
 
-                                        {/* Master Assets Reset */}
-                                        <div className="mb-8">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="w-8 h-8 bg-rose-600/10 rounded-lg flex items-center justify-center text-rose-600">
-                                                    <Box className="w-4 h-4" />
+                                        <div className="space-y-3">
+                                            {/* Master Inventaris Row */}
+                                            <div className="p-4 bg-white border border-rose-100 rounded-2xl flex items-center justify-between group hover:border-rose-300 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2.5 rounded-xl border border-rose-50 bg-rose-50/50 text-rose-600">
+                                                        <Box className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest leading-none block">MASTER INVENTARIS</span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">MASTER ASSETS (INVENTARIS)</h3>
-                                                    <p className="text-[9px] text-rose-400 font-bold uppercase tracking-tight italic">Tindakan ini akan menghapus seluruh daftar aset utama dan pemetaan ruangan.</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={async () => {
-                                                    if (confirm(`KRITIS: Anda akan menghapus SELURUH MASTER ASSETS ${liveCompany?.name}. Data ini tidak bisa dikembalikan. Lanjutkan?`)) {
-                                                        try {
-                                                            await purgeData(selectedCompany.id, 'ACTIVE_ASSETS');
-                                                            alert(`Master Assets ${liveCompany?.name} berhasil dikosongkan total.`);
-                                                        } catch (err: any) {
-                                                            alert(`Error: ${err.message}`);
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm(`KRITIS: Anda akan menghapus SELURUH MASTER ASSETS ${liveCompany?.name}. Data ini tidak bisa dikembalikan. Lanjutkan?`)) {
+                                                            try {
+                                                                await purgeData(selectedCompany.id, 'ACTIVE_ASSETS');
+                                                                alert(`Master Assets ${liveCompany?.name} berhasil dikosongkan total.`);
+                                                            } catch (err: any) {
+                                                                alert(`Error: ${err.message}`);
+                                                            }
                                                         }
-                                                    }
-                                                }}
-                                                className="w-full py-4 bg-white border-2 border-rose-200 hover:border-rose-600 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 group"
-                                            >
-                                                <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                                                HAPUS & RESET SEMUA MASTER ASSETS
-                                            </button>
-                                        </div>
-
-                                        {/* Permanent Company Delete */}
-                                        <div className="mt-8 pt-8 border-t border-rose-200/50">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="w-8 h-8 bg-rose-600/10 rounded-lg flex items-center justify-center text-rose-600">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">PENGHAPUSAN PERUSAHAAN</h3>
-                                                    <p className="text-[9px] text-rose-400 font-bold uppercase tracking-tight italic">
-                                                        Seluruh data milik <span className="underline">{liveCompany?.name}</span> akan dihapus selamanya.
-                                                    </p>
-                                                </div>
+                                                    }}
+                                                    className="p-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center bg-white text-rose-400 border border-rose-100 hover:text-rose-600 hover:border-rose-400 hover:bg-rose-50"
+                                                    title="Reset Master"
+                                                >
+                                                    <RefreshCcw className="w-4 h-4 group-hover/btn:rotate-180 transition-transform duration-500" />
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={() => {
-                                                    if (confirm(`KONFIRMASI AKHIR: Apakah Anda yakin ingin menghapus ${liveCompany?.name}?`)) {
-                                                        deleteCompany(selectedCompany.id);
-                                                        setView("companies");
-                                                        setSelectedCompany(null);
-                                                    }
-                                                }}
-                                                className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                                HAPUS PERUSAHAAN SECARA PERMANEN
-                                            </button>
+
+                                            {/* Hapus Klien Row */}
+                                            <div className="p-4 bg-white border border-rose-100 rounded-2xl flex items-center justify-between group hover:border-rose-300 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2.5 rounded-xl border border-rose-50 bg-rose-50/50 text-rose-600">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest leading-none block">HAPUS KLIEN PERMANEN</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm(`KONFIRMASI AKHIR: Apakah Anda yakin ingin menghapus ${liveCompany?.name}?`)) {
+                                                            deleteCompany(selectedCompany.id);
+                                                            setView("companies");
+                                                            setSelectedCompany(null);
+                                                        }
+                                                    }}
+                                                    className="p-2.5 rounded-xl transition-all shadow-lg shadow-rose-100 flex items-center justify-center bg-rose-600 text-white hover:bg-rose-700"
+                                                    title="Hapus Permanen"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
