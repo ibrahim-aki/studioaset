@@ -3,7 +3,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { LogOut, Key, Camera, CameraOff, RefreshCw, ShieldAlert } from "lucide-react";
+import { LogOut, Key, Camera, CameraOff, RefreshCw, ShieldAlert, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
@@ -15,30 +15,67 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     const router = useRouter();
 
     // State baru untuk status akses yang lebih detail
-    const [accessStatus, setAccessStatus] = useState<"checking" | "allowed" | "desktop" | "emulator">("checking");
+    const [accessStatus, setAccessStatus] = useState<"checking" | "allowed" | "desktop" | "emulator" | "wrong-browser">("checking");
 
     useEffect(() => {
-        const ua = navigator.userAgent.toLowerCase();
+        const ua = navigator.userAgent;
+        const uaLower = ua.toLowerCase();
         const platform = (navigator as any).platform?.toLowerCase() || "";
-        
+
         const isMobileUA = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua);
         // iPad modern terkadang melaporkan sebagai Macintosh (MacIntel), cek via touch
-        const isIpadOS = (navigator.maxTouchPoints > 2 && /mac/i.test(ua));
-        
+        const isIpadOS = (navigator.maxTouchPoints > 2 && /mac/i.test(uaLower));
+
         // Deteksi Platform Hardware Asli
         const isDesktopPlatform = /win32|win64|macintel|linux x86_64/i.test(platform);
 
         if (!isMobileUA && !isIpadOS) {
             // Murni Desktop
             setAccessStatus("desktop");
-        } else if (isMobileUA && isDesktopPlatform && !isIpadOS) {
+            return;
+        }
+
+        if (isMobileUA && isDesktopPlatform && !isIpadOS) {
             // User-Agent mengaku Mobile, tapi Platform Hardware tetap Windows/Mac/Linux.
             // Ini adalah indikasi kuat penggunaan "Inspect Element" (Mobile Emulation).
             setAccessStatus("emulator");
-        } else {
-            // Perangkat Mobile Asli atau iPad
-            setAccessStatus("allowed");
+            return;
         }
+
+        // --- Deteksi Browser yang Diizinkan ---
+        const isAndroid = /android/i.test(ua);
+        const isIOS = /iphone|ipad|ipod/i.test(ua) || isIpadOS;
+
+        if (isAndroid) {
+            // Android: Hanya izinkan Chrome asli
+            // Chrome Android: mengandung 'Chrome/' tapi BUKAN EdgA, SamsungBrowser, OPR, atau Firefox
+            const isChromeAndroid = /Chrome\//.test(ua) &&
+                !/EdgA\//.test(ua) &&
+                !/SamsungBrowser\//.test(ua) &&
+                !/OPR\//.test(ua) &&
+                !/Firefox\//.test(ua);
+
+            if (!isChromeAndroid) {
+                setAccessStatus("wrong-browser");
+                return;
+            }
+        } else if (isIOS) {
+            // iOS: Hanya izinkan Safari asli
+            // Safari iOS: mengandung 'Safari/' tapi BUKAN CriOS (Chrome iOS), FxiOS (Firefox iOS), EdgiOS (Edge iOS)
+            const isSafariIOS = /Safari\//.test(ua) &&
+                !/CriOS\//.test(ua) &&
+                !/FxiOS\//.test(ua) &&
+                !/EdgiOS\//.test(ua) &&
+                !/OPiOS\//.test(ua);
+
+            if (!isSafariIOS) {
+                setAccessStatus("wrong-browser");
+                return;
+            }
+        }
+
+        // Perangkat Mobile Asli dengan browser yang benar
+        setAccessStatus("allowed");
     }, []);
 
     // Pengecekan ketersediaan kamera
@@ -121,6 +158,58 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
         logout();
         router.push("/login");
     };
+
+    // --- Lapisan Proteksi: Browser Tidak Didukung ---
+    if (accessStatus === "wrong-browser") {
+        return (
+            <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
+                <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center p-6">
+                    <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-blue-100 overflow-hidden">
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-6 pt-10 pb-12 text-center text-white">
+                            <div className="w-20 h-20 bg-white/10 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Smartphone className="w-9 h-9 text-white" />
+                            </div>
+                            <h1 className="text-lg font-black tracking-tight text-white uppercase">Browser Tidak Didukung</h1>
+                            <p className="text-sm text-blue-100 mt-2 leading-relaxed font-medium">
+                                Aplikasi ini hanya dapat dibuka menggunakan browser resmi yang didukung.
+                            </p>
+                        </div>
+                        <div className="px-6 py-6 space-y-4">
+                            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">Gunakan browser berikut:</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex flex-col items-center gap-2 p-4 bg-green-50 rounded-2xl border-2 border-green-200">
+                                    <span className="text-3xl">🤖</span>
+                                    <div className="text-center">
+                                        <p className="text-xs font-black text-green-800 uppercase">Android</p>
+                                        <p className="text-sm font-black text-green-600">Chrome</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center gap-2 p-4 bg-blue-50 rounded-2xl border-2 border-blue-200">
+                                    <span className="text-3xl">🍎</span>
+                                    <div className="text-center">
+                                        <p className="text-xs font-black text-blue-800 uppercase">iPhone / iPad</p>
+                                        <p className="text-sm font-black text-blue-600">Safari</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-amber-50 rounded-2xl border border-amber-100 p-3">
+                                <p className="text-[10px] text-amber-700 font-bold leading-relaxed text-center">
+                                    Browser lain (Firefox, Samsung Internet, Opera, dll.) tidak didukung untuk memastikan fitur kamera berjalan dengan optimal.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center gap-1.5 py-3 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition-all active:scale-95"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                Keluar Aplikasi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </ProtectedRoute>
+        );
+    }
 
     // --- Lapisan Proteksi: Desktop & Emulator ---
     if (accessStatus === "desktop") {
