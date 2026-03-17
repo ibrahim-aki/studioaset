@@ -222,7 +222,7 @@ export default function LoginPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="relative z-10"
                         >
-                            <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">{welcomeTitle}</h2>
+                            <h2 className="text-4xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">{welcomeTitle}</h2>
                             <p className="text-sm font-medium text-white/70 leading-relaxed mb-8 max-w-[220px] mx-auto">
                                 {welcomeDescription}
                             </p>
@@ -265,8 +265,8 @@ export default function LoginPage() {
                     ) : (
                         <>
                             <div className="mb-10">
-                                <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Login</h1>
-                                <p className="text-xs font-bold text-white/40 uppercase tracking-[0.2em]">Sign in to your account</p>
+                                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Login</h1>
+                                <p className="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">Sign in to your account</p>
                             </div>
 
                             <form onSubmit={handleLogin} className="space-y-6">
@@ -318,7 +318,7 @@ export default function LoginPage() {
                                                 boxShadow: 'none'
                                             }}
                                         />
-                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">Remember me</span>
+                                        <span className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Remember me</span>
                                     </label>
                                     <button
                                         type="button"
@@ -351,7 +351,7 @@ export default function LoginPage() {
                                                 }
                                             }
                                         }}
-                                        className="text-[10px] font-bold text-white/30 hover:text-white transition-all tracking-tight uppercase"
+                                        className="text-[10px] font-semibold text-white/30 hover:text-white transition-all tracking-tight uppercase"
                                     >
                                         Forgot password?
                                     </button>
@@ -360,7 +360,7 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full py-4 px-4 rounded-xl text-[12px] font-black uppercase tracking-[0.3em] text-white transition-all transform hover:translate-y-[-2px] active:scale-[0.98] relative overflow-hidden group/btn shadow-[0_10px_20px_-10px_rgba(124,77,255,0.5)] border border-white/20"
+                                    className="w-full py-4 px-4 rounded-xl text-[12px] font-bold uppercase tracking-[0.3em] text-white transition-all transform hover:translate-y-[-2px] active:scale-[0.98] relative overflow-hidden group/btn shadow-[0_10px_20px_-10px_rgba(124,77,255,0.5)] border border-white/20"
                                     style={{
                                         background: "linear-gradient(135deg, rgba(124, 77, 255, 0.4) 0%, rgba(58, 190, 249, 0.4) 100%)",
                                         backdropFilter: "blur(8px)",
@@ -374,7 +374,7 @@ export default function LoginPage() {
 
                             <div 
                                 onClick={() => setDisplayMessage("Mohon maaf aplikasi ini belum dibuka untuk umum")}
-                                className="mt-8 text-center text-[9px] font-black text-white/30 flex items-center justify-center gap-3 group/signup cursor-pointer"
+                                className="mt-8 text-center text-[9px] font-bold text-white/30 flex items-center justify-center gap-3 group/signup cursor-pointer"
                             >
                                 <span className="shrink-0">Don't have an account?</span>
                                 <span className="text-white/60 tracking-widest group-hover/signup:text-white transition-colors underline underline-offset-4 decoration-white/20">SIGN UP</span>

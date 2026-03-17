@@ -51,10 +51,10 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                     <div className="flex items-center gap-8">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-brand-purple rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-xs">SA</span>
+                                <span className="text-white font-semibold text-xs">SA</span>
                             </div>
                             <div>
-                                <h1 className="text-sm font-bold text-gray-900 leading-none">Super Admin</h1>
+                                <h1 className="text-sm font-semibold text-gray-900 leading-none">Super Admin</h1>
                                 <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none mt-1">System Management</p>
                             </div>
                         </div>
@@ -69,7 +69,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                             <div className="w-7 h-7 rounded-full bg-brand-purple/10 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
                                 <KeyRound className="w-4 h-4" />
                             </div>
-                            <span className="hidden sm:inline text-xs font-bold text-gray-600 group-hover:text-brand-purple transition-colors">{user?.name || "User"}</span>
+                            <span className="hidden sm:inline text-xs font-semibold text-gray-600 group-hover:text-brand-purple transition-colors">{user?.name || "User"}</span>
                         </button>
 
                         <button
@@ -83,7 +83,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
                                 logout();
                                 router.push("/login");
                             }}
-                            className="text-[10px] font-black text-rose-600 hover:bg-rose-50 px-2 sm:px-3 py-2 rounded-lg transition-colors border border-rose-100 uppercase tracking-widest"
+                            className="text-[10px] font-bold text-rose-600 hover:bg-rose-50 px-2 sm:px-3 py-2 rounded-lg transition-colors border border-rose-100 uppercase tracking-widest"
                         >
                             Keluar
                         </button>

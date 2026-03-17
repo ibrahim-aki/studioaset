@@ -6,10 +6,10 @@
 4. **Konfirmasi Pengguna:** Kamu DILARANG melanjutkan ke tahap eksekusi sampai pengguna memberikan jawaban eksplisit seperti "Lanjutkan", "Setuju", atau "Ya".
 5. **Eksekusi:** Setelah ada persetujuan, baru jalankan instruksi tersebut langkah demi langkah.
 6. *Pengecualian pesan commit github:* apapun yang ada hubungannya dengansuper admin serta informasi github atau vercel ganti dengan kata lain di pesan commit
-7. *Pengecualian Cangelog aplikasi:* fitur, perbaikan, update atau perubahan apapun yang ada hubungannya dengan super admin serta informasi github atau vercel atau cloudinary tidak perlu dicatat atau dimasukkan ke cangelog aplikasi
+7. *Pengecualian Cangelog aplikasi:* fitur, perbaikan, update atau perubahan apapun yang ada hubungannya dengan super admin serta informasi github atau vercel atau cloudinary tidak perlu dicatat atau dimasukkan ke cangelog aplikasi, saya tidak mau Admin dan operator tau kalau di atas mereka masih ada super admin.
 8. *Bahasa Cangelog di Aplikasi* khusus di menu Cangelog Aplikasi keterangan Hari Tanggal Jam tulis dalah bahasa Indonesia, untuk deskripsi Cangelog tulis dalam bahasa inggris.
 9. *Folder Terlarang* tidak perlu membaca folder node_modules di setiap pekerjaan, jika harus membacanya harus meminta ijin terlebih dahulu kepada saya dan beri saya alasan kenapa kamu harus membacanya
-10. *Bahasa Wajib* Gunakan bahasa indonesia di saat melakukan apapun tanpa terkecuai !!!.
+10. *Bahasa Wajib* Gunakan bahasa indonesia untuk berkomunikasi dengan saya disaat mau melakukan apapun !
 11. *Perbedaan Konteks* Jika kalimat pertanyaan kamu hanya wajib menjawab tanpa harus eksekusi kode !
 
 # Protokol Efisiensi (Hemat Token)

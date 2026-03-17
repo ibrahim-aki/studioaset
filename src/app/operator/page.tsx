@@ -66,13 +66,13 @@ export default function OperatorPage() {
             <div className="space-y-6">
                 <div className="bg-gradient-to-br from-[#1A0D3C] to-brand-purple rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
                     <div className="relative z-10">
-                        <h1 className="text-2xl font-black tracking-tight">Halo, {user?.name || "Client Operator"}</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">Halo, {user?.name || "Client Operator"}</h1>
                         <p className="opacity-80 mt-2 text-sm font-medium">Panel Khusus Pengecekan Barang Client</p>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest ml-4">Pilih Cabang</h2>
+                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest ml-4">Pilih Cabang</h2>
                     <div className="grid grid-cols-1 gap-3">
                         {locations.map(loc => (
                             <button
@@ -84,7 +84,7 @@ export default function OperatorPage() {
                                     <div className="p-4 bg-brand-purple/10 rounded-2xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
                                         <MapPin className="w-6 h-6" />
                                     </div>
-                                    <span className="font-black text-gray-900 text-lg">{loc.name}</span>
+                                    <span className="font-bold text-gray-900 text-lg">{loc.name}</span>
                                 </div>
                                 <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-brand-purple group-hover:bg-brand-purple/10 transition-all">
                                     <DoorOpen className="w-5 h-5" />
@@ -101,7 +101,7 @@ export default function OperatorPage() {
         <div className="space-y-6">
             <div className="bg-gradient-to-br from-brand-purple to-brand-purple rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
                 <div className="relative z-10">
-                    <h1 className="text-2xl font-black tracking-tight">Halo, {user?.name || "Operator"}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Halo, {user?.name || "Operator"}</h1>
                     <p className="opacity-80 mt-2 text-sm font-medium">Siap untuk melakukan pengecekan aset hari ini?</p>
                 </div>
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -117,8 +117,8 @@ export default function OperatorPage() {
                             <DoorOpen className="w-10 h-10" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Mulai Checklist</h2>
-                            <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-1">Inisiasi Tugas Lapangan</p>
+                            <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight">Mulai Checklist</h2>
+                            <p className="text-sm text-gray-400 font-semibold uppercase tracking-widest mt-1">Inisiasi Tugas Lapangan</p>
                         </div>
                     </div>
                 </button>
@@ -126,7 +126,7 @@ export default function OperatorPage() {
                 <div className="space-y-4">
                     <div className="bg-white border-2 border-brand-purple rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4">
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-teal/5 text-brand-teal text-[10px] font-black uppercase rounded-full border border-brand-teal/10 animate-pulse">
+                            <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-teal/5 text-brand-teal text-[10px] font-bold uppercase rounded-full border border-brand-teal/10 animate-pulse">
                                 <span className="w-1.5 h-1.5 rounded-full bg-brand-teal"></span>
                                 Sedang Bertugas
                             </span>
@@ -138,26 +138,26 @@ export default function OperatorPage() {
                                     <Clock className="w-10 h-10" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Sesi Aktif</h2>
-                                    <p className="text-sm text-brand-purple font-bold uppercase tracking-widest mt-1">{activeShift.locationName}</p>
+                                    <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight">Sesi Aktif</h2>
+                                    <p className="text-sm text-brand-purple font-semibold uppercase tracking-widest mt-1">{activeShift.locationName}</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-6">
                                 <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Jam Kerja</p>
-                                    <p className="text-sm font-black text-gray-700">{activeShift.startTime} - {activeShift.endTime}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Jam Kerja</p>
+                                    <p className="text-sm font-bold text-gray-700">{activeShift.startTime} - {activeShift.endTime}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mulai Pada</p>
-                                    <p className="text-sm font-black text-gray-700">{new Date(activeShift.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mulai Pada</p>
+                                    <p className="text-sm font-bold text-gray-700">{new Date(activeShift.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
                                 </div>
                             </div>
 
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => router.push(`/operator/rooms?locationId=${activeShift.locationId}`)}
-                                    className="flex-1 py-4 bg-brand-purple hover:bg-brand-purple text-white font-black rounded-2xl transition-all shadow-lg shadow-brand-purple text-sm uppercase tracking-widest"
+                                    className="flex-1 py-4 bg-brand-purple hover:bg-brand-purple text-white font-bold rounded-2xl transition-all shadow-lg shadow-brand-purple text-sm uppercase tracking-widest"
                                 >
                                     Lanjut Checklist
                                 </button>
@@ -170,7 +170,7 @@ export default function OperatorPage() {
                                         }
                                     }}
                                     disabled={loading}
-                                    className="px-6 py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 font-black rounded-2xl transition-all text-sm uppercase tracking-widest border border-rose-100"
+                                    className="px-6 py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-2xl transition-all text-sm uppercase tracking-widest border border-rose-100"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Akhiri"}
                                 </button>
@@ -190,8 +190,8 @@ export default function OperatorPage() {
                                     <ClipboardCheck className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-extrabold text-gray-900 tracking-tight">Inisiasi Tugas</h3>
-                                    <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest">Detail Shift</p>
+                                    <h3 className="font-bold text-gray-900 tracking-tight">Inisiasi Tugas</h3>
+                                    <p className="text-[10px] text-brand-purple font-bold uppercase tracking-widest">Detail Shift</p>
                                 </div>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white rounded-xl transition-colors text-gray-400">
@@ -202,14 +202,14 @@ export default function OperatorPage() {
                         <form onSubmit={handleSubmit} className="p-8 space-y-6">
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
                                         <Clock className="w-3 h-3" /> Jam Mulai
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <select
                                             disabled
                                             value={stHour}
-                                            className="flex-1 px-3 py-3 bg-gray-100 border border-gray-100 rounded-2xl text-sm outline-none font-bold appearance-none text-center text-gray-400"
+                                            className="flex-1 px-3 py-3 bg-gray-100 border border-gray-100 rounded-2xl text-sm outline-none font-semibold appearance-none text-center text-gray-400"
                                         >
                                             <option value="">HH</option>
                                             {Array.from({ length: 24 }).map((_, i) => (
@@ -229,7 +229,7 @@ export default function OperatorPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
                                         <Clock className="w-3 h-3 text-rose-400" /> Jam Selesai
                                     </label>
                                     <div className="flex items-center gap-2">
@@ -237,19 +237,19 @@ export default function OperatorPage() {
                                             required
                                             value={edHour}
                                             onChange={(e) => setEdHour(e.target.value)}
-                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold appearance-none text-center"
+                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-semibold appearance-none text-center"
                                         >
                                             <option value="">HH</option>
                                             {Array.from({ length: 24 }).map((_, i) => (
                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
                                             ))}
                                         </select>
-                                        <span className="font-black text-gray-300">:</span>
+                                        <span className="font-bold text-gray-300">:</span>
                                         <select
                                             required
                                             value={edMin}
                                             onChange={(e) => setEdMin(e.target.value)}
-                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold appearance-none text-center"
+                                            className="flex-1 px-3 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-semibold appearance-none text-center"
                                         >
                                             {Array.from({ length: 60 }).map((_, i) => (
                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
@@ -260,14 +260,14 @@ export default function OperatorPage() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 flex items-center gap-1.5">
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 flex items-center gap-1.5">
                                     <MapPin className="w-3 h-3" /> Lokasi Penugasan
                                 </label>
                                 <select
                                     required
                                     value={locationId}
                                     onChange={(e) => setLocationId(e.target.value)}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold appearance-none"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-semibold appearance-none"
                                 >
                                     <option value="">-- Pilih Cabang --</option>
                                     {locations.map(loc => (
@@ -277,7 +277,7 @@ export default function OperatorPage() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Keterangan Tambahan (Opsional)</label>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Keterangan Tambahan (Opsional)</label>
                                 <textarea
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera, RefreshCcw } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera, RefreshCcw, Play, Pause } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
 import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc, addDoc, Timestamp, serverTimestamp } from "firebase/firestore";
 import clsx from "clsx";
@@ -15,6 +15,7 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
     const [timeLeft, setTimeLeft] = useState("");
     const [colorBase, setColorBase] = useState("gray"); // 'emerald' | 'amber' | 'rose' | 'gray'
     const [percentage, setPercentage] = useState(100);
+    const [showMenu, setShowMenu] = useState(false);
 
     const resetQuota = async () => {
         if (!quota.defaultDurationMinutes || quota.defaultDurationMinutes <= 0) return;
@@ -23,6 +24,8 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
             const newResetAt = new Date(new Date().getTime() + (quota.defaultDurationMinutes * 60 * 1000));
             await updateDoc(doc(db, "agentQuotas", quota.id), {
                 resetAt: Timestamp.fromDate(newResetAt),
+                isPaused: false,
+                remainingSeconds: null,
                 updatedAt: serverTimestamp()
             });
         } catch (err) {
@@ -30,19 +33,53 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
         }
     };
 
+    const handleTogglePause = async () => {
+        try {
+            if (quota.isPaused) {
+                // Resume: Set new resetAt based on remaining seconds
+                const remaining = quota.remainingSeconds || 0;
+                const newResetAt = new Date(new Date().getTime() + (remaining * 1000));
+                await updateDoc(doc(db, "agentQuotas", quota.id), {
+                    isPaused: false,
+                    resetAt: Timestamp.fromDate(newResetAt),
+                    remainingSeconds: null,
+                    updatedAt: serverTimestamp()
+                });
+            } else {
+                // Pause: Save remaining seconds
+                const now = new Date().getTime();
+                const resetTime = quota.resetAt.toDate().getTime();
+                const diff = Math.max(0, Math.floor((resetTime - now) / 1000));
+                await updateDoc(doc(db, "agentQuotas", quota.id), {
+                    isPaused: true,
+                    remainingSeconds: diff,
+                    updatedAt: serverTimestamp()
+                });
+            }
+        } catch (err) {
+            console.error("Pause/Play toggle failed:", err);
+        }
+    };
+
     useEffect(() => {
         const timer = setInterval(() => {
             if (!quota.resetAt) return;
-            const now = new Date().getTime();
-            const resetTime = quota.resetAt.toDate().getTime();
-            const diff = resetTime - now;
+
+            let diff = 0;
+            if (quota.isPaused) {
+                diff = (quota.remainingSeconds || 0) * 1000;
+            } else {
+                const now = new Date().getTime();
+                const resetTime = quota.resetAt.toDate().getTime();
+                diff = resetTime - now;
+            }
 
             if (diff <= 0) {
                 setTimeLeft("RESET READY");
                 setColorBase("emerald");
                 setPercentage(100); 
                 
-                if (quota.defaultDurationMinutes > 0) {
+                if (quota.defaultDurationMinutes > 0 && !quota.isPaused) {
                     resetQuota();
                 }
                 return;
@@ -55,7 +92,9 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
 
             setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
 
-            if (quota.defaultDurationMinutes && quota.defaultDurationMinutes > 0) {
+            if (quota.isPaused) {
+                setColorBase("gray");
+            } else if (quota.defaultDurationMinutes && quota.defaultDurationMinutes > 0) {
                 const totalMs = quota.defaultDurationMinutes * 60 * 1000;
                 const p = Math.min(100, Math.max(0, (diff / totalMs) * 100));
                 setPercentage(Math.round(p));
@@ -65,19 +104,19 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
                 const twentyFourHoursMs = 24 * 60 * 60 * 1000;
                 const fortyEightHoursMs = 48 * 60 * 60 * 1000;
 
-                if (diff <= twoHoursMs) setColorBase("emerald");
+                if (p > 75) setColorBase("rose");
+                else if (diff <= twoHoursMs) setColorBase("emerald");
                 else if (diff <= eightHoursMs) setColorBase("cyan");
                 else if (diff <= twentyFourHoursMs) setColorBase("blue");
-                else if (diff <= fortyEightHoursMs) setColorBase("amber");
-                else if (p > 75) setColorBase("rose");
-                else setColorBase("orange");
+                else if (diff <= fortyEightHoursMs) setColorBase("orange");
+                else setColorBase("amber");
             } else {
                 setPercentage(0);
                 setColorBase("emerald");
             }
         }, 1000);
         return () => clearInterval(timer);
-    }, [quota.resetAt, quota.defaultDurationMinutes]);
+    }, [quota.resetAt, quota.defaultDurationMinutes, quota.isPaused, quota.remainingSeconds]);
 
     const colorClasses = {
         emerald: { stroke: "stroke-emerald-500", bg: "bg-emerald-500", text: "text-emerald-500" },
@@ -86,17 +125,17 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
         amber: { stroke: "stroke-amber-500", bg: "bg-amber-500", text: "text-amber-500" },
         orange: { stroke: "stroke-orange-500", bg: "bg-orange-500", text: "text-orange-500" },
         rose: { stroke: "stroke-rose-500", bg: "bg-rose-500", text: "text-rose-500" },
-        gray: { stroke: "stroke-gray-300", bg: "bg-gray-300", text: "text-gray-500" }
+        gray: { stroke: "stroke-gray-300", bg: "bg-gray-300", text: "text-gray-400" }
     };
 
     const currentStyle = colorClasses[colorBase as keyof typeof colorClasses] || colorClasses.gray;
 
     return (
-        <div className="group/item relative bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 rounded-xl p-2.5 transition-all duration-300">
+        <div className="group/item relative bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 rounded-xl p-2 transition-all duration-300">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {/* Circular Gauge */}
-                    <div className="relative w-10 h-10 flex-shrink-0">
+                    <div className="relative w-8 h-8 flex-shrink-0">
                         <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
                             <circle
                                 cx="18" cy="18" r="15.5"
@@ -118,41 +157,83 @@ function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: str
                             />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[8px] font-black text-gray-900">{percentage}%</span>
+                            <span className="text-[7px] font-bold text-gray-900">{percentage}%</span>
                         </div>
                     </div>
 
                     <div className="min-w-0">
-                        <h4 className="text-[10.5px] font-bold text-gray-800 uppercase tracking-tight truncate leading-tight mb-0.5">
+                        <h4 className="text-[10px] font-semibold text-gray-800 uppercase tracking-tight truncate leading-tight mb-0">
                             {quota.model}
                         </h4>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                             <div className={clsx(
-                                "w-1.5 h-1.5 rounded-full animate-pulse",
+                                "w-1 h-1 rounded-full",
+                                !quota.isPaused && "animate-pulse",
                                 currentStyle.bg
                             )}></div>
                             <span className={clsx(
-                                "text-[9px] font-extrabold tracking-tight font-mono",
+                                "text-[8.5px] font-bold tracking-tight font-mono",
                                 currentStyle.text
                             )}>{timeLeft}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-gray-100">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Toggle Pause/Play */}
                     <button 
-                        onClick={() => onEdit(quota)}
-                        className="p-1.5 text-gray-400 hover:text-brand-purple transition-all active:scale-90"
-                        title="Edit Timer"
+                        onClick={handleTogglePause}
+                        className={clsx(
+                            "p-1.5 rounded-lg transition-all active:scale-95",
+                            quota.isPaused 
+                                ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" 
+                                : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        )}
+                        title={quota.isPaused ? "Resume Timer" : "Pause Timer"}
                     >
-                        <Pencil className="w-3.5 h-3.5" />
+                        {quota.isPaused ? <Play className="w-2.5 h-2.5 fill-current" /> : <Pause className="w-2.5 h-2.5 fill-current" />}
                     </button>
-                    <button 
-                        onClick={() => onDelete(quota.id)}
-                        className="p-1.5 text-gray-400 hover:text-rose-500 transition-all active:scale-90"
-                    >
-                        <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+
+                    {/* Integrated Menu */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowMenu(!showMenu)}
+                            className={clsx(
+                                "p-1.5 rounded-lg transition-all active:scale-95",
+                                showMenu 
+                                    ? "bg-gray-900 text-white shadow-md shadow-gray-200" 
+                                    : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                            )}
+                        >
+                            <MoreVertical className="w-2.5 h-2.5" />
+                        </button>
+
+                        {showMenu && (
+                            <>
+                                <div className="fixed inset-0 z-[100]" onClick={() => setShowMenu(false)}></div>
+                                <div className="absolute right-0 top-full mt-1.5 w-24 bg-white border border-gray-100/50 rounded-xl shadow-xl z-[101] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 backdrop-blur-sm">
+                                    <button 
+                                        onClick={() => {
+                                            onEdit(quota);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-[9px] font-bold text-gray-600 hover:bg-gray-50 flex items-center justify-between border-b border-gray-50 transition-colors"
+                                    >
+                                        EDIT <Pencil className="w-2.5 h-2.5 text-brand-purple" />
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            if (confirm("Hapus pemantauan ini?")) onDelete(quota.id);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-[9px] font-bold text-rose-500 hover:bg-rose-50 flex items-center justify-between transition-colors"
+                                    >
+                                        DELETE <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -177,17 +258,17 @@ function QuotaCard({ email, quotas, onDelete, onEdit }: { email: string, quotas:
     });
 
     return (
-        <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-brand-purple/5 transition-colors">
-                    <Mail className="w-4 h-4 text-gray-400 group-hover:text-brand-purple" />
+        <div className="bg-white border border-gray-100 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100 group-hover:bg-brand-purple/5 transition-colors">
+                    <Mail className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-purple" />
                 </div>
                 <div>
-                    <h3 className="text-[11px] font-medium text-gray-900 tracking-tight lowercase">{email}</h3>
+                    <h3 className="text-[10px] font-medium text-gray-900 tracking-tight lowercase">{email}</h3>
                 </div>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {sortedQuotas.map(q => <QuotaItem key={q.id} quota={q} onDelete={onDelete} onEdit={onEdit} />)}
             </div>
         </div>
@@ -230,7 +311,7 @@ function AntigravityView({ quotas, onAdd, onDelete, onEdit }: { quotas: any[], o
                     <p className="text-[10px] font-normal uppercase mt-1 text-gray-400">Belum ada akun yang dimonitor.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                     {emailList.map(email => (
                         <QuotaCard 
                             key={email} 
@@ -246,7 +327,7 @@ function AntigravityView({ quotas, onAdd, onDelete, onEdit }: { quotas: any[], o
     );
 }
 
-function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, initialData }: { isOpen: boolean, onClose: () => void, onAdd: (data: any) => void, onUpdate: (id: string, data: any) => void, existingQuotas: any[], initialData?: any }) {
+function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, allSystemEmails = [], initialData }: { isOpen: boolean, onClose: () => void, onAdd: (data: any) => void, onUpdate: (id: string, data: any) => void, existingQuotas: any[], allSystemEmails?: string[], initialData?: any }) {
     const [email, setEmail] = useState("");
     const [model, setModel] = useState("Gemini 3.1 Pro");
     
@@ -348,20 +429,19 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, initi
                         <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">EMAIL</label>
                         <input
                             required
-                            type="email"
+                            type="text"
                             list="existing-emails"
+                            autoComplete="off"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none"
                             placeholder="account@mail.com"
                         />
-                        {!initialData && (
-                            <datalist id="existing-emails">
-                                {Array.from(new Set(existingQuotas.map(q => q.email))).map(email => (
-                                    <option key={email} value={email} />
-                                ))}
-                            </datalist>
-                        )}
+                        <datalist id="existing-emails">
+                            {allSystemEmails.map(email => (
+                                <option key={email} value={email} />
+                            ))}
+                        </datalist>
                     </div>
 
                     <div className="space-y-1">
@@ -380,13 +460,13 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, initi
                     </div>
 
                     <div className="p-4 bg-brand-purple/5 rounded-2xl border border-brand-purple/10 space-y-3">
-                        <label className="block text-[9px] font-bold text-brand-purple uppercase tracking-widest text-center">Timer Default (Auto Reset)</label>
+                        <label className="block text-[9px] font-semibold text-brand-purple uppercase tracking-widest text-center">Timer Default (Auto Reset)</label>
                         <div className="grid grid-cols-3 gap-2">
                             <div className="space-y-1">
                                 <input
                                     type="number" min="0" value={defDays}
                                     onChange={(e) => setDefDays(Number(e.target.value))}
-                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-bold transition-all outline-none text-center"
+                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-semibold transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase">Days</span>
                             </div>
@@ -394,7 +474,7 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, initi
                                 <input
                                     type="number" min="0" max="23" value={defHours}
                                     onChange={(e) => setDefHours(Number(e.target.value))}
-                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-bold transition-all outline-none text-center"
+                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-semibold transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase">Hours</span>
                             </div>
@@ -402,7 +482,7 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, initi
                                 <input
                                     type="number" min="0" max="59" value={defMinutes}
                                     onChange={(e) => setDefMinutes(Number(e.target.value))}
-                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-bold transition-all outline-none text-center"
+                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-semibold transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase">Mins</span>
                             </div>
@@ -562,8 +642,8 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                             <UserPlus className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-extrabold text-gray-900 tracking-tight">Tambah Pengguna</h3>
-                            <p className="text-[10px] text-brand-purple font-black uppercase tracking-widest">Akses Baru</p>
+                            <h3 className="font-bold text-gray-900 tracking-tight">Tambah Pengguna</h3>
+                            <p className="text-[10px] text-brand-purple font-bold uppercase tracking-widest">Akses Baru</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-colors text-gray-400">
@@ -580,7 +660,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nama Lengkap</label>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nama Lengkap</label>
                             <input
                                 required
                                 value={name}
@@ -591,7 +671,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Alamat Email</label>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Alamat Email</label>
                             <input
                                 type="email"
                                 required
@@ -603,7 +683,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nomor Telepon</label>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nomor Telepon</label>
                             <input
                                 type="tel"
                                 required
@@ -615,7 +695,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Password</label>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Password</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
@@ -636,7 +716,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Pilih Peran (Role)</label>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Pilih Peran (Role)</label>
                             <div className="grid grid-cols-2 gap-3">
                                 {[
                                     { id: "ADMIN", label: "ADMIN", color: "indigo" },
@@ -649,7 +729,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                                         type="button"
                                         onClick={() => setRole(r.id as any)}
                                         className={clsx(
-                                            "py-3 rounded-2xl text-[10px] font-black tracking-widest border transition-all",
+                                            "py-3 rounded-2xl text-[10px] font-bold tracking-widest border transition-all",
                                             role === r.id
                                                 ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : 'rose-500'} border-transparent text-white shadow-lg`
                                                 : "bg-gray-50 border-gray-100 text-gray-400"
@@ -662,7 +742,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Penempatan Cabang</label>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Penempatan Cabang</label>
                             <select
                                 required
                                 value={locationId}
@@ -1436,6 +1516,10 @@ export default function UserManagementPage() {
                 onAdd={handleAddQuota}
                 onUpdate={handleUpdateQuota}
                 existingQuotas={agentQuotas}
+                allSystemEmails={Array.from(new Set([
+                    ...users.map(u => u.email),
+                    ...agentQuotas.map(q => q.email)
+                ])).filter(email => email && email.trim() !== "").sort()}
                 initialData={selectedQuota}
             />
 
