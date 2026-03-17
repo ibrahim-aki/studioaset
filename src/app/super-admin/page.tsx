@@ -11,10 +11,24 @@ import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmai
 import { UserRole } from "@/context/AuthContext";
 
 // --- ANTIGRAVITY MONITOR COMPONENTS ---
-function QuotaItem({ quota, onDelete }: { quota: any, onDelete: (id: string) => void }) {
+function QuotaItem({ quota, onDelete, onEdit }: { quota: any, onDelete: (id: string) => void, onEdit: (quota: any) => void }) {
     const [timeLeft, setTimeLeft] = useState("");
-    const [statusColor, setStatusColor] = useState("text-gray-400");
-    const [barGradient, setBarGradient] = useState("from-gray-200 to-gray-300");
+    const [colorBase, setColorBase] = useState("gray"); // 'emerald' | 'amber' | 'rose' | 'gray'
+    const [percentage, setPercentage] = useState(100);
+
+    const resetQuota = async () => {
+        if (!quota.defaultDurationMinutes || quota.defaultDurationMinutes <= 0) return;
+        
+        try {
+            const newResetAt = new Date(new Date().getTime() + (quota.defaultDurationMinutes * 60 * 1000));
+            await updateDoc(doc(db, "agentQuotas", quota.id), {
+                resetAt: Timestamp.fromDate(newResetAt),
+                updatedAt: serverTimestamp()
+            });
+        } catch (err) {
+            console.error("Auto-reset failed:", err);
+        }
+    };
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -25,8 +39,12 @@ function QuotaItem({ quota, onDelete }: { quota: any, onDelete: (id: string) => 
 
             if (diff <= 0) {
                 setTimeLeft("RESET READY");
-                setStatusColor("text-emerald-500");
-                setBarGradient("from-emerald-400 to-emerald-600");
+                setColorBase("emerald");
+                setPercentage(100); 
+                
+                if (quota.defaultDurationMinutes > 0) {
+                    resetQuota();
+                }
                 return;
             }
 
@@ -37,60 +55,127 @@ function QuotaItem({ quota, onDelete }: { quota: any, onDelete: (id: string) => 
 
             setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
 
-            if (diff > 12 * 60 * 60 * 1000) {
-                setStatusColor("text-rose-500");
-                setBarGradient("from-rose-500 to-rose-600");
-            } else if (diff > 2 * 60 * 60 * 1000) {
-                setStatusColor("text-amber-500");
-                setBarGradient("from-amber-400 to-amber-600 shadow-amber-200");
+            if (quota.defaultDurationMinutes && quota.defaultDurationMinutes > 0) {
+                const totalMs = quota.defaultDurationMinutes * 60 * 1000;
+                const p = Math.min(100, Math.max(0, (diff / totalMs) * 100));
+                setPercentage(Math.round(p));
+
+                const twoHoursMs = 2 * 60 * 60 * 1000;
+                const eightHoursMs = 8 * 60 * 60 * 1000;
+                const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+                const fortyEightHoursMs = 48 * 60 * 60 * 1000;
+
+                if (diff <= twoHoursMs) setColorBase("emerald");
+                else if (diff <= eightHoursMs) setColorBase("cyan");
+                else if (diff <= twentyFourHoursMs) setColorBase("blue");
+                else if (diff <= fortyEightHoursMs) setColorBase("amber");
+                else if (p > 75) setColorBase("rose");
+                else setColorBase("orange");
             } else {
-                setStatusColor("text-emerald-500");
-                setBarGradient("from-emerald-400 to-emerald-600 shadow-emerald-200");
+                setPercentage(0);
+                setColorBase("emerald");
             }
         }, 1000);
         return () => clearInterval(timer);
-    }, [quota.resetAt]);
+    }, [quota.resetAt, quota.defaultDurationMinutes]);
+
+    const colorClasses = {
+        emerald: { stroke: "stroke-emerald-500", bg: "bg-emerald-500", text: "text-emerald-500" },
+        cyan: { stroke: "stroke-cyan-500", bg: "bg-cyan-500", text: "text-cyan-500" },
+        blue: { stroke: "stroke-blue-500", bg: "bg-blue-500", text: "text-blue-500" },
+        amber: { stroke: "stroke-amber-500", bg: "bg-amber-500", text: "text-amber-500" },
+        orange: { stroke: "stroke-orange-500", bg: "bg-orange-500", text: "text-orange-500" },
+        rose: { stroke: "stroke-rose-500", bg: "bg-rose-500", text: "text-rose-500" },
+        gray: { stroke: "stroke-gray-300", bg: "bg-gray-300", text: "text-gray-500" }
+    };
+
+    const currentStyle = colorClasses[colorBase as keyof typeof colorClasses] || colorClasses.gray;
 
     return (
-        <div className="group/item relative bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 rounded-xl p-3 transition-all duration-300">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-white shadow-sm border border-gray-100 rounded flex items-center justify-center text-gray-400 group-hover/item:text-brand-purple transition-colors">
-                        <Activity className="w-3.5 h-3.5" />
+        <div className="group/item relative bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 rounded-xl p-2.5 transition-all duration-300">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    {/* Circular Gauge */}
+                    <div className="relative w-10 h-10 flex-shrink-0">
+                        <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
+                            <circle
+                                cx="18" cy="18" r="15.5"
+                                fill="none"
+                                className="stroke-gray-100"
+                                strokeWidth="4"
+                            />
+                            <circle
+                                cx="18" cy="18" r="15.5"
+                                fill="none"
+                                strokeWidth="4"
+                                strokeDasharray="100, 100"
+                                strokeDashoffset={100 - percentage}
+                                strokeLinecap="round"
+                                className={clsx(
+                                    "transition-all duration-1000 shadow-sm",
+                                    currentStyle.stroke
+                                )}
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[8px] font-black text-gray-900">{percentage}%</span>
+                        </div>
                     </div>
-                    <div>
-                        <h4 className="text-[10px] font-medium text-gray-900 uppercase tracking-tight">{quota.model}</h4>
-                        <div className="flex items-center gap-1 mt-0.5">
-                            <Clock className={clsx("w-2 h-2 opacity-60", statusColor)} />
-                            <span className={clsx("text-[8.5px] font-normal tracking-wide font-mono", statusColor)}>{timeLeft}</span>
+
+                    <div className="min-w-0">
+                        <h4 className="text-[10.5px] font-bold text-gray-800 uppercase tracking-tight truncate leading-tight mb-0.5">
+                            {quota.model}
+                        </h4>
+                        <div className="flex items-center gap-1.5">
+                            <div className={clsx(
+                                "w-1.5 h-1.5 rounded-full animate-pulse",
+                                currentStyle.bg
+                            )}></div>
+                            <span className={clsx(
+                                "text-[9px] font-extrabold tracking-tight font-mono",
+                                currentStyle.text
+                            )}>{timeLeft}</span>
                         </div>
                     </div>
                 </div>
-                <button 
-                    onClick={() => onDelete(quota.id)}
-                    className="opacity-0 group-hover/item:opacity-100 p-1.5 text-gray-300 hover:text-rose-500 transition-all active:scale-90"
-                >
-                    <Trash2 className="w-3 h-3" />
-                </button>
-            </div>
-            
-            <div className="space-y-1">
-                <div className="flex items-center justify-between px-0.5">
-                    <span className="text-[7px] font-medium text-gray-400 uppercase tracking-[0.1em]">REMAINING</span>
-                    <span className="text-[8px] font-medium text-gray-600">{quota.currentUsage}%</span>
-                </div>
-                <div className="h-1 w-full bg-gray-200/50 rounded-full overflow-hidden">
-                    <div 
-                        className={clsx("h-full rounded-full transition-all duration-1000 bg-gradient-to-r shadow-sm", barGradient)}
-                        style={{ width: `${quota.currentUsage}%` }}
-                    ></div>
+
+                <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-gray-100">
+                    <button 
+                        onClick={() => onEdit(quota)}
+                        className="p-1.5 text-gray-400 hover:text-brand-purple transition-all active:scale-90"
+                        title="Edit Timer"
+                    >
+                        <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                        onClick={() => onDelete(quota.id)}
+                        className="p-1.5 text-gray-400 hover:text-rose-500 transition-all active:scale-90"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             </div>
         </div>
     );
 }
 
-function QuotaCard({ email, quotas, onDelete }: { email: string, quotas: any[], onDelete: (id: string) => void }) {
+function QuotaCard({ email, quotas, onDelete, onEdit }: { email: string, quotas: any[], onDelete: (id: string) => void, onEdit: (quota: any) => void }) {
+    const MODEL_ORDER = [
+        "Gemini 3.1 Pro",
+        "Gemini 3 Flash",
+        "Claude Sonnet 4.6",
+        "Claude Opus 4.6",
+        "GPT-OSS 120B"
+    ];
+
+    const sortedQuotas = [...quotas].sort((a, b) => {
+        const indexA = MODEL_ORDER.indexOf(a.model);
+        const indexB = MODEL_ORDER.indexOf(b.model);
+        const rankA = indexA === -1 ? 999 : indexA;
+        const rankB = indexB === -1 ? 999 : indexB;
+        return rankA - rankB;
+    });
+
     return (
         <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
             <div className="flex items-center gap-3 mb-4">
@@ -103,13 +188,13 @@ function QuotaCard({ email, quotas, onDelete }: { email: string, quotas: any[], 
             </div>
             
             <div className="space-y-3">
-                {quotas.map(q => <QuotaItem key={q.id} quota={q} onDelete={onDelete} />)}
+                {sortedQuotas.map(q => <QuotaItem key={q.id} quota={q} onDelete={onDelete} onEdit={onEdit} />)}
             </div>
         </div>
     );
 }
 
-function AntigravityView({ quotas, onAdd, onDelete }: { quotas: any[], onAdd: () => void, onDelete: (id: string) => void }) {
+function AntigravityView({ quotas, onAdd, onDelete, onEdit }: { quotas: any[], onAdd: () => void, onDelete: (id: string) => void, onEdit: (quota: any) => void }) {
     const grouped = quotas.reduce((acc: any, curr: any) => {
         const email = curr.email || "Unknown";
         if (!acc[email]) acc[email] = [];
@@ -152,6 +237,7 @@ function AntigravityView({ quotas, onAdd, onDelete }: { quotas: any[], onAdd: ()
                             email={email} 
                             quotas={grouped[email]} 
                             onDelete={onDelete} 
+                            onEdit={onEdit} 
                         />
                     ))}
                 </div>
@@ -160,13 +246,53 @@ function AntigravityView({ quotas, onAdd, onDelete }: { quotas: any[], onAdd: ()
     );
 }
 
-function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boolean, onClose: () => void, onAdd: (data: any) => void, existingQuotas: any[] }) {
+function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, initialData }: { isOpen: boolean, onClose: () => void, onAdd: (data: any) => void, onUpdate: (id: string, data: any) => void, existingQuotas: any[], initialData?: any }) {
     const [email, setEmail] = useState("");
     const [model, setModel] = useState("Gemini 3.1 Pro");
+    
+    // Timer Baru (Manual)
     const [days, setDays] = useState(0);
     const [hours, setHours] = useState(0);
     const [minutes, setMinutes] = useState(0);
+
+    // Timer Default
+    const [defDays, setDefDays] = useState(0);
+    const [defHours, setDefHours] = useState(0);
+    const [defMinutes, setDefMinutes] = useState(0);
+
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (initialData) {
+            setEmail(initialData.email || "");
+            setModel(initialData.model || "Gemini 3.1 Pro");
+            
+            // Kalkulasi sisa waktu ke input manual jika ingin edit manual
+            if (initialData.resetAt) {
+                const diff = initialData.resetAt.toDate().getTime() - new Date().getTime();
+                if (diff > 0) {
+                    setDays(Math.floor(diff / (1000 * 60 * 60 * 24)));
+                    setHours(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+                    setMinutes(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+                } else {
+                    setDays(0); setHours(0); setMinutes(0);
+                }
+            }
+
+            // Kalkulasi durasi default ke input
+            if (initialData.defaultDurationMinutes) {
+                const total = initialData.defaultDurationMinutes;
+                setDefDays(Math.floor(total / (24 * 60)));
+                setDefHours(Math.floor((total % (24 * 60)) / 60));
+                setDefMinutes(total % 60);
+            }
+        } else {
+            setEmail("");
+            setModel("Gemini 3.1 Pro");
+            setDays(0); setHours(0); setMinutes(0);
+            setDefDays(0); setDefHours(0); setDefMinutes(0);
+        }
+    }, [initialData, isOpen]);
 
     if (!isOpen) return null;
 
@@ -180,14 +306,23 @@ function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boo
                 (Number(hours) * 60 * 60 * 1000) + 
                 (Number(minutes) * 60 * 1000)
             );
+
+            const defaultDurationMinutes = (Number(defDays) * 24 * 60) + (Number(defHours) * 60) + Number(defMinutes);
             
-            await onAdd({
+            const dataToSave = {
                 email,
                 model,
                 currentUsage: 100,
                 resetAt: Timestamp.fromDate(resetTime),
+                defaultDurationMinutes,
                 updatedAt: serverTimestamp()
-            });
+            };
+
+            if (initialData) {
+                await onUpdate(initialData.id, dataToSave);
+            } else {
+                await onAdd(dataToSave);
+            }
             onClose();
         } catch (err: any) {
             alert(err.message);
@@ -201,14 +336,14 @@ function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boo
             <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
                 <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">ADD AGEN</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">{initialData ? 'EDIT' : 'ADD'} AGEN</h3>
                     </div>
                     <button onClick={onClose} className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors group">
                         <X className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
                     <div className="space-y-1">
                         <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">EMAIL</label>
                         <input
@@ -220,11 +355,13 @@ function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boo
                             className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none"
                             placeholder="account@mail.com"
                         />
-                        <datalist id="existing-emails">
-                            {Array.from(new Set(existingQuotas.map(q => q.email))).map(email => (
-                                <option key={email} value={email} />
-                            ))}
-                        </datalist>
+                        {!initialData && (
+                            <datalist id="existing-emails">
+                                {Array.from(new Set(existingQuotas.map(q => q.email))).map(email => (
+                                    <option key={email} value={email} />
+                                ))}
+                            </datalist>
+                        )}
                     </div>
 
                     <div className="space-y-1">
@@ -242,8 +379,38 @@ function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boo
                         </select>
                     </div>
 
+                    <div className="p-4 bg-brand-purple/5 rounded-2xl border border-brand-purple/10 space-y-3">
+                        <label className="block text-[9px] font-bold text-brand-purple uppercase tracking-widest text-center">Timer Default (Auto Reset)</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                                <input
+                                    type="number" min="0" value={defDays}
+                                    onChange={(e) => setDefDays(Number(e.target.value))}
+                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-bold transition-all outline-none text-center"
+                                />
+                                <span className="block text-[7px] text-gray-400 text-center uppercase">Days</span>
+                            </div>
+                            <div className="space-y-1">
+                                <input
+                                    type="number" min="0" max="23" value={defHours}
+                                    onChange={(e) => setDefHours(Number(e.target.value))}
+                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-bold transition-all outline-none text-center"
+                                />
+                                <span className="block text-[7px] text-gray-400 text-center uppercase">Hours</span>
+                            </div>
+                            <div className="space-y-1">
+                                <input
+                                    type="number" min="0" max="59" value={defMinutes}
+                                    onChange={(e) => setDefMinutes(Number(e.target.value))}
+                                    className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-bold transition-all outline-none text-center"
+                                />
+                                <span className="block text-[7px] text-gray-400 text-center uppercase">Mins</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="space-y-1">
-                        <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">Reset Duration</label>
+                        <label className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest ml-1">Manual Timer (Input Saat Ini)</label>
                         <div className="grid grid-cols-3 gap-2">
                             <div className="space-y-1">
                                 <input
@@ -286,7 +453,7 @@ function AddQuotaModal({ isOpen, onClose, onAdd, existingQuotas }: { isOpen: boo
                             disabled={loading}
                             className="w-full py-3 bg-brand-purple hover:bg-brand-purple/90 text-white text-[10px] font-semibold rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 uppercase tracking-[0.2em]"
                         >
-                            {loading ? "INITIALIZING..." : "ACTIVATE MONITOR"}
+                            {loading ? "SAVING..." : (initialData ? "UPDATE MONITOR" : "ACTIVATE MONITOR")}
                         </button>
                     </div>
                 </form>
@@ -810,6 +977,7 @@ export default function UserManagementPage() {
     const [usageMetrics, setUsageMetrics] = useState({ dailyWrites: 0, monthlyActiveUsers: 0, dailyReadsEstimate: 0 });
     const [agentQuotas, setAgentQuotas] = useState<any[]>([]);
     const [isAddQuotaOpen, setIsAddQuotaOpen] = useState(false);
+    const [selectedQuota, setSelectedQuota] = useState<any>(null);
     const [portalTab, setPortalTab] = useState<"clients" | "antigravity">("clients");
 
     const { assetLogs, checklists: contextChecklists, locations, companies, addCompany, deleteCompany, updateCompany, rooms, assets, purgeData } = useLocalDb();
@@ -1005,6 +1173,14 @@ export default function UserManagementPage() {
         }
     };
 
+    const handleUpdateQuota = async (id: string, data: any) => {
+        try {
+            await updateDoc(doc(db, "agentQuotas", id), data);
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
+    };
+
     const handleDeleteQuota = async (id: string) => {
         if (confirm("Confirm: Hapus data monitoring email ini?")) {
             try {
@@ -1042,9 +1218,14 @@ export default function UserManagementPage() {
 
                 <AddQuotaModal 
                     isOpen={isAddQuotaOpen}
-                    onClose={() => setIsAddQuotaOpen(false)}
+                    onClose={() => {
+                        setIsAddQuotaOpen(false);
+                        setSelectedQuota(null);
+                    }}
                     onAdd={handleAddQuota}
+                    onUpdate={handleUpdateQuota}
                     existingQuotas={agentQuotas}
+                    initialData={selectedQuota}
                 />
 
                 <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1219,8 +1400,15 @@ export default function UserManagementPage() {
                         </button>
                         <AntigravityView
                             quotas={agentQuotas}
-                            onAdd={() => setIsAddQuotaOpen(true)}
+                            onAdd={() => {
+                                setSelectedQuota(null);
+                                setIsAddQuotaOpen(true);
+                            }}
                             onDelete={handleDeleteQuota}
+                            onEdit={(quota) => {
+                                setSelectedQuota(quota);
+                                setIsAddQuotaOpen(true);
+                            }}
                         />
                     </div>
                 )}
@@ -1241,9 +1429,14 @@ export default function UserManagementPage() {
 
             <AddQuotaModal 
                 isOpen={isAddQuotaOpen}
-                onClose={() => setIsAddQuotaOpen(false)}
+                onClose={() => {
+                    setIsAddQuotaOpen(false);
+                    setSelectedQuota(null);
+                }}
                 onAdd={handleAddQuota}
+                onUpdate={handleUpdateQuota}
                 existingQuotas={agentQuotas}
+                initialData={selectedQuota}
             />
 
             <header className="mb-8 space-y-4">
