@@ -3,7 +3,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { LogOut, Key, Camera, CameraOff, RefreshCw } from "lucide-react";
+import { LogOut, Key, Camera, CameraOff, RefreshCw, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
@@ -14,15 +14,31 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const router = useRouter();
 
-    // Lapisan 3: Deteksi jenis perangkat (User-Agent)
-    const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+    // State baru untuk status akses yang lebih detail
+    const [accessStatus, setAccessStatus] = useState<"checking" | "allowed" | "desktop" | "emulator">("checking");
 
     useEffect(() => {
         const ua = navigator.userAgent.toLowerCase();
-        const isMobile = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua);
-        // iPad modern kadang melaporkan sebagai macOS, cek tambahan via touch
-        const isIpadOS = navigator.maxTouchPoints > 1 && /mac/i.test(ua);
-        setIsDesktop(!isMobile && !isIpadOS);
+        const platform = (navigator as any).platform?.toLowerCase() || "";
+        
+        const isMobileUA = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua);
+        // iPad modern terkadang melaporkan sebagai Macintosh (MacIntel), cek via touch
+        const isIpadOS = (navigator.maxTouchPoints > 2 && /mac/i.test(ua));
+        
+        // Deteksi Platform Hardware Asli
+        const isDesktopPlatform = /win32|win64|macintel|linux x86_64/i.test(platform);
+
+        if (!isMobileUA && !isIpadOS) {
+            // Murni Desktop
+            setAccessStatus("desktop");
+        } else if (isMobileUA && isDesktopPlatform && !isIpadOS) {
+            // User-Agent mengaku Mobile, tapi Platform Hardware tetap Windows/Mac/Linux.
+            // Ini adalah indikasi kuat penggunaan "Inspect Element" (Mobile Emulation).
+            setAccessStatus("emulator");
+        } else {
+            // Perangkat Mobile Asli atau iPad
+            setAccessStatus("allowed");
+        }
     }, []);
 
     // Pengecekan ketersediaan kamera
@@ -74,8 +90,8 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
         router.push("/login");
     };
 
-    // --- Lapisan 3: Layar Blokir Desktop ---
-    if (isDesktop === true) {
+    // --- Lapisan Proteksi: Desktop & Emulator ---
+    if (accessStatus === "desktop") {
         return (
             <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
                 <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6">
@@ -103,7 +119,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                             </div>
                             <div className="bg-gray-50 rounded-2xl border border-gray-100 p-3">
                                 <p className="text-[10px] text-gray-500 leading-relaxed text-center">
-                                    Kebijakan ini diterapkan untuk memastikan foto aset diambil secara langsung menggunakan kamera perangkat.
+                                    Kebijakan ini diterapkan untuk memastikan laporan aset dilakukan secara fisik di lokasi.
                                 </p>
                             </div>
                             <button
@@ -111,29 +127,61 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                                 className="w-full flex items-center justify-center gap-1.5 py-3 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition-all active:scale-95"
                             >
                                 <LogOut className="w-3.5 h-3.5" />
-                                Keluar dari Aplikasi
+                                Keluar Aplikasi
                             </button>
                         </div>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-6 text-center">
-                        Studio Aset • Akses Operator Hanya via HP/Tablet
-                    </p>
                 </div>
             </ProtectedRoute>
         );
     }
 
-    // --- Lapisan Pengecekan Kamera (loading): isDesktop masih null = belum tahu jenisnya ---
-    if (isDesktop === null || cameraStatus === "checking") {
+    if (accessStatus === "emulator") {
+        return (
+            <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
+                <div className="min-h-screen bg-rose-50 flex flex-col items-center justify-center p-6">
+                    <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-rose-100 overflow-hidden">
+                        <div className="bg-rose-600 px-6 pt-10 pb-12 text-center text-white">
+                            <div className="w-20 h-20 bg-white/10 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <ShieldAlert className="w-9 h-9 text-white" />
+                            </div>
+                            <h1 className="text-lg font-black tracking-tight text-white uppercase">Emulator Terdeteksi!</h1>
+                            <p className="text-sm text-rose-100 mt-2 leading-relaxed font-medium">
+                                Anda terdeteksi menggunakan <span className="text-white font-bold">Simulator Browser</span>. 
+                            </p>
+                        </div>
+                        <div className="px-6 py-6 space-y-4">
+                            <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
+                                <p className="text-xs text-rose-800 font-bold leading-relaxed text-center">
+                                    Demi validitas data, dilarang melakukan inspeksi melalui komputer yang memanipulasi tampilan HP. Gunakan perangkat fisik asli.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full py-3 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition-all active:scale-95 shadow-lg shadow-rose-200"
+                            >
+                                Keluar & Gunakan HP Asli
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </ProtectedRoute>
+        );
+    }
+
+    // --- Layar Loading / Pengecekan Awal ---
+    if (accessStatus === "checking" || cameraStatus === "checking") {
         return (
             <ProtectedRoute allowedRoles={["OPERATOR", "CLIENT_OPERATOR"]}>
                 <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
                     <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-brand-purple/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                        <div className="w-16 h-16 bg-brand-purple/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
                             <Camera className="w-8 h-8 text-brand-purple" />
                         </div>
-                        <p className="text-sm font-bold text-gray-700">Memeriksa akses kamera...</p>
-                        <p className="text-xs text-gray-400">Harap izinkan akses kamera jika ada permintaan dari browser.</p>
+                        <div className="space-y-1">
+                            <p className="text-sm font-bold text-gray-700 uppercase tracking-widest">Validasi Perangkat</p>
+                            <p className="text-xs text-gray-400">Sedang memeriksa otentikasi hardware...</p>
+                        </div>
                     </div>
                 </div>
             </ProtectedRoute>
