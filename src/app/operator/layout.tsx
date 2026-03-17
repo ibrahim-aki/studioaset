@@ -46,24 +46,56 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
 
     useEffect(() => {
         const checkCamera = async () => {
+            // Jika mediaDevices tidak tersedia = bukan HTTPS atau browser sangat lama
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setCameraStatus("no-camera");
+                return;
+            }
+
+            // Helper: Coba buka stream kamera, kembalikan true jika berhasil
+            const tryStream = async (constraints: MediaStreamConstraints): Promise<boolean> => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    stream.getTracks().forEach(t => t.stop());
+                    return true;
+                } catch {
+                    return false;
+                }
+            };
+
             try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-                    setCameraStatus("no-camera");
+                // Tahap 1: Coba dengan facingMode "environment" (kamera belakang)
+                // Chrome Android mendukung ini dengan baik
+                const stage1 = await tryStream({ video: { facingMode: "environment" } });
+                if (stage1) {
+                    setCameraStatus("allowed");
                     return;
                 }
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const hasCamera = devices.some(device => device.kind === "videoinput");
-                if (!hasCamera) {
-                    setCameraStatus("no-camera");
+
+                // Tahap 2: Fallback ke { video: true } untuk Firefox mobile
+                // Firefox tidak mendukung facingMode constraint secara langsung
+                const stage2 = await tryStream({ video: true });
+                if (stage2) {
+                    setCameraStatus("allowed");
                     return;
                 }
-                // Perangkat punya kamera, coba minta izin
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                stream.getTracks().forEach(t => t.stop());
-                setCameraStatus("allowed");
+
+                // Kedua tahap gagal, cek alasannya
+                throw new Error("camera_unavailable");
+
             } catch (err: any) {
-                // Kamera ada tapi izin ditolak user
-                setCameraStatus("denied");
+                const errorName = err?.name || "";
+                if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
+                    // Kamera ada tapi izin ditolak user
+                    setCameraStatus("denied");
+                } else if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
+                    // Tidak ada kamera fisik sama sekali
+                    setCameraStatus("no-camera");
+                } else {
+                    // Kamera gagal karena sebab lain (sedang terpakai, dsb.)
+                    // Jangan blokir operator, anggap tersedia
+                    setCameraStatus("allowed");
+                }
             }
         };
         checkCamera();
