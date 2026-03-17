@@ -109,7 +109,12 @@ export default function ChangelogPage() {
                                 <div className="flex gap-3">
                                     <span className="shrink-0 text-gray-300">-</span>
                                     {/* rule 11: deskripsi Cangelog tulis dalam bahasa inggris */}
-                                    <p className="flex-1">{item.commit.message.split('\n')[0]}</p>
+                                    <p className="flex-1">
+                                        {item.commit.message.split('\n')[0]
+                                            .replace(/^(.*?)\d{1,2}[:.]\d{2}\s*-\s*/, '') // Remove timestamp prefixes like "Selasa, 17 Maret 2026 10:48 - "
+                                            .replace(/^FITUR:/i, 'FEAT:') // Standardize FITUR to FEAT
+                                            .trim()}
+                                    </p>
                                 </div>
 
                                 {item.commit.message.split('\n').length > 1 && (
