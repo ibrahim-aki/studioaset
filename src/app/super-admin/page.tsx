@@ -1194,15 +1194,66 @@ export default function UserManagementPage() {
         }
     };
 
+    const compressImage = async (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1200;
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Gagal kompresi"));
+                    }, "image/jpeg", 0.7);
+                };
+            };
+            reader.onerror = (e) => reject(e);
+        });
+    };
+
     // FUNGSI UPLOAD GAMBAR KE CLOUDINARY
     const handleImageUpload = async (file: File) => {
         setUploadingImage(true);
         try {
+            // Hapus gambar lama jika ada sebelum upload yang baru
+            if (notificationImageUrl) {
+                console.log("[LOG] Deleting previous notification image:", notificationImageUrl);
+                await fetch('/api/cloudinary/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls: [notificationImageUrl] })
+                });
+            }
+
+            // Kompresi dulu sebelum upload ke Cloudinary
+            const compressedBlob = await compressImage(file);
+            const compressedFile = new File([compressedBlob], `notif_${Date.now()}.jpg`, { type: "image/jpeg" });
+
             const CLOUD_NAME = "dsbryri1d";
             const UPLOAD_PRESET = "studioaset_notif";
 
             const formData = new FormData();
-            formData.append("file", file);
+            formData.append("file", compressedFile);
             formData.append("upload_preset", UPLOAD_PRESET);
 
             const res = await fetch(
@@ -1217,10 +1268,33 @@ export default function UserManagementPage() {
 
             const data = await res.json();
             setNotificationImageUrl(data.secure_url);
-            alert("Foto berhasil diupload ke Cloudinary!");
+            alert("Foto berhasil diupload (Auto-Compressed)!");
         } catch (err: any) {
             console.error("Cloudinary upload failed:", err);
             alert("Gagal mengupload gambar: " + err.message);
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
+    const handleRemoveImage = async () => {
+        if (!notificationImageUrl) return;
+        if (!confirm("Hapus foto ini dari Cloudinary & Database?")) return;
+
+        setUploadingImage(true);
+        try {
+            const res = await fetch('/api/cloudinary/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ urls: [notificationImageUrl] })
+            });
+
+            if (!res.ok) throw new Error("Gagal menghapus dari Cloudinary");
+
+            setNotificationImageUrl("");
+            alert("Foto berhasil dihapus secara permanen!");
+        } catch (err: any) {
+            alert("Gagal menghapus foto: " + err.message);
         } finally {
             setUploadingImage(false);
         }
@@ -2286,7 +2360,7 @@ export default function UserManagementPage() {
                                                                 </div>
                                                                 <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Foto Tersimpan di Cloudinary ✓</p>
                                                                 <button
-                                                                    onClick={() => setNotificationImageUrl("")}
+                                                                    onClick={handleRemoveImage}
                                                                     className="mt-4 text-[9px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-700 transition-colors"
                                                                 >Hapus Foto</button>
                                                             </div>
@@ -2380,9 +2454,10 @@ export default function UserManagementPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                                                 {[
-                                                    { id: 'LOGS_COMBINED', label: 'LOG AKTIVITAS', icon: History, type: 'LOGS', desc: 'Audit log & changelog' },
+                                                    { id: 'ADMIN_LOGS', label: 'LOG SISTEM & LOGIN', icon: History, type: 'LOGS', desc: 'Aktivitas admin' },
+                                                    { id: 'ASSET_HISTORY', label: 'HISTORY ASET', icon: Activity, type: 'ASSET_HISTORY', desc: 'Status & pergerakan' },
                                                     { id: 'REPORTS', label: 'LAPORAN HARIAN', icon: ClipboardCheck, type: 'REPORTS', desc: 'Checklist harian' },
                                                     { id: 'TRASH', label: 'TEMPAT SAMPAH', icon: Trash2, type: 'TRASH', desc: 'Aset yang dihapus' },
                                                 ].map((item) => (

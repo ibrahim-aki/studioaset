@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { History as HistoryIcon, Clock, ChevronRight, GitBranch, Github, Loader2, Eye } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { useLocalDb } from "@/context/LocalDbContext";
+import { History as HistoryIcon, Loader2 } from "lucide-react";
+
 import clsx from "clsx";
 
 interface GithubCommit {
@@ -19,8 +18,6 @@ interface GithubCommit {
 }
 
 export default function ChangelogPage() {
-    const { user } = useAuth();
-    const { changelogs, markChangelogAsRead } = useLocalDb();
     const [commits, setCommits] = useState<GithubCommit[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -62,23 +59,7 @@ export default function ChangelogPage() {
         fetchCommits();
     }, []);
 
-    // Mark all changelogs as read when visiting this page
-    useEffect(() => {
-        if (changelogs.length > 0 && user) {
-            changelogs.forEach(c => {
-                if (!c.readBy?.some(r => r.adminId === user.uid)) {
-                    markChangelogAsRead(c.id);
-                }
-            });
-        }
-    }, [changelogs, user?.uid]);
 
-    // Aggregate readers from all changelogs (excluding Super Admins)
-    const allReaders = Array.from(new Set(
-        changelogs.flatMap(c => c.readBy || [])
-            .filter(r => r.role !== "SUPER_ADMIN")
-            .map(r => r.adminName)
-    ));
 
     if (loading) {
         return (
@@ -89,33 +70,23 @@ export default function ChangelogPage() {
     }
 
     return (
-        <div className="p-4 sm:p-8 max-w-3xl mx-auto font-mono text-[11px] text-[#333] leading-normal uppercase">
-            <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-6">
-                <h1 className="font-bold text-[14px] whitespace-nowrap">System Updates:</h1>
-                {allReaders.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 opacity-60">
-                        <span className="text-[9px] font-black tracking-widest flex items-center gap-1">
-                            <Eye className="w-3 h-3" /> Seen By:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                            {allReaders.map((name, i) => (
-                                <span key={i} className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
-                                    {name}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
+        <div className="relative">
+            {/* STICKY HEADER - HASIL NYATA BOS */}
+            <div className="sticky top-16 lg:top-0 z-40 bg-gray-50/95 backdrop-blur-md border-b border-gray-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-5 transition-all duration-300">
+                <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-baseline gap-2 font-mono text-[11px] uppercase tracking-tighter">
+                    <h1 className="font-bold text-[14px] whitespace-nowrap text-[#333]">System Updates:</h1>
+                </div>
             </div>
 
-            {error && (
-                <div className="mb-4 text-rose-600">
-                    ERR: {error}
-                </div>
-            )}
+            <div className="p-4 sm:p-6 lg:p-0 pt-8 max-w-3xl mx-auto font-mono text-[11px] text-[#333] leading-normal uppercase">
+                {error && (
+                    <div className="mb-4 text-rose-600">
+                        ERR: {error}
+                    </div>
+                )}
 
-            <div className="space-y-4 border-l border-gray-200 ml-1 pl-6 relative">
-                {commits.map((item, index) => {
+                <div className="space-y-4 border-l border-gray-200 ml-1 pl-6 relative">
+                    {commits.map((item, index) => {
                     const commitDate = new Date(item.commit.author.date);
                     const day = commitDate.getDay();
                     const hour = commitDate.getHours();
@@ -180,6 +151,7 @@ export default function ChangelogPage() {
             <footer className="mt-20 pt-10 border-t border-gray-100 opacity-30">
                 <p className="text-[10px]">End of system log</p>
             </footer>
+            </div>
         </div>
     );
 }

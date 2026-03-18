@@ -9,7 +9,6 @@ import {
     updateDoc,
     deleteDoc,
     query,
-    orderBy,
     where,
     getDocs,
     getDoc,
@@ -195,6 +194,7 @@ interface LocalDbContextType {
     deleteRoomAsset: (id: string, opName?: string) => Promise<void>;
     moveRoomAsset: (assetId: string, newRoomId: string, opName?: string) => Promise<void>;
 
+    assetHistory: AssetLog[];
     addChecklist: (checklist: Omit<Checklist, "id" | "isRead" | "companyId">) => Promise<void>;
     markChecklistAsRead: (id: string) => Promise<void>;
     addLog: (log: Omit<AssetLog, "id" | "timestamp" | "operatorName" | "companyId"> & { operatorName?: string; companyId?: string }) => Promise<void>;
@@ -228,6 +228,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
     const [roomAssets, setRoomAssets] = useState<RoomAsset[]>([]);
     const [checklists, setChecklists] = useState<Checklist[]>([]);
     const [assetLogs, setAssetLogs] = useState<AssetLog[]>([]);
+    const [assetHistory, setAssetHistory] = useState<AssetLog[]>([]);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [changelogs, setChangelogs] = useState<ChangelogEntry[]>([]);
     const [operatorShifts, setOperatorShifts] = useState<OperatorShift[]>([]);
@@ -249,6 +250,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         setRoomAssets([]);
         setChecklists([]);
         setAssetLogs([]);
+        setAssetHistory([]);
         setChangelogs([]);
         setOperatorShifts([]);
         setCategories(initialCategories);
@@ -324,8 +326,22 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                 setAssetLogs(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
             }
         ));
-        unsubs.push(onSnapshot(query(collection(db, "changelogs"), orderBy("date", "desc")), (snap) => {
-            setChangelogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChangelogEntry)));
+        unsubs.push(onSnapshot(
+            isSuperAdmin ? collection(db, "assetHistory") : query(collection(db, "assetHistory"), where("companyId", "==", finalCompanyId)),
+            (snap) => {
+                const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AssetLog));
+                setAssetHistory(list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+            }
+        ));
+        unsubs.push(onSnapshot(collection(db, "changelogs"), (snap) => {
+            const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChangelogEntry));
+            // Sort client-side agar dokumen tanpa field 'date' (misal SYSTEM_HISTORY) tidak diabaikan Firestore
+            list.sort((a, b) => {
+                if (!a.date) return 1;
+                if (!b.date) return -1;
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
+            setChangelogs(list);
         }));
         unsubs.push(onSnapshot(doc(db, "settings", "categories"), (docSnap) => {
             if (docSnap.exists()) setCategories(docSnap.data().list || []);
@@ -375,6 +391,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         roomAssets,
         checklists,
         assetLogs,
+        assetHistory,
         categories,
         changelogs,
         operatorShifts,
@@ -384,16 +401,19 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         markChangelogAsRead: async (id) => {
             if (!user) return;
             const currentChangelog = changelogs.find(c => c.id === id);
-            // Hanya tambah jika admin ini belum ada dalam daftar pembaca
-            if (currentChangelog && !currentChangelog.readBy?.some(r => r.adminId === user.uid)) {
-                await updateDoc(doc(db, "changelogs", id), { 
+            // Sesuai aturan No.7, Super Admin tidak dimasukkan dalam jejak audit pembaca di database
+            // Namun, markChangelogAsRead tetap dipanggil agar sistem tahu admin biasa sudah membaca.
+            if (!currentChangelog || !currentChangelog.readBy?.some(r => r.adminId === user.uid)) {
+                await setDoc(doc(db, "changelogs", id), { 
                     readBy: arrayUnion({
                         adminId: user.uid,
                         adminName: user.name || "Administrator",
                         readAt: new Date().toISOString(),
                         role: user.role || "ADMIN"
-                    })
-                });
+                    }),
+                    date: currentChangelog?.date || new Date().toISOString(),
+                    type: currentChangelog?.type || "SYSTEM"
+                }, { merge: true });
             }
         },
 
@@ -487,7 +507,18 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             await api.addLog({ assetId: id, assetName: a.name, type: "SYSTEM", toValue: `Aset Baru`, notes: `Asset: ${a.name}`, companyId });
         }),
         updateAsset: async (id, data) => withLoading(async () => {
+            const assetBefore = assets.find(a => a.id === id);
             await updateDoc(doc(db, "assets", id), data as any);
+            if (assetBefore) {
+                await api.addLog({ 
+                    assetId: id, 
+                    assetName: assetBefore.name, 
+                    type: "SYSTEM", 
+                    toValue: "Update Data Aset", 
+                    notes: `Memperbarui informasi aset: ${assetBefore.name}`, 
+                    companyId: finalCompanyId 
+                });
+            }
         }),
         deleteAsset: async (id, reason = "Dihapus oleh admin") => withLoading(async () => {
             const asset = assets.find(a => a.id === id);
@@ -648,14 +679,26 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         // Internal helper - dipanggil background oleh semua fungsi lain, tidak perlu loading UI
         addLog: async (log) => {
-            const id = uuidv4();
-            const timestamp = new Date().toISOString();
-            const finalName = log.operatorName || user?.name || user?.email || "Admin";
-            const finalRole = log.operatorRole || user?.role || "SYSTEM";
-            let companyId = log.companyId || user?.companyId || "";
-            if (!companyId && finalRole !== "SUPER_ADMIN" && finalRole !== "SYSTEM") companyId = localStorage.getItem("last_known_company_id") || "";
-            const newLog: AssetLog = { ...log, id, companyId, timestamp, operatorName: finalName, operatorRole: finalRole };
-            await setDoc(doc(db, "assetLogs", id), newLog);
+            try {
+                const id = uuidv4();
+                const timestamp = new Date().toISOString();
+                const finalName = log.operatorName || user?.name || user?.email || "System";
+                const finalRole = log.operatorRole || user?.role || "SYSTEM";
+                let companyId = log.companyId || user?.companyId || "";
+                if (!companyId && finalRole !== "SUPER_ADMIN" && finalRole !== "SYSTEM") companyId = localStorage.getItem("last_known_company_id") || "";
+                const newLog: AssetLog = { ...log, id, companyId, timestamp, operatorName: finalName, operatorRole: finalRole };
+
+                // Jurnal Umum (Asset Logs) - Simpan semua di sini
+                await setDoc(doc(db, "assetLogs", id), newLog);
+
+                // DUPLIKASI KE HISTORY ASET (Point A)
+                // Jika log ini berhubungan dengan aset (punya assetId), duplikat ke koleksi assetHistory
+                if (newLog.assetId) {
+                    await setDoc(doc(db, "assetHistory", id), newLog);
+                }
+            } catch (err) {
+                console.error("Gagal mencatat log:", err);
+            }
         },
 
         purgeData: async (companyId, type) => withLoading(async () => {
@@ -663,21 +706,17 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
             const collectionMapping: Record<string, string> = {
                 'LOGS': 'assetLogs',
-                'ASSET_HISTORY': 'assetLogs',
-                'REPORTS': 'checklists',
+                'ASSET_HISTORY': 'assetHistory', // Arahkan ke koleksi history yang mandiri
+                'REPORTS': 'checklist',
                 'TRASH': 'deleted_assets',
                 'ACTIVE_ASSETS': 'assets'
             };
             const collName = collectionMapping[type];
 
-            // Query seluruh data milik perusahaan ini
-            let queries: any[] = [];
-            if (type === 'LOGS' || type === 'ASSET_HISTORY') {
-                // Untuk log admin dan changelog aset, kita hapus seluruhnya dari koleksi assetLogs milik perusahaan ini
-                queries.push(query(collection(db, collName), where("companyId", "==", companyId)));
-            } else {
-                queries.push(query(collection(db, collName), where("companyId", "==", companyId)));
-            }
+            // Query data spesifik
+            // Untuk LOGS: Hapus SEMUA di assetLogs (Journal) - Agar log admin bersih total
+            // Untuk ASSET_HISTORY: Hapus SEMUA di assetHistory
+            const queries = [query(collection(db, collName), where("companyId", "==", companyId))];
 
             const allDocs: any[] = [];
             for (const q of queries) {
@@ -687,28 +726,27 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
             if (allDocs.length === 0) return;
 
-            // Hapus foto Cloudinary yang terlampir
-            const urlsToDelete: string[] = [];
-            allDocs.forEach(doc => {
-                const data = doc.data();
-                if (type === 'REPORTS' && data.items && Array.isArray(data.items)) {
-                    data.items.forEach((item: any) => {
-                        if (item.photoUrl && item.photoUrl.includes('res.cloudinary.com')) {
-                            urlsToDelete.push(item.photoUrl);
-                        }
-                    });
-                }
-            });
+            // Hapus foto Cloudinary HANYA jika tipenya 'ASSET_HISTORY'
+            // Karena Laporan Harian (REPORTS) share foto yang sama dengan History Aset
+            if (type === 'ASSET_HISTORY') {
+                const urlsToDelete: string[] = [];
+                allDocs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.photoUrl && data.photoUrl.includes('res.cloudinary.com')) {
+                        urlsToDelete.push(data.photoUrl);
+                    }
+                });
 
-            if (urlsToDelete.length > 0) {
-                try {
-                    await fetch('/api/cloudinary/delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ urls: urlsToDelete })
-                    });
-                } catch (err) {
-                    console.error("Gagal menghapus foto dari Cloudinary:", err);
+                if (urlsToDelete.length > 0) {
+                    try {
+                        await fetch('/api/cloudinary/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ urls: urlsToDelete })
+                        });
+                    } catch (err) {
+                        console.error("Gagal menghapus foto dari Cloudinary saat purge:", err);
+                    }
                 }
             }
 
@@ -799,7 +837,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                             {/* Overlay Info */}
                             <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Internal Asset Documentation</p>
-                                <p className="text-xs text-white/40 font-medium italic">Protected by Studio Aset Security System</p>
+                                <p className="text-xs text-white/40 font-medium italic">Restored on ibrahim cloud server</p>
                             </div>
                         </div>
                     </div>

@@ -108,6 +108,7 @@ function AssetsContent() {
         roomAssets: rawRoomAssets,
         rooms: rawRooms,
         assetLogs,
+        assetHistory, // Gunakan history mandiri untuk UI Detail Aset
         addAsset,
         updateAsset,
         deleteAsset,
@@ -140,13 +141,25 @@ function AssetsContent() {
     // Pre-calculate service counts for all assets to avoid filtering in every row
     const serviceCountsMap = useMemo(() => {
         const counts: Record<string, number> = {};
-        assetLogs.forEach(log => {
+        assetHistory.forEach(log => {
             if (log.assetId && (log.toValue === "SERVIS" || (log.notes && log.notes.toLowerCase().includes("servis")))) {
                 counts[log.assetId] = (counts[log.assetId] || 0) + 1;
             }
         });
         return counts;
-    }, [assetLogs]);
+    }, [assetHistory]);
+
+    // Pre-calculate assets that have ANY photo (Initial or Audit Log)
+    const assetsWithPhotosMap = useMemo(() => {
+        const map: Record<string, boolean> = {};
+        rawAssets.forEach(a => {
+            if (a.initialPhotoUrl) map[a.id] = true;
+        });
+        assetHistory.forEach(l => {
+            if (l.assetId && l.photoUrl) map[l.assetId] = true;
+        });
+        return map;
+    }, [rawAssets, assetHistory]);
 
     const memoizedUniqueNames = useMemo(() => 
         Array.from(new Set(rawAssets.map(a => a.name))).sort()
@@ -255,7 +268,7 @@ function AssetsContent() {
     };
 
     const getAssetHistory = (assetId: string) => {
-        return assetLogs
+        return assetHistory
             .filter(log => log.assetId === assetId)
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     };
@@ -1080,7 +1093,12 @@ function AssetsContent() {
                                                         <td className="py-1 px-2 text-center">
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); setCompareAsset(asset); }}
-                                                                className="p-1.5 rounded-lg transition-all border text-gray-400 border-gray-100 hover:border-brand-purple/50 bg-white hover:text-brand-purple"
+                                                                className={clsx(
+                                                                    "p-1.5 rounded-lg transition-all border shadow-sm",
+                                                                    assetsWithPhotosMap[asset.id]
+                                                                        ? "bg-orange-50 text-brand-orange border-brand-orange/30 hover:bg-orange-100"
+                                                                        : "bg-white text-gray-400 border-gray-100 hover:border-brand-purple/50 hover:text-brand-purple"
+                                                                )}
                                                             >
                                                                 <Camera className="w-3.5 h-3.5" />
                                                             </button>
@@ -1642,7 +1660,9 @@ function AssetsContent() {
                                                     {/* Timestamp Badge */}
                                                     <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-left">
                                                         <p className="text-[9px] text-white/60 font-black uppercase tracking-widest">Oleh {lastAudit.operatorName}</p>
-                                                        <p className="text-[10px] text-white font-bold">{new Date(lastAudit.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
+                                                        <p className="text-[10px] text-white font-bold">
+                                                            {new Date(lastAudit.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} • {new Date(lastAudit.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                                                        </p>
                                                     </div>
                                                 </>
                                             );
@@ -1749,8 +1769,8 @@ function AssetsContent() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-sm font-medium text-gray-900">{new Date(h.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
-                                                    <p className="text-xs text-gray-500">{new Date(h.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                                                    <p className="text-sm font-medium text-gray-900">{new Date(h.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                                    <p className="text-xs text-gray-500 font-bold">{new Date(h.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
                                                 </div>
                                             </div>
                                             {h.notes && (

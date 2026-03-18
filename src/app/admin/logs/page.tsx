@@ -48,9 +48,7 @@ export default function AdminLogsPage() {
                         <History className="w-5 h-5 text-brand-purple" />
                         Log Aktivitas Admin
                     </h1>
-                    <p className="mt-0.5 text-[9px] text-gray-400 font-semibold uppercase tracking-tighter">
-                        Audit trail seluruh aktivitas manajemen sistem dan inventaris.
-                    </p>
+
                 </div>
                 <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-brand-teal rounded-lg border border-emerald-100 text-[9px] font-bold uppercase tracking-tighter">
                     <span className="w-1.5 h-1.5 bg-brand-teal rounded-full animate-ping" />
@@ -90,12 +88,12 @@ export default function AdminLogsPage() {
             <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto max-h-[750px] custom-scrollbar">
                     <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50/50 border-b border-gray-100">
-                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left w-[110px]">Waktu Log</th>
-                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left w-[140px]">Admin / Operator</th>
-                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left">Jenis & Kejadian</th>
-                                <th className="px-2 py-2 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left">Detail Catatan</th>
+                        <thead className="sticky top-0 z-20 shadow-sm">
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                                <th className="px-2 py-2 bg-gray-50 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left w-[110px]">Waktu Log</th>
+                                <th className="px-2 py-2 bg-gray-50 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left w-[140px]">Admin / Operator</th>
+                                <th className="px-2 py-2 bg-gray-50 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left">Jenis & Kejadian</th>
+                                <th className="px-2 py-2 bg-gray-50 text-[9px] uppercase font-bold text-gray-500 tracking-tighter text-left">Detail Catatan</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -155,8 +153,8 @@ export default function AdminLogsPage() {
                                                 onClick={() => setExpandedEventId(expandedEventId === log.id ? null : log.id)}
                                             >
                                                 <div className={clsx(
-                                                    "flex flex-wrap items-center gap-1.5 transition-all duration-300",
-                                                    expandedEventId === log.id ? "whitespace-normal bg-blue-50/30 p-1 rounded" : "whitespace-nowrap truncate max-w-[200px]"
+                                                    "flex items-center gap-1.5 transition-all duration-300",
+                                                    expandedEventId === log.id ? "flex-wrap whitespace-normal bg-blue-50/30 p-1 rounded" : "flex-nowrap whitespace-nowrap truncate max-w-[600px]"
                                                 )}>
                                                     <span className={clsx(
                                                         "text-[9px] font-bold leading-none shrink-0 tracking-tighter",
@@ -201,9 +199,8 @@ export default function AdminLogsPage() {
                 </div>
             </div>
 
-            <footer className="mt-8 pt-4 border-t border-gray-100 flex justify-between items-center text-[9px] text-gray-300 font-bold uppercase tracking-tighter">
-                <span>System Security Audit v3.0</span>
-                <span>Security Logging Enabled - {filteredLogs.length} Entries</span>
+            <footer className="mt-8 pt-4 border-t border-gray-100 flex justify-end items-center text-[9px] text-gray-300 font-bold uppercase tracking-tighter">
+                <span>Logging Enabled - {filteredLogs.length} Entries</span>
             </footer>
         </div>
     );

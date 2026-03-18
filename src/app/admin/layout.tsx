@@ -45,12 +45,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const pathname = usePathname();
     const { user, logout } = useAuth();
-    const { addLog, changelogs } = useLocalDb();
+    const { addLog } = useLocalDb();
     const router = useRouter();
-
-    const unreadChangelogsCount = changelogs.filter(c => 
-        !c.readBy?.some(r => r.adminId === user?.uid)
-    ).length;
 
     const handleLogout = () => {
         addLog({
@@ -65,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <ProtectedRoute allowedRoles={["ADMIN", "CLIENT_ADMIN"]}>
-            <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
+            <div className="min-h-screen bg-gray-50 flex">
                 <ChangePasswordModal
                     isOpen={isPasswordModalOpen || (user?.role !== 'SUPER_ADMIN' && user?.needsPasswordChange === true)}
                     onClose={() => setIsPasswordModalOpen(false)}
@@ -153,12 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                         {isActive && !isCollapsed && (
                                                             <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-blue shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
                                                         )}
-                                                        {item.href === "/admin/changelog" && unreadChangelogsCount > 0 && (
-                                                            <div className={clsx(
-                                                                "w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]",
-                                                                isCollapsed ? "absolute top-2 right-2" : "ml-auto"
-                                                            )} />
-                                                        )}
+
                                                     </Link>
                                                 </li>
                                             );

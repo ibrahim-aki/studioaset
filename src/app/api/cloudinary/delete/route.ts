@@ -1,56 +1,86 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary with environment variables
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 export async function POST(req: Request) {
   try {
     const { urls } = await req.json();
 
     if (!urls || !Array.isArray(urls)) {
-      return NextResponse.json({ error: 'Invalid or missing "urls" array' }, { status: 400 });
+      return NextResponse.json({ error: 'Daftar URL tidak valid atau kosong' }, { status: 400 });
     }
 
-    if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.warn("Cloudinary API Key or Secret is missing. Skipping image deletion.");
-      return NextResponse.json({ message: 'Skipped. Missing Credentials.' }, { status: 200 });
+    // Konfigurasi dinamis di dalam fungsi (lebih aman saat runtime)
+    const cloud_name = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const api_key = process.env.CLOUDINARY_API_KEY;
+    const api_secret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!api_key || !api_secret) {
+      console.error("[CLOUD-DELETE-ERROR] API Key atau Secret Cloudinary TIDAK DITEMUKAN di Environment Server.");
+      return NextResponse.json({ 
+        error: 'Server tidak memiliki izin akses (Kredensial Cloudinary kosong). Silakan restart npm run dev BOS!' 
+      }, { status: 401 });
     }
+
+    cloudinary.config({ cloud_name, api_key, api_secret });
 
     const deletionResults = [];
 
     for (const url of urls) {
       try {
-        // Extract public_id from Cloudinary URL reliably
-        // Example URL: https://res.cloudinary.com/dxyz123/image/upload/v1234567/preset_name/filename.jpg
-        // Matches everything after /upload/ (ignoring optional /v<numbers>/) up to the file extension
-        const matches = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
-        if (!matches || !matches[1]) {
-          console.warn(`Could not extract public_id from ${url}`);
-          deletionResults.push({ url, error: 'Invalid URL format' });
-          continue;
+        if (!url) continue;
+
+        // Logika ekstraksi publicId yang mendukung folder (studioaset/login-notifications/...)
+        const parts = url.split('/');
+        const uploadIndex = parts.indexOf('upload');
+        let publicId = "";
+
+        if (uploadIndex !== -1) {
+          // Cari bagian setelah 'upload/' dan lewati versi (v123...)
+          let sliceStart = uploadIndex + 1;
+          const nextPart = parts[sliceStart];
+          if (nextPart.startsWith('v') && /^\d+$/.test(nextPart.substring(1))) {
+            sliceStart = uploadIndex + 2;
+          }
+
+          // Gabungkan sisa bagian menjadi publicId lengkap dengan folder
+          const fullPath = parts.slice(sliceStart).join('/');
+          // Buang ekstensi (.jpg, .png) paling akhir
+          publicId = decodeURIComponent(fullPath.substring(0, fullPath.lastIndexOf('.')));
         }
 
-        const publicId = decodeURIComponent(matches[1]);
+        if (!publicId) {
+            deletionResults.push({ url, error: 'Format URL tidak dikenali (Gagal ambil ID)' });
+            continue;
+        }
 
-        // Delete from Cloudinary
-        const result = await cloudinary.uploader.destroy(publicId);
-        console.log(`Cloudinary deletion for ${publicId}:`, result);
+        console.log(`[CLOUD-DELETE] Menghapus ID: ${publicId} (URL: ${url})`);
+
+        // Hapus paksa (invalidate) dari Cloudinary
+        const result = await cloudinary.uploader.destroy(publicId, { 
+            resource_type: 'image',
+            invalidate: true 
+        });
+
+        console.log(`[CLOUD-DELETE] Hasil destroy untuk ${publicId}:`, result);
         deletionResults.push({ url, publicId, result });
         
       } catch (err: any) {
-        console.error(`Failed to delete Cloudinary image: ${url}`, err);
+        console.error(`[CLOUD-DELETE] Kegagalan sistem saat menghapus ${url}:`, err);
         deletionResults.push({ url, error: err.message });
       }
     }
 
-    return NextResponse.json({ success: true, results: deletionResults }, { status: 200 });
+    // Cek apakah ada yang benar-benar berhasil terhapus (Cloudinary balas result: 'ok')
+    const hasSuccess = deletionResults.some(r => r.result?.result === 'ok');
+
+    return NextResponse.json({ 
+        success: hasSuccess, 
+        results: deletionResults,
+        message: hasSuccess ? "Terhapus!" : "Cloudinary mengabarkan ID tidak ditemukan atau gagal."
+    }, { status: 200 });
+
   } catch (error: any) {
-    console.error('Error in Cloudinary Delete API:', error);
+    console.error('CRITICAL ERROR in Cloudinary Delete API:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
