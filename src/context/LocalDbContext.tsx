@@ -13,7 +13,8 @@ import {
     where,
     getDocs,
     getDoc,
-    writeBatch
+    writeBatch,
+    arrayUnion
 } from "firebase/firestore";
 import { Activity, Loader2, X } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -110,7 +111,7 @@ export interface Checklist {
     overallNotes: string;
     roomStatus: "LIVE_NOW" | "READY_FOR_LIVE" | "NOT_READY" | "STANDBY" | "FINISHED_LIVE" | "";
     items: ChecklistItem[];
-    isRead?: boolean;
+    readBy?: { adminId: string, adminName: string, readAt: string }[];
 }
 
 export interface ChangelogEntry {
@@ -122,6 +123,7 @@ export interface ChangelogEntry {
     type: "FEAT" | "FIX" | "IMPROVE";
     changes: string[];
     visibility: "PUBLIC" | "SUPER_ADMIN";
+    readBy?: { adminId: string, adminName: string, readAt: string, role?: string }[];
 }
 
 export interface OperatorShift {
@@ -182,6 +184,7 @@ interface LocalDbContextType {
 
     changelogs: ChangelogEntry[];
     addChangelog: (entry: Omit<ChangelogEntry, "id">) => Promise<void>;
+    markChangelogAsRead: (id: string) => Promise<void>;
 
     addAsset: (asset: Omit<MasterAsset, "id" | "companyId">) => Promise<void>;
     updateAsset: (id: string, asset: Partial<Omit<MasterAsset, "id" | "companyId">>) => Promise<void>;
@@ -378,6 +381,21 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         isSystemBusy,
         previewImage,
         setPreviewImage,
+        markChangelogAsRead: async (id) => {
+            if (!user) return;
+            const currentChangelog = changelogs.find(c => c.id === id);
+            // Hanya tambah jika admin ini belum ada dalam daftar pembaca
+            if (currentChangelog && !currentChangelog.readBy?.some(r => r.adminId === user.uid)) {
+                await updateDoc(doc(db, "changelogs", id), { 
+                    readBy: arrayUnion({
+                        adminId: user.uid,
+                        adminName: user.name || "Administrator",
+                        readAt: new Date().toISOString(),
+                        role: user.role || "ADMIN"
+                    })
+                });
+            }
+        },
 
         addCompany: async (comp) => withLoading(async () => {
             const id = uuidv4();
@@ -458,7 +476,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
         addChangelog: async (entry) => {
             const id = uuidv4();
-            await setDoc(doc(db, "changelogs", id), { ...entry, id });
+            await setDoc(doc(db, "changelogs", id), { ...entry, id, readBy: [] });
         },
 
         addAsset: async (a) => withLoading(async () => {
@@ -586,7 +604,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         addChecklist: async (c) => withLoading(async () => {
             const id = uuidv4();
             const companyId = finalCompanyId;
-            await setDoc(doc(db, "checklists", id), { ...c, id, companyId, isRead: false });
+            await setDoc(doc(db, "checklists", id), { ...c, id, companyId, readBy: [] });
 
             for (const item of c.items) {
                 const currentAsset = assets.find(a => a.id === item.assetId);
@@ -614,7 +632,18 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         }),
         // Internal helper - tidak perlu loading UI
         markChecklistAsRead: async (id) => {
-            await updateDoc(doc(db, "checklists", id), { isRead: true });
+            if (!user) return;
+            const currentChecklist = checklists.find(c => c.id === id);
+            // Hanya tambah jika admin ini belum ada dalam daftar pembaca
+            if (currentChecklist && !currentChecklist.readBy?.some(r => r.adminId === user.uid)) {
+                await updateDoc(doc(db, "checklists", id), { 
+                    readBy: arrayUnion({
+                        adminId: user.uid,
+                        adminName: user.name || "Administrator",
+                        readAt: new Date().toISOString()
+                    })
+                });
+            }
         },
 
         // Internal helper - dipanggil background oleh semua fungsi lain, tidak perlu loading UI

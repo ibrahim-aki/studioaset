@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { History as HistoryIcon, Clock, ChevronRight, GitBranch, Github, Loader2 } from "lucide-react";
+import { History as HistoryIcon, Clock, ChevronRight, GitBranch, Github, Loader2, Eye } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useLocalDb } from "@/context/LocalDbContext";
 import clsx from "clsx";
 
 interface GithubCommit {
@@ -17,6 +19,8 @@ interface GithubCommit {
 }
 
 export default function ChangelogPage() {
+    const { user } = useAuth();
+    const { changelogs, markChangelogAsRead } = useLocalDb();
     const [commits, setCommits] = useState<GithubCommit[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -58,6 +62,24 @@ export default function ChangelogPage() {
         fetchCommits();
     }, []);
 
+    // Mark all changelogs as read when visiting this page
+    useEffect(() => {
+        if (changelogs.length > 0 && user) {
+            changelogs.forEach(c => {
+                if (!c.readBy?.some(r => r.adminId === user.uid)) {
+                    markChangelogAsRead(c.id);
+                }
+            });
+        }
+    }, [changelogs, user?.uid]);
+
+    // Aggregate readers from all changelogs (excluding Super Admins)
+    const allReaders = Array.from(new Set(
+        changelogs.flatMap(c => c.readBy || [])
+            .filter(r => r.role !== "SUPER_ADMIN")
+            .map(r => r.adminName)
+    ));
+
     if (loading) {
         return (
             <div className="p-12 font-mono text-[13px] text-gray-400">
@@ -68,7 +90,23 @@ export default function ChangelogPage() {
 
     return (
         <div className="p-4 sm:p-8 max-w-3xl mx-auto font-mono text-[11px] text-[#333] leading-normal uppercase">
-            <h1 className="font-bold mb-4 text-[14px]">System Updates:</h1>
+            <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-6">
+                <h1 className="font-bold text-[14px] whitespace-nowrap">System Updates:</h1>
+                {allReaders.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 opacity-60">
+                        <span className="text-[9px] font-black tracking-widest flex items-center gap-1">
+                            <Eye className="w-3 h-3" /> Seen By:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {allReaders.map((name, i) => (
+                                <span key={i} className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                                    {name}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {error && (
                 <div className="mb-4 text-rose-600">

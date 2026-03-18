@@ -228,7 +228,7 @@ export default function AdminPage() {
             {/* Top Metrics - Elevated Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
                 {[
-                    { label: "Laporan Baru", value: checklists.filter(c => c.isRead === false).length, icon: Bell, color: "from-rose-500 to-pink-500", href: "/admin/checklists" },
+                    { label: "Laporan Baru", value: checklists.filter(c => !c.readBy?.some(r => r.adminId === user?.uid) && (c as any).isRead !== true).length, icon: Bell, color: "from-rose-500 to-pink-500", href: "/admin/checklists" },
                     { label: "Unit Studio", value: roomStats.totalRooms, icon: DoorOpen, color: "from-brand-teal to-blue-500", href: "/admin/rooms" },
                     { label: "Total Aset", value: assetStats.totalAll, icon: Box, color: "from-brand-purple to-purple-400", href: "/admin/assets" },
                     { label: "Total Laporan", value: checklists.length, icon: ClipboardCheck, color: "from-brand-orange to-amber-400", href: "/admin/checklists" }
@@ -240,8 +240,8 @@ export default function AdminPage() {
                             href={stat.href}
                             className={clsx(
                                 "group relative overflow-hidden bg-white p-4 rounded-lg border transition-all duration-500",
-                                isNewReport 
-                                    ? "border-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.1)] ring-1 ring-rose-500/10" 
+                                isNewReport
+                                    ? "border-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.1)] ring-1 ring-rose-500/10"
                                     : "border-gray-100 shadow-sm hover:shadow-md"
                             )}
                         >

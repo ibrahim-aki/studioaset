@@ -15,6 +15,7 @@ export default function AdminLogsPage() {
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [filteredLogs, setFilteredLogs] = useState<AssetLog[]>([]);
     const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+    const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
     useEffect(() => {
         let docs = assetLogs.filter(log => {
@@ -149,8 +150,14 @@ export default function AdminLogsPage() {
                                             </td>
 
                                             {/* KOLOM JENIS & KEJADIAN - NO WRAP, NO AUTO-WIDTH LIMIT */}
-                                            <td className="px-2 py-1.5 tracking-tighter align-top whitespace-nowrap">
-                                                <div className="flex items-center gap-1.5">
+                                            <td 
+                                                className="px-2 py-1.5 tracking-tighter align-top cursor-pointer"
+                                                onClick={() => setExpandedEventId(expandedEventId === log.id ? null : log.id)}
+                                            >
+                                                <div className={clsx(
+                                                    "flex flex-wrap items-center gap-1.5 transition-all duration-300",
+                                                    expandedEventId === log.id ? "whitespace-normal bg-blue-50/30 p-1 rounded" : "whitespace-nowrap truncate max-w-[200px]"
+                                                )}>
                                                     <span className={clsx(
                                                         "text-[9px] font-bold leading-none shrink-0 tracking-tighter",
                                                         log.type === "MOVEMENT" ? "text-brand-orange" :

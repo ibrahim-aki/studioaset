@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useLocalDb, Location } from "@/context/LocalDbContext";
 import { Plus, Edit2, Trash2, MapPin, X, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import clsx from "clsx";
 
 export default function LocationsPage() {
     const { user } = useAuth();
@@ -12,6 +13,8 @@ export default function LocationsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ id: "", name: "", address: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [expandedLocNameId, setExpandedLocNameId] = useState<string | null>(null);
+    const [expandedAddressId, setExpandedAddressId] = useState<string | null>(null);
 
     const { locations: rawLocations, addLocation, updateLocation, deleteLocation, rooms } = useLocalDb();
 
@@ -92,7 +95,7 @@ export default function LocationsPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto">
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -152,14 +155,30 @@ export default function LocationsPage() {
 
                                         return (
                                             <tr key={loc.id} className="group bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm border border-gray-100 rounded-lg">
-                                                <td className="whitespace-nowrap py-4 px-4 text-sm font-semibold text-gray-900 rounded-l-lg border-y border-l border-gray-100">
+                                                <td 
+                                                    className="py-4 px-4 text-sm font-semibold text-gray-900 rounded-l-lg border-y border-l border-gray-100 cursor-pointer"
+                                                    onClick={() => setExpandedLocNameId(expandedLocNameId === loc.id ? null : loc.id)}
+                                                >
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                                        {loc.name}
+                                                        <div className={clsx(
+                                                            "transition-all duration-300",
+                                                            expandedLocNameId === loc.id ? "whitespace-normal bg-green-50/30 p-1 rounded" : "truncate whitespace-nowrap overflow-hidden max-w-[200px]"
+                                                        )}>
+                                                            {loc.name}
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-4 text-sm text-gray-500 border-y border-gray-100">
-                                                    {loc.address || <span className="text-gray-300 italic">Belum diatur</span>}
+                                                <td 
+                                                    className="px-4 py-4 text-sm text-gray-500 border-y border-gray-100 cursor-pointer"
+                                                    onClick={() => setExpandedAddressId(expandedAddressId === loc.id ? null : loc.id)}
+                                                >
+                                                    <div className={clsx(
+                                                        "transition-all duration-300",
+                                                        expandedAddressId === loc.id ? "whitespace-normal bg-orange-50/30 p-2 rounded border border-orange-100" : "truncate whitespace-nowrap overflow-hidden max-w-[300px]"
+                                                    )}>
+                                                        {loc.address || <span className="text-gray-300 italic">Belum diatur</span>}
+                                                    </div>
                                                 </td>
                                                 <td className="whitespace-nowrap px-4 py-4 text-sm text-center border-y border-gray-100">
                                                     <span className="text-gray-600 font-medium">

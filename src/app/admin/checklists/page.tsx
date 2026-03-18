@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useLocalDb, Checklist, ChecklistItem } from "@/context/LocalDbContext";
-import { ClipboardList, Calendar, MapPin, User, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertTriangle, AlertOctagon, Zap, Ban, ClipboardCheck, Clock, Camera, History, LayoutGrid, Search, Filter, Flag } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { ClipboardList, Calendar, MapPin, User, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertTriangle, AlertOctagon, Zap, Ban, ClipboardCheck, Clock, Camera, History, LayoutGrid, Search, Filter, Flag, Eye } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
 
 export default function ChecklistHistoryPage() {
+    const { user } = useAuth();
     const [checklists, setChecklists] = useState<Checklist[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -19,11 +21,13 @@ export default function ChecklistHistoryPage() {
         setLoading(false);
     }, [rawChecklists]);
 
-    const handleExpand = (id: string, isRead?: boolean) => {
+    const handleExpand = (id: string, checklist: Checklist) => {
         const isCurrentlyExpanded = expandedId === id;
         setExpandedId(isCurrentlyExpanded ? null : id);
 
-        if (!isCurrentlyExpanded && !isRead) {
+        const isReadByMe = checklist.readBy?.some(r => r.adminId === user?.uid) || (checklist as any).isRead === true;
+
+        if (!isCurrentlyExpanded && !isReadByMe) {
             markChecklistAsRead(id);
         }
     };
@@ -116,7 +120,7 @@ export default function ChecklistHistoryPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto">
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -157,7 +161,7 @@ export default function ChecklistHistoryPage() {
                                         <tr
                                             className={clsx(
                                                 "group hover:bg-orange-50/10 transition-all duration-150 border-b border-gray-50 last:border-0",
-                                                report.isRead === false && "bg-brand-purple/[0.02]"
+                                                (!report.readBy?.some(r => r.adminId === user?.uid) && (report as any).isRead !== true) && "bg-brand-purple/[0.02]"
                                             )}
                                         >
                                             <td className="px-4 py-3 whitespace-nowrap align-top">
@@ -170,7 +174,7 @@ export default function ChecklistHistoryPage() {
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="text-[11px] font-semibold text-gray-900 uppercase tracking-tighter">{report.roomName}</span>
-                                                        {report.isRead === false && (
+                                                        {(!report.readBy?.some(r => r.adminId === user?.uid) && (report as any).isRead !== true) && (
                                                             <span className="bg-brand-purple text-[8px] font-semibold px-1 py-0.5 rounded text-white uppercase tracking-widest">Baru</span>
                                                         )}
                                                     </div>
@@ -198,7 +202,7 @@ export default function ChecklistHistoryPage() {
                                             </td>
                                             <td className="px-4 py-3 text-right align-top">
                                                 <button
-                                                    onClick={() => handleExpand(report.id, report.isRead)}
+                                                    onClick={() => handleExpand(report.id, report)}
                                                     className={clsx(
                                                         "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-tighter transition-all",
                                                         expandedId === report.id
@@ -214,7 +218,7 @@ export default function ChecklistHistoryPage() {
                                         {expandedId === report.id && (
                                             <tr className="bg-gray-50/80 border-b border-gray-100 animate-in slide-in-from-top-2 duration-300">
                                                 <td colSpan={6} className="px-6 py-8">
-                                                    <div className="max-w-5xl mx-auto">
+                                                    <div className="max-w-full mx-auto">
                                                         <div className="flex items-center justify-between mb-6">
                                                             <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
                                                                 <ClipboardCheck className="w-4 h-4 text-brand-purple" />
@@ -282,6 +286,28 @@ export default function ChecklistHistoryPage() {
                                                                 </p>
                                                             </div>
                                                         )}
+ 
+                                                        {/* Status Dibaca (Audit Trail) */}
+                                                        <div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap items-center gap-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <Eye className="w-3.5 h-3.5 text-gray-400" />
+                                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Dibaca Oleh:</span>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {report.readBy && report.readBy.length > 0 ? (
+                                                                    report.readBy.map((reader, idx) => (
+                                                                        <div key={idx} className="flex flex-col bg-white border border-gray-100 px-3 py-1.5 rounded-lg shadow-sm">
+                                                                            <span className="text-[10px] font-bold text-gray-900">{reader.adminName}</span>
+                                                                            <span className="text-[8px] text-gray-400 font-medium">
+                                                                                {new Date(reader.readAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}, {new Date(reader.readAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))
+                                                                ) : (
+                                                                    <span className="text-[10px] text-gray-400 italic">{(report as any).isRead ? "Sistem Lama (Sudah Dibaca)" : "Belum ada yang membaca"}</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>

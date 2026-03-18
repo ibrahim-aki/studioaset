@@ -5,6 +5,7 @@ import { useLocalDb, Room } from "@/context/LocalDbContext";
 import { Plus, Edit2, Trash2, DoorOpen, X, Loader2, Video, MapPin, ChevronDown, ChevronUp, Filter, Lock } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import clsx from "clsx";
 
 export default function RoomsPage() {
     const { user } = useAuth();
@@ -15,6 +16,8 @@ export default function RoomsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [locationFilter, setLocationFilter] = useState("ALL");
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+    const [expandedRoomNameId, setExpandedRoomNameId] = useState<string | null>(null);
+    const [expandedDescId, setExpandedDescId] = useState<string | null>(null);
     const filterRef = useRef<HTMLDivElement>(null);
 
     const { rooms: rawRooms, locations: rawLocations, roomAssets, checklists, addRoom, updateRoom, deleteRoom } = useLocalDb();
@@ -113,7 +116,7 @@ export default function RoomsPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto">
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -216,11 +219,19 @@ export default function RoomsPage() {
                                         const locName = rawLocations.find(l => l.id === room.locationId)?.name || "-";
                                         return (
                                             <tr key={room.id} className="group bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm border border-gray-100 rounded-lg">
-                                                <td className="py-4 px-4 rounded-l-lg border-y border-l border-gray-100">
+                                                <td 
+                                                    className="py-4 px-4 rounded-l-lg border-y border-l border-gray-100 cursor-pointer"
+                                                    onClick={() => setExpandedRoomNameId(expandedRoomNameId === room.id ? null : room.id)}
+                                                >
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-2 h-2 rounded-full bg-brand-blue"></div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-semibold text-gray-900">{room.name}</span>
+                                                            <div className={clsx(
+                                                                "text-sm font-semibold text-gray-900 transition-all duration-300",
+                                                                expandedRoomNameId === room.id ? "whitespace-normal bg-blue-50/30 p-1 rounded" : "truncate whitespace-nowrap overflow-hidden max-w-[180px]"
+                                                            )}>
+                                                                {room.name}
+                                                            </div>
                                                             <span className="text-[10px] text-gray-400 uppercase tracking-tighter">#{room.id.substring(0, 8)}</span>
                                                         </div>
                                                     </div>
@@ -232,7 +243,7 @@ export default function RoomsPage() {
                                                     {(() => {
                                                         const latestCheck = checklists.find(c => c.roomId === room.id);
                                                         const status = latestCheck?.roomStatus || "";
-
+ 
                                                         if (status === "LIVE_NOW") return (
                                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 ring-1 ring-green-600/20">
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-600 mr-1.5 animate-pulse"></span>
@@ -266,8 +277,16 @@ export default function RoomsPage() {
                                                         <span className="text-gray-400 text-[10px] font-medium uppercase tracking-tight">Perangkat</span>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-4 text-sm text-gray-400 border-y border-gray-100 italic">
-                                                    {room.description || "-"}
+                                                <td 
+                                                    className="py-4 px-4 text-sm text-gray-400 border-y border-gray-100 italic cursor-pointer"
+                                                    onClick={() => setExpandedDescId(expandedDescId === room.id ? null : room.id)}
+                                                >
+                                                    <div className={clsx(
+                                                        "transition-all duration-300",
+                                                        expandedDescId === room.id ? "whitespace-normal bg-orange-50/30 p-2 rounded border border-orange-100 not-italic text-gray-600" : "truncate whitespace-nowrap overflow-hidden max-w-[250px]"
+                                                    )}>
+                                                        {room.description || "-"}
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 px-4 whitespace-nowrap text-right rounded-r-lg border-y border-r border-gray-100">
                                                     <div className="flex items-center justify-end gap-1">

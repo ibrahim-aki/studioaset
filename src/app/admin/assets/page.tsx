@@ -96,6 +96,7 @@ function AssetsContent() {
     const [deletePassword, setDeletePassword] = useState("");
     const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+    const [expandedNameId, setExpandedNameId] = useState<string | null>(null);
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
     const [importProgress, setImportProgress] = useState<{ current: number; total: number; isImporting: boolean }>({ current: 0, total: 0, isImporting: false });
 
@@ -1017,17 +1018,17 @@ function AssetsContent() {
                                         <thead className="sticky top-0 z-[60] border-b-2 border-gray-200">
                                             <tr className="text-gray-500">
                                                 <th scope="col" className="py-3 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[40px] bg-gray-100">No</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Kode</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[180px] bg-gray-100">Identitas Aset</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[140px] bg-gray-100">Kode</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[280px] bg-gray-100">Identitas Aset</th>
                                                 <th scope="col" className="py-3 px-2 text-center text-[9px] font-bold uppercase tracking-wider w-[50px] bg-gray-100">Foto</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[110px] bg-gray-100">Kategori</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[160px] bg-gray-100">Kategori</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px] bg-gray-100">Tgl Masuk</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[75px] bg-gray-100">Umur Aset</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Cabang</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[100px] bg-gray-100">Ruangan</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[120px] bg-gray-100">Umur Aset</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[120px] bg-gray-100">Cabang</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[120px] bg-gray-100">Ruangan</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[90px] bg-gray-100">Servis</th>
                                                 <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider w-[80px] bg-gray-100">Kondisi</th>
-                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider bg-gray-100">Catatan</th>
+                                                <th scope="col" className="py-3 px-2 text-left text-[9px] font-bold uppercase tracking-wider bg-gray-100 min-w-[200px]">Catatan</th>
                                                 <th scope="col" className="relative py-3 px-4 text-right text-[9px] font-bold uppercase tracking-wider w-[60px] bg-gray-100">Aksi</th>
                                             </tr>
                                         </thead>
@@ -1065,8 +1066,16 @@ function AssetsContent() {
                                                         <td className="py-1 px-2 text-[10px] font-mono font-bold text-brand-purple whitespace-nowrap truncate">
                                                             {asset.assetCode || "-"}
                                                         </td>
-                                                        <td className="py-1 px-2 truncate">
-                                                            <span className="text-[10px] font-semibold text-gray-900 whitespace-nowrap" title={asset.name}>{asset.name}</span>
+                                                        <td 
+                                                            className="py-1 px-2 cursor-pointer"
+                                                            onClick={() => setExpandedNameId(expandedNameId === asset.id ? null : asset.id)}
+                                                        >
+                                                            <div className={clsx(
+                                                                "text-[10px] font-semibold text-gray-900 transition-all duration-300",
+                                                                expandedNameId === asset.id ? "whitespace-normal bg-blue-50/50 p-1 rounded border border-blue-100" : "truncate whitespace-nowrap"
+                                                            )}>
+                                                                {asset.name}
+                                                            </div>
                                                         </td>
                                                         <td className="py-1 px-2 text-center">
                                                             <button
@@ -1322,7 +1331,7 @@ function AssetsContent() {
                 isModalOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm shadow-2xl" onClick={closeModal}></div>
-                        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
+                        <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h2 className="text-xl font-bold text-gray-900 tracking-tight">
