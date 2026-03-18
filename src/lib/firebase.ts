@@ -16,7 +16,6 @@ const firebaseConfig = {
 const isValidConfig = firebaseConfig.apiKey &&
     firebaseConfig.projectId &&
     firebaseConfig.apiKey !== "your_api_key_here";
-
 let app: FirebaseApp | undefined;
 let auth: Auth | any;
 let db: Firestore | any;

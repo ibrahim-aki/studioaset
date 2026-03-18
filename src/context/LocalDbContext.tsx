@@ -203,6 +203,7 @@ interface LocalDbContextType {
     operatorShifts: OperatorShift[];
     addShift: (shift: Omit<OperatorShift, "id" | "companyId" | "operatorId" | "operatorName" | "operatorPhone" | "status" | "createdAt">) => Promise<string>;
     endShift: (id: string) => Promise<void>;
+    updateShift: (id: string, data: Partial<OperatorShift>) => Promise<void>;
 
     // Global UI State
     isSystemBusy: boolean;
@@ -783,6 +784,9 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const target = operatorShifts.find(s => s.id === id);
             await updateDoc(doc(db, "operatorShifts", id), { status: "COMPLETED" });
             if (target) await api.addLog({ type: "AUTH", toValue: "Selesai Tugas", operatorName: target.operatorName, companyId: target.companyId, notes: `End shift` });
+        }),
+        updateShift: async (id, data) => withLoading(async () => {
+            await updateDoc(doc(db, "operatorShifts", id), data);
         })
     };
 

@@ -372,66 +372,57 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
 
     return (
         <div className="pb-10">
-            <Link href="/operator/rooms" className="inline-flex items-center text-sm font-bold text-gray-400 hover:text-gray-600 mb-4 transition-colors">
-                <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
+            <Link href="/operator/rooms" className="inline-flex items-center text-[10px] font-bold text-gray-400 hover:text-gray-600 mb-2 transition-colors uppercase tracking-[0.2em]">
+                <ArrowLeft className="w-3 h-3 mr-1" /> Kembali
             </Link>
 
-            <div className="bg-gradient-to-tr from-purple-600 to-blue-600 p-6 rounded-3xl shadow-lg text-white mb-4">
-                <h1 className="text-2xl font-black mb-1">Checklist: {roomName}</h1>
-                <p className="opacity-90 text-sm">Silakan pilih status dari tiap properti di bawah ini dengan sejujurnya.</p>
+            <div className="bg-gradient-to-tr from-brand-purple to-brand-blue p-5 rounded-2xl shadow-md text-white mb-3">
+                <h1 className="text-xl font-black mb-0.5 tracking-tight">Ruang: {roomName}</h1>
+                <p className="opacity-80 text-[10px] font-medium italic">Laporkan kondisi aset dengan teliti</p>
             </div>
 
             {/* Room History Section */}
-            <div className="mb-6 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <button
                     type="button"
                     onClick={() => setShowHistory(!showHistory)}
-                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
                 >
                     <div className="flex items-center gap-2">
-                        <History className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-black text-gray-900 uppercase tracking-widest">Riwayat Update Ruangan</span>
-                        <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{roomHistory.length}</span>
+                        <History className="w-4 h-4 text-brand-purple" />
+                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Riwayat Update</span>
+                        <span className="bg-brand-purple/5 text-brand-purple text-[9px] px-1.5 py-0.5 rounded-full font-bold">{roomHistory.length}</span>
                     </div>
-                    {showHistory ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                    {showHistory ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                 </button>
 
                 {showHistory && (
-                    <div className="px-6 pb-6 pt-2 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    <div className="px-5 pb-5 pt-1 space-y-3 animate-in slide-in-from-top-1 duration-200">
                         {roomHistory.map((h, i) => (
-                            <div key={i} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                            <div key={i} className="flex flex-col gap-1.5 p-3 bg-gray-50 rounded-xl border border-gray-100 text-[10px]">
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight">
-                                        <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
-                                            <User className="w-2.5 h-2.5" /> {h.operatorName}
+                                    <div className="flex items-center gap-2 font-bold uppercase tracking-tight">
+                                        <span className="flex items-center gap-1 text-brand-purple bg-white px-1.5 py-0.5 rounded border border-brand-purple/5">
+                                            <User className="w-2.5 h-2.5" /> {h.operatorName.split(' ')[0]}
                                         </span>
-                                        <span className="flex items-center gap-1 text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                                            <Clock className="w-2.5 h-2.5" /> {getFullDateTime(h.timestamp)} {getRelativeTime(h.timestamp) && `(${getRelativeTime(h.timestamp)})`}
-                                        </span>
+                                        <span className="text-gray-400">{getRelativeTime(h.timestamp)}</span>
                                     </div>
                                     <span className={clsx(
-                                        "text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter",
-                                        h.roomStatus === 'LIVE_NOW' ? 'bg-emerald-100 text-emerald-700' :
-                                            h.roomStatus === 'READY_FOR_LIVE' ? 'bg-green-100 text-green-700' :
-                                                h.roomStatus === 'NOT_READY' ? 'bg-rose-100 text-rose-700' :
-                                                    h.roomStatus === 'STANDBY' ? 'bg-amber-100 text-amber-700' :
-                                                        h.roomStatus === 'FINISHED_LIVE' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                                        "text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter",
+                                        h.roomStatus === 'LIVE_NOW' ? 'bg-emerald-500 text-white' :
+                                            h.roomStatus === 'READY_FOR_LIVE' ? 'bg-green-500 text-white' :
+                                                h.roomStatus === 'NOT_READY' ? 'bg-rose-500 text-white' :
+                                                    h.roomStatus === 'STANDBY' ? 'bg-amber-500 text-white' :
+                                                        h.roomStatus === 'FINISHED_LIVE' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
                                     )}>
-                                        {h.roomStatus === 'LIVE_NOW' ? 'LIVE SEKARANG' :
-                                            h.roomStatus === 'READY_FOR_LIVE' ? 'SIAP LIVE' :
-                                                h.roomStatus === 'NOT_READY' ? 'TIDAK BISA LIVE' :
-                                                    h.roomStatus === 'STANDBY' ? 'STANDBY' :
-                                                        h.roomStatus === 'FINISHED_LIVE' ? 'SELESAI LIVE' : 'UNKNOWN'}
+                                        {h.roomStatus?.replace('_', ' ')}
                                     </span>
                                 </div>
                                 {h.overallNotes && (
-                                    <p className="text-xs text-gray-600 italic font-medium leading-relaxed">&ldquo;{h.overallNotes}&rdquo;</p>
+                                    <p className="text-gray-500 italic font-medium leading-relaxed">&ldquo;{h.overallNotes}&rdquo;</p>
                                 )}
                             </div>
                         ))}
-                        {roomHistory.length === 0 && (
-                            <p className="text-sm text-gray-400 font-bold text-center py-4 uppercase italic">Belum ada riwayat pengecekan</p>
-                        )}
                     </div>
                 )}
             </div>
@@ -439,30 +430,30 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
             <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
                 <div className="space-y-4">
                     {/* Feature: Pull from Warehouse */}
-                    <div className="mb-4">
+                    <div className="mb-2">
                         <button
                             type="button"
                             onClick={() => setIsAddingFromWarehouse(!isAddingFromWarehouse)}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-3xl border-2 border-dashed border-purple-200 transition-all font-black text-sm uppercase tracking-widest"
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-brand-purple/5 hover:bg-brand-purple/10 text-brand-purple rounded-xl border border-dashed border-brand-purple/20 transition-all font-bold text-[11px] uppercase tracking-[0.2em]"
                         >
-                            {isAddingFromWarehouse ? <XCircle className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                            {isAddingFromWarehouse ? "Batal Menambah" : "Tarik Aset Dari Gudang"}
+                            {isAddingFromWarehouse ? <XCircle className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                            {isAddingFromWarehouse ? "Batal" : "Tambah Barang Dari Gudang"}
                         </button>
 
                         {isAddingFromWarehouse && (
-                            <div className="mt-3 p-4 bg-white rounded-3xl border-2 border-purple-200 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-                                <div className="relative mb-3">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <div className="mt-2 p-3 bg-white rounded-xl border border-brand-purple/10 shadow-lg animate-in zoom-in-95 duration-200">
+                                <div className="relative mb-2">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                                     <input
                                         type="text"
-                                        placeholder="Cari aset di gudang cabang..."
+                                        placeholder="Cari alat..."
                                         value={warehouseSearchTerm}
                                         onChange={(e) => setWarehouseSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-purple-200 outline-none"
+                                        className="w-full pl-9 pr-3 py-2 bg-gray-50 border-none rounded-lg text-xs font-bold focus:ring-1 focus:ring-brand-purple/20 outline-none"
                                     />
                                 </div>
 
-                                <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
+                                <div className="max-h-48 overflow-y-auto space-y-1.5 px-0.5 custom-scrollbar">
                                     {rawAssets
                                         .filter(a => a.locationId === locationId && !rawRoomAssets.some(ra => ra.assetId === a.id))
                                         .filter(a => a.status === "BAIK" || a.status === "RUSAK")
@@ -475,179 +466,147 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                                                 key={asset.id}
                                                 type="button"
                                                 onClick={() => addAssetFromWarehouse(asset.id, asset.name)}
-                                                className="w-full flex items-center justify-between p-3 hover:bg-purple-50 rounded-2xl border border-gray-100 transition-colors group"
+                                                className="w-full flex items-center justify-between p-2.5 hover:bg-brand-purple/5 rounded-lg border border-gray-50 transition-colors group"
                                             >
-                                                <div className="flex flex-col items-start gap-1 text-left">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-black text-gray-900 group-hover:text-purple-700 leading-tight">{asset.name}</span>
-                                                        <span className={clsx(
-                                                            "text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                                                            asset.status === "BAIK" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                                                        )}>
-                                                            {asset.status}
-                                                        </span>
-                                                    </div>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase">{asset.assetCode || 'NO-CODE'} • {asset.category}</span>
+                                                <div className="flex flex-col items-start gap-0.5 text-left">
+                                                    <span className="text-[11px] font-bold text-gray-900 group-hover:text-brand-purple leading-tight">{asset.name}</span>
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{asset.assetCode || 'NO-CODE'} • {asset.category}</span>
                                                 </div>
-                                                <div className="bg-purple-100 p-1.5 rounded-lg text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                                                <div className="text-brand-purple/40 group-hover:text-brand-purple transition-all">
                                                     <Plus className="w-4 h-4" />
                                                 </div>
                                             </button>
                                         ))
                                     }
-                                    {rawAssets.filter(a => a.locationId === locationId && !rawRoomAssets.some(ra => ra.assetId === a.id) && (a.status === "BAIK" || a.status === "RUSAK")).length === 0 && (
-                                        <p className="text-center py-6 text-xs font-bold text-gray-400 italic">Gudang kosong atau semua aset sudah terdistribusi.</p>
-                                    )}
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {checklist.length === 0 ? (
-                        <div className="text-center p-10 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 text-gray-400">
-                            <Package className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                            <p className="text-sm font-black uppercase tracking-widest">Belum ada perlengkapan</p>
-                            <p className="text-[10px] mt-1 font-bold uppercase tracking-tight">Gunakan tombol di atas untuk menarik barang dari gudang cabang.</p>
+                        <div className="text-center p-8 bg-gray-50 rounded-2xl border border-dashed border-gray-100 text-gray-300">
+                            <Package className="w-8 h-8 mx-auto mb-2 opacity-10" />
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Ruangan Kosong</p>
                         </div>
                     ) : (
                         checklist.map((item, idx) => (
-                            <div key={item.assetId} className="bg-white rounded-[2rem] p-4 shadow-sm border border-gray-100/80 group">
+                            <div key={item.assetId} className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100/80 group">
                                 <div className="flex flex-col gap-3">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center font-black text-xs group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-6 h-6 rounded-lg bg-gray-100 text-gray-400 flex items-center justify-center font-black text-[10px] group-hover:bg-brand-purple/5 group-hover:text-brand-purple transition-all">
                                                 {idx + 1}
                                             </div>
                                             <div>
-                                                <h3 className="font-black text-gray-900 text-base tracking-tight">{item.assetName}</h3>
+                                                <h3 className="font-bold text-gray-900 text-[13px] tracking-tight leading-tight">{item.assetName}</h3>
                                                 {(() => {
                                                     const master = rawAssets.find(ma => ma.id === item.assetId);
-                                                    const isClientAsset = master?.category?.toLowerCase().includes("client asset") ||
-                                                        master?.category?.toLowerCase().includes("client aset");
-                                                    if (isClientAsset) return <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">(Opsional)</span>;
+                                                    if (master?.category?.toLowerCase().includes("client")) return <span className="text-[8px] font-bold text-brand-purple bg-brand-purple/5 px-1 rounded-sm uppercase tracking-tighter">Client Asset</span>;
                                                     return null;
                                                 })()}
                                             </div>
                                         </div>
                                         {!assets.some(a => a.assetId === item.assetId) && (
-                                            <span className="text-[8px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-widest">Baru dari Gudang</span>
+                                            <span className="text-[7px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">BARU</span>
                                         )}
                                     </div>
-                                    {/* Rest of mapping as usual */}
-                                    <div className="flex flex-col gap-1.5 bg-gray-50 p-1.5 rounded-[1.25rem]">
-                                        <div className="flex items-center gap-1.5">
-                                            {[
-                                                { id: 'BAIK', label: 'BAIK', color: 'green', icon: CheckCircle2 },
-                                                { id: 'RUSAK', label: 'RUSAK', color: 'amber', icon: AlertTriangle },
-                                                { id: 'MATI', label: 'MATI', color: 'rose', icon: XCircle },
-                                                { id: 'HILANG', label: 'HILANG', color: 'slate', icon: AlertOctagon }
-                                            ].map(st => (
-                                                <button
-                                                    key={st.id}
-                                                    type="button"
-                                                    onClick={() => updateItemStatus(item.assetId, st.id as ChecklistItem["status"])}
-                                                    className={clsx(
-                                                        "flex-1 flex items-center justify-center gap-1.5 text-[10px] font-black px-3 py-2.5 rounded-xl transition-all uppercase tracking-tight border-2",
-                                                        item.status === st.id
-                                                            ? st.color === 'green' ? "bg-green-500 border-green-500 text-white shadow-md shadow-green-200 scale-105"
-                                                                : st.color === 'amber' ? "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-200 scale-105"
-                                                                    : st.color === 'rose' ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200 scale-105"
-                                                                        : "bg-slate-600 border-slate-600 text-white shadow-md shadow-slate-200 scale-105"
-                                                            : "bg-white border-gray-100 text-gray-400 hover:border-gray-200 hover:text-gray-600 shadow-sm"
-                                                    )}
-                                                >
-                                                    <st.icon className={clsx("w-3.5 h-3.5", item.status === st.id ? "text-white" : "opacity-40")} />
-                                                    <span className="xs:inline">{st.label}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                        {item.status === "MATI" && item.movedToRoomId !== "GL-WAREHOUSE" && (
-                                            <div className="px-3 py-1 bg-rose-50 border border-rose-100 rounded-lg flex items-center gap-2 animate-pulse">
-                                                <AlertOctagon className="w-3 h-3 text-rose-600" />
-                                                <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight">Wajib Kembalikan ke Gudang!</span>
-                                            </div>
-                                        )}
+                                    {/* Status Selector - Compact Row */}
+                                    <div className="flex items-center gap-1 p-1 bg-gray-50 rounded-xl">
+                                        {[
+                                            { id: 'BAIK', label: 'BAIK', color: 'green', icon: CheckCircle2 },
+                                            { id: 'RUSAK', label: 'RUSAK', color: 'amber', icon: AlertTriangle },
+                                            { id: 'MATI', label: 'MATI', color: 'rose', icon: XCircle },
+                                            { id: 'HILANG', label: 'HILANG', color: 'slate', icon: AlertOctagon }
+                                        ].map(st => (
+                                            <button
+                                                key={st.id}
+                                                type="button"
+                                                onClick={() => updateItemStatus(item.assetId, st.id as ChecklistItem["status"])}
+                                                className={clsx(
+                                                    "flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg transition-all border-2",
+                                                    item.status === st.id
+                                                        ? st.color === 'green' ? "bg-green-500 border-green-500 text-white shadow-lg shadow-green-200"
+                                                            : st.color === 'amber' ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-200"
+                                                                : st.color === 'rose' ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-200"
+                                                                    : "bg-slate-600 border-slate-600 text-white shadow-lg shadow-slate-200"
+                                                        : "bg-white border-transparent text-gray-300 hover:text-gray-500"
+                                                )}
+                                            >
+                                                <st.icon className={clsx("w-3.5 h-3.5 mb-0.5", item.status === st.id ? "text-white" : "opacity-30")} />
+                                                <span className="text-[8px] font-black tracking-tighter uppercase">{st.label}</span>
+                                            </button>
+                                        ))}
                                     </div>
 
-                                    <div className="grid gap-3 transition-all duration-300 grid-cols-1 md:grid-cols-2">
-                                        <div className="relative">
+                                    {item.status === "MATI" && item.movedToRoomId !== "GL-WAREHOUSE" && (
+                                        <div className="px-3 py-1 bg-rose-50 border border-rose-100 rounded-lg flex items-center gap-2 animate-pulse">
+                                            <AlertOctagon className="w-3 h-3 text-rose-600" />
+                                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight">Wajib Kenbali Ke Gudang!</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 relative">
                                             <input
                                                 type="text"
-                                                placeholder="Catatan kondisi..."
+                                                placeholder="Catatan..."
                                                 required={item.status !== "BAIK" && item.status !== ""}
                                                 value={item.notes}
                                                 onChange={(e) => updateItemNotes(item.assetId, e.target.value)}
-                                                className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:bg-white focus:border-purple-200 focus:outline-none transition-all"
+                                                className="w-full bg-gray-50 border border-transparent rounded-lg px-3 py-2 text-[10px] font-medium text-gray-900 placeholder-gray-400 focus:bg-white focus:border-brand-purple/20 focus:outline-none transition-all"
                                             />
                                         </div>
-
-                                        <div className="relative">
+                                        <div className="flex-1 relative">
                                             <select
                                                 value={item.movedToRoomId || ""}
                                                 onChange={(e) => updateItemMovedToRoom(item.assetId, e.target.value)}
-                                                className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-2.5 text-xs text-gray-900 shadow-sm focus:bg-white focus:border-purple-200 focus:outline-none transition-all"
+                                                className="w-full bg-gray-50 border border-transparent rounded-lg px-2 py-2 text-[10px] font-bold text-gray-600 focus:bg-white focus:border-brand-purple/20 focus:outline-none transition-all appearance-none"
                                             >
-                                                <option value="">&rarr; Tetap di {roomName}</option>
-                                                <option value="GL-WAREHOUSE">&larr; Kembalikan ke Gudang</option>
+                                                <option value="">&rarr; Lokasi: {roomName.split(' ')[0]}</option>
+                                                <option value="GL-WAREHOUSE">&larr; Balik Gudang</option>
                                                 {rawRooms
                                                     .filter(r => r.locationId === locationId && r.id !== roomId)
                                                     .map(room => (
-                                                        <option key={room.id} value={room.id}>
-                                                            Geser ke: {room.name}
-                                                        </option>
+                                                        <option key={room.id} value={room.id}>&rarr; Pindah: {room.name.split(' ')[0]}</option>
                                                     ))
                                                 }
                                             </select>
                                         </div>
                                     </div>
 
-                                    {/* Action Box: Photo Capture (Hanya muncul jika diaktifkan di Super Admin) */}
+                                    {/* Action Box: Photo Capture - Compact */}
                                     {currentCompany?.requireChecklistPhoto && (
-                                        <div className="mt-2">
+                                        <div className="pt-1">
                                             {item.photoUrl ? (
-                                                <div className="relative w-full h-40 rounded-2xl overflow-hidden border-2 border-green-500 shadow-inner group/photo">
-                                                    <img src={item.photoUrl} alt="Bukti Foto" className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group/photo:opacity-100 transition-opacity">
+                                                <div className="relative w-full h-36 rounded-xl overflow-hidden border border-emerald-500/20 shadow-inner group/photo">
+                                                    <img src={item.photoUrl} alt="Bukti" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group/photo:opacity-100 transition-opacity backdrop-blur-[2px]">
                                                         <button 
                                                             type="button"
                                                             onClick={() => setChecklist(prev => prev.map(i => i.assetId === item.assetId ? { ...i, photoUrl: "" } : i))}
-                                                            className="bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md text-white transition-all"
+                                                            className="bg-rose-500 text-white p-2 rounded-lg shadow-lg"
                                                         >
-                                                            <Trash2 className="w-5 h-5" />
+                                                            <Trash2 className="w-4 h-4" />
                                                         </button>
-                                                    </div>
-                                                    <div className="absolute bottom-2 left-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
-                                                        Foto Tersimpan
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <label className={clsx(
-                                                    "w-full h-32 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
+                                                    "w-full h-16 flex items-center justify-center gap-3 rounded-xl border border-dashed transition-all cursor-pointer",
                                                     uploadingAssetId === item.assetId 
-                                                        ? "bg-gray-50 border-purple-200" 
-                                                        : "bg-purple-50/50 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+                                                        ? "bg-gray-50 border-brand-purple/20" 
+                                                        : "bg-brand-purple/5 border-brand-purple/10 hover:bg-brand-purple/10"
                                                 )}>
                                                     {uploadingAssetId === item.assetId ? (
-                                                        <div className="flex flex-col items-center animate-pulse">
-                                                            <Loader2 className="w-6 h-6 animate-spin text-purple-600 mb-1" />
-                                                            <span className="text-[10px] font-black text-purple-600 uppercase">Mengompres & Upload...</span>
-                                                        </div>
+                                                        <Loader2 className="w-4 h-4 animate-spin text-brand-purple" />
                                                     ) : (
                                                         <>
-                                                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                                                                <Camera className="w-6 h-6" />
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <p className="text-[11px] font-black text-purple-700 uppercase tracking-tight">Ambil Foto Aset</p>
-                                                                <p className="text-[9px] text-purple-400 font-bold uppercase">(Wajib Kamera)</p>
-                                                            </div>
+                                                            <Camera className="w-4 h-4 text-brand-purple/50" />
+                                                            <span className="text-[10px] font-bold text-brand-purple/70 uppercase">Ambil Bukti Foto</span>
                                                         </>
                                                     )}
                                                     <input 
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        capture="environment" 
-                                                        className="hidden" 
+                                                        type="file" accept="image/*" capture="environment" className="hidden" 
                                                         onChange={(e) => e.target.files?.[0] && handlePhotoCapture(item.assetId, e.target.files[0])}
                                                         disabled={!!uploadingAssetId}
                                                     />
@@ -662,170 +621,85 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                 </div>
 
                 {assets.length > 0 && (
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50">
-                        <label className="block text-sm font-bold text-gray-900 mb-4 flex items-center justify-between">
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100/50">
+                        <label className="block text-[11px] font-black uppercase text-gray-900 tracking-widest mb-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-purple-600" /> Status Kesiapan Ruangan
+                                <Zap className="w-4 h-4 text-brand-purple" /> Status Ruangan
                             </div>
                             {isLockedToFinished && (
-                                <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 animate-pulse">
-                                    LIVE CLOSING REQUIRED
-                                </span>
+                                <span className="text-[8px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full animate-pulse border border-rose-100">Live Closing Required</span>
                             )}
                         </label>
 
                         {isLockedToFinished && (
-                            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
-                                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
-                                    <AlertTriangle className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-black text-amber-900 uppercase tracking-tight">Sesi Live Belum Ditutup</p>
-                                    <p className="text-[10px] text-amber-700 font-medium leading-relaxed mt-1">
-                                        Status terakhir ruangan ini adalah <span className="font-bold underline">SEDANG LIVE</span>. Anda wajib memilih status <span className="font-bold">SELESAI LIVE</span> untuk menandai berakhirnya sesi sebelum bisa mengubah ke status lain di checklist berikutnya.
-                                    </p>
-                                </div>
+                            <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-amber-700 font-medium leading-tight">
+                                    Wajib pilih <span className="font-bold underline">Selesai Live</span> untuk menutup sesi sebelumnya.
+                                </p>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 gap-3">
-                            <button
-                                type="button"
-                                disabled={isLockedToFinished}
-                                onClick={() => setRoomStatus("LIVE_NOW")}
-                                className={clsx(
-                                    "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
-                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
-                                    roomStatus === "LIVE_NOW"
-                                        ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
-                                        : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
-                                )}
-                            >
-                                <div className={clsx(
-                                    "w-10 h-10 rounded-full flex items-center justify-center",
-                                    roomStatus === "LIVE_NOW" ? "bg-emerald-500 text-white" : "bg-gray-200 text-gray-400"
-                                )}>
-                                    <Video className="w-6 h-6" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-sm uppercase leading-tight">Live Sekarang</p>
-                                    <p className="text-xs opacity-70 text-nowrap">Studio sedang aktif menyiarkan live</p>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={isLockedToFinished}
-                                onClick={() => setRoomStatus("READY_FOR_LIVE")}
-                                className={clsx(
-                                    "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
-                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
-                                    roomStatus === "READY_FOR_LIVE"
-                                        ? "bg-green-50 border-green-500 text-green-700 shadow-sm"
-                                        : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
-                                )}
-                            >
-                                <div className={clsx(
-                                    "w-10 h-10 rounded-full flex items-center justify-center",
-                                    roomStatus === "READY_FOR_LIVE" ? "bg-green-500 text-white" : "bg-gray-200 text-gray-400"
-                                )}>
-                                    <CheckCircle2 className="w-6 h-6" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-sm uppercase leading-tight">Siap Live</p>
-                                    <p className="text-xs opacity-70">Studio siap digunakan 100%</p>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={isLockedToFinished}
-                                onClick={() => setRoomStatus("NOT_READY")}
-                                className={clsx(
-                                    "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
-                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
-                                    roomStatus === "NOT_READY"
-                                        ? "bg-rose-50 border-rose-500 text-rose-700 shadow-sm"
-                                        : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
-                                )}
-                            >
-                                <div className={clsx(
-                                    "w-10 h-10 rounded-full flex items-center justify-center",
-                                    roomStatus === "NOT_READY" ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-400"
-                                )}>
-                                    <Ban className="w-6 h-6" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-sm uppercase leading-tight">Tidak Bisa Live</p>
-                                    <p className="text-xs opacity-70">Ada kerusakan fatal / kendala teknis</p>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={isLockedToFinished}
-                                onClick={() => setRoomStatus("STANDBY")}
-                                className={clsx(
-                                    "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
-                                    isLockedToFinished && "opacity-40 grayscale cursor-not-allowed",
-                                    roomStatus === "STANDBY"
-                                        ? "bg-amber-50 border-amber-500 text-amber-700 shadow-sm"
-                                        : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
-                                )}
-                            >
-                                <div className={clsx(
-                                    "w-10 h-10 rounded-full flex items-center justify-center",
-                                    roomStatus === "STANDBY" ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-400"
-                                )}>
-                                    <ClipboardCheck className="w-6 h-6" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-sm uppercase leading-tight">Standby</p>
-                                    <p className="text-xs opacity-70">Studio siaga (pemeriksaan rutin/istirahat)</p>
-                                </div>
-                            </button>
-
+                        <div className="grid grid-cols-2 gap-2">
+                            {[
+                                { id: "LIVE_NOW", label: "Live Now", c: "emerald", icon: Video },
+                                { id: "READY_FOR_LIVE", label: "Siap Live", c: "green", icon: CheckCircle2 },
+                                { id: "NOT_READY", label: "Ada Kendala", c: "rose", icon: Ban },
+                                { id: "STANDBY", label: "Standby", c: "amber", icon: Clock },
+                            ].map((s) => (
+                                <button
+                                    key={s.id} type="button"
+                                    disabled={isLockedToFinished && s.id !== "FINISHED_LIVE"}
+                                    onClick={() => setRoomStatus(s.id as any)}
+                                    className={clsx(
+                                        "flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all",
+                                        isLockedToFinished && s.id !== "FINISHED_LIVE" && "opacity-20 grayscale cursor-not-allowed",
+                                        roomStatus === s.id
+                                            ? s.c === 'emerald' ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                                            : s.c === 'green' ? "bg-green-50 border-green-500 text-green-700"
+                                            : s.c === 'rose' ? "bg-rose-50 border-rose-500 text-rose-700"
+                                            : "bg-amber-50 border-amber-500 text-amber-700"
+                                            : "bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100"
+                                    )}
+                                >
+                                    <s.icon className={clsx("w-5 h-5", roomStatus === s.id ? "" : "text-gray-300")} />
+                                    <span className="text-[10px] font-bold uppercase tracking-tighter">{s.label}</span>
+                                </button>
+                            ))}
                             <button
                                 type="button"
                                 onClick={() => setRoomStatus("FINISHED_LIVE")}
                                 className={clsx(
-                                    "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all",
+                                    "col-span-2 flex items-center justify-center gap-3 p-3 rounded-xl border-2 transition-all",
                                     isLockedToFinished && "border-blue-400 bg-blue-50/50",
                                     roomStatus === "FINISHED_LIVE"
                                         ? "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
-                                        : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
+                                        : "bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100"
                                 )}
                             >
-                                <div className={clsx(
-                                    "w-10 h-10 rounded-full flex items-center justify-center relative",
-                                    roomStatus === "FINISHED_LIVE" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-400"
-                                )}>
-                                    <Flag className="w-6 h-6" />
+                                <div className="relative">
+                                    <Flag className={clsx("w-5 h-5", roomStatus === "FINISHED_LIVE" ? "text-blue-500" : "text-gray-300")} />
                                     {isLockedToFinished && (
-                                        <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600 border border-white"></span>
                                         </span>
                                     )}
                                 </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-sm uppercase leading-tight">Selesai Live</p>
-                                    <p className="text-xs opacity-70">Sesi live berakhir, studio kembali siap</p>
-                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Selesai Live (Tutup Sesi)</span>
                             </button>
                         </div>
                     </div>
                 )}
 
                 {assets.length > 0 && (
-                    <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100/50">
-                        <label className="block text-sm font-bold text-gray-900 mb-2">Catatan Tambahan (Bila ada)</label>
+                    <div className="bg-white rounded-2xl p-4 border border-gray-100/50">
                         <textarea
-                            rows={3}
+                            rows={2}
                             value={overallNotes}
                             onChange={(e) => setOverallNotes(e.target.value)}
-                            placeholder="Misal: AC bocor, kebersihan ruangan kurang..."
-                            className="w-full bg-white rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-500 border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow"
+                            placeholder="Catatan tambahan ruangan..."
+                            className="w-full bg-gray-50 rounded-xl px-4 py-2 text-[11px] text-gray-900 border border-transparent focus:bg-white focus:border-brand-purple/20 transition-all outline-none"
                         />
                     </div>
                 )}
@@ -834,16 +708,17 @@ export default function ChecklistFormPage({ params }: { params: Promise<{ roomId
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full h-16 rounded-3xl font-black text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-xl shadow-green-500/30 flex items-center justify-center text-lg hover:brightness-110 active:scale-95 transition-all transform"
+                        className="w-full h-14 rounded-2xl font-black text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-sm uppercase tracking-widest hover:brightness-105 active:scale-95 transition-all"
                     >
                         {isSubmitting ? (
-                            <Loader2 className="w-6 h-6 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                            <>Kirim Laporan <Send className="w-5 h-5 ml-2" /></>
+                            <>Simpan Laporan <Send className="w-4 h-4 ml-2" /></>
                         )}
                     </button>
                 )}
             </form>
         </div>
+
     );
 }

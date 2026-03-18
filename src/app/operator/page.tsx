@@ -63,31 +63,31 @@ export default function OperatorPage() {
 
     if (user?.role === "CLIENT_OPERATOR") {
         return (
-            <div className="space-y-6">
-                <div className="bg-gradient-to-br from-[#1A0D3C] to-brand-purple rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="space-y-4">
+                <div className="bg-gradient-to-br from-[#1A0D3C] to-brand-purple rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                     <div className="relative z-10">
-                        <h1 className="text-2xl font-bold tracking-tight">Halo, {user?.name || "Client Operator"}</h1>
-                        <p className="opacity-80 mt-2 text-sm font-medium">Panel Khusus Pengecekan Barang Client</p>
+                        <h1 className="text-xl font-bold tracking-tight">Halo, {user?.name || "Client Operator"}</h1>
+                        <p className="opacity-80 mt-1 text-xs font-medium italic">Panel Khusus Pengecekan Barang Client</p>
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest ml-4">Pilih Cabang</h2>
-                    <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-3">
+                    <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-4">Pilih Cabang</h2>
+                    <div className="grid grid-cols-1 gap-2.5">
                         {locations.map(loc => (
                             <button
                                 key={loc.id}
                                 onClick={() => router.push(`/operator/rooms?locationId=${loc.id}`)}
-                                className="bg-white border border-gray-100 rounded-[2rem] p-6 flex items-center justify-between hover:border-brand-purple hover:shadow-xl transition-all group"
+                                className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-brand-purple/30 hover:shadow-md transition-all group"
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className="p-4 bg-brand-purple/10 rounded-2xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
-                                        <MapPin className="w-6 h-6" />
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-brand-purple/5 rounded-xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
+                                        <MapPin className="w-5 h-5" />
                                     </div>
-                                    <span className="font-bold text-gray-900 text-lg">{loc.name}</span>
+                                    <span className="font-bold text-gray-900 text-base">{loc.name}</span>
                                 </div>
-                                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-brand-purple group-hover:bg-brand-purple/10 transition-all">
-                                    <DoorOpen className="w-5 h-5" />
+                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-brand-purple group-hover:bg-brand-purple/5 transition-all">
+                                    <DoorOpen className="w-4 h-4" />
                                 </div>
                             </button>
                         ))}
@@ -98,66 +98,66 @@ export default function OperatorPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="bg-gradient-to-br from-brand-purple to-brand-purple rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="space-y-4">
+            <div className="bg-gradient-to-br from-brand-purple to-brand-purple rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                 <div className="relative z-10">
-                    <h1 className="text-2xl font-bold tracking-tight">Halo, {user?.name || "Operator"}</h1>
-                    <p className="opacity-80 mt-2 text-sm font-medium">Siap untuk melakukan pengecekan aset hari ini?</p>
+                    <h1 className="text-xl font-bold tracking-tight">Halo, {user?.name || "Operator"}</h1>
+                    <p className="opacity-80 mt-1 text-xs font-medium italic">Siap untuk pengecekan aset hari ini?</p>
                 </div>
-                <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
             </div>
 
             {!activeShift ? (
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full text-left bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl hover:border-brand-purple transition-all active:scale-[0.98] transform group"
+                    className="w-full text-left bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-brand-purple transition-all active:scale-[0.99] transform group"
                 >
-                    <div className="flex items-center space-x-6">
-                        <div className="bg-brand-purple/10 p-6 rounded-2xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all shadow-inner">
-                            <DoorOpen className="w-10 h-10" />
+                    <div className="flex items-center space-x-5">
+                        <div className="bg-brand-purple/5 p-4 rounded-xl text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all">
+                            <DoorOpen className="w-8 h-8" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight">Mulai Checklist</h2>
-                            <p className="text-sm text-gray-400 font-semibold uppercase tracking-widest mt-1">Inisiasi Tugas Lapangan</p>
+                            <h2 className="text-lg font-bold text-gray-900 uppercase tracking-tight">Mulai Checklist</h2>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Inisiasi Tugas Lapangan</p>
                         </div>
                     </div>
                 </button>
             ) : (
-                <div className="space-y-4">
-                    <div className="bg-white border-2 border-brand-purple rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4">
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-teal/5 text-brand-teal text-[10px] font-bold uppercase rounded-full border border-brand-teal/10 animate-pulse">
-                                <span className="w-1.5 h-1.5 rounded-full bg-brand-teal"></span>
-                                Sedang Bertugas
+                <div className="space-y-3">
+                    <div className="bg-white border-2 border-brand-purple/20 rounded-2xl p-6 shadow-md relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-3">
+                            <span className="flex items-center gap-1 px-2 py-0.5 bg-brand-teal/5 text-brand-teal text-[9px] font-bold uppercase rounded-full border border-brand-teal/10 animate-pulse">
+                                <span className="w-1 h-1 rounded-full bg-brand-teal"></span>
+                                Aktif
                             </span>
                         </div>
 
-                        <div className="flex flex-col gap-6">
-                            <div className="flex items-center gap-6">
-                                <div className="bg-brand-purple p-6 rounded-2xl text-white shadow-lg shadow-brand-purple">
-                                    <Clock className="w-10 h-10" />
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-brand-purple/10 p-4 rounded-xl text-brand-purple">
+                                    <Clock className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight">Sesi Aktif</h2>
-                                    <p className="text-sm text-brand-purple font-semibold uppercase tracking-widest mt-1">{activeShift.locationName}</p>
+                                    <h2 className="text-lg font-bold text-gray-900 uppercase tracking-tight">Sesi Aktif</h2>
+                                    <p className="text-xs text-brand-purple font-bold uppercase tracking-widest mt-0.5">{activeShift.locationName}</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-6">
+                            <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-4">
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Jam Kerja</p>
-                                    <p className="text-sm font-bold text-gray-700">{activeShift.startTime} - {activeShift.endTime}</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Shift</p>
+                                    <p className="text-xs font-bold text-gray-700">{activeShift.startTime} - {activeShift.endTime}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mulai Pada</p>
-                                    <p className="text-sm font-bold text-gray-700">{new Date(activeShift.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Dimulai</p>
+                                    <p className="text-xs font-bold text-gray-700">{new Date(activeShift.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="flex gap-2.5">
                                 <button
                                     onClick={() => router.push(`/operator/rooms?locationId=${activeShift.locationId}`)}
-                                    className="flex-1 py-4 bg-brand-purple hover:bg-brand-purple text-white font-bold rounded-2xl transition-all shadow-lg shadow-brand-purple text-sm uppercase tracking-widest"
+                                    className="flex-1 py-3 bg-brand-purple hover:bg-brand-purple/90 text-white font-bold rounded-xl transition-all shadow-md shadow-brand-purple/20 text-xs uppercase tracking-widest"
                                 >
                                     Lanjut Checklist
                                 </button>
@@ -170,15 +170,16 @@ export default function OperatorPage() {
                                         }
                                     }}
                                     disabled={loading}
-                                    className="px-6 py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-2xl transition-all text-sm uppercase tracking-widest border border-rose-100"
+                                    className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl transition-all text-xs uppercase tracking-widest border border-rose-100/50"
                                 >
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Akhiri"}
+                                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Akhiri"}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
 
             {/* Modal Shift */}
             {isModalOpen && (

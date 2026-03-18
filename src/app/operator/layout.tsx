@@ -3,15 +3,22 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { LogOut, Key, Camera, CameraOff, RefreshCw, ShieldAlert, Smartphone } from "lucide-react";
+import { LogOut, Key, Camera, CameraOff, RefreshCw, ShieldAlert, Smartphone, AlertTriangle, Lock, Clock, Bell, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
     const { user, logout } = useAuth();
-    const { addLog, operatorShifts, endShift } = useLocalDb();
+    const { addLog, operatorShifts, endShift, companies, updateShift } = useLocalDb();
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    // State untuk shift expired
+    const [isShiftExpired, setIsShiftExpired] = useState(false);
+    const [newEndTime, setNewEndTime] = useState("");
+    const [isUpdatingShift, setIsUpdatingShift] = useState(false);
     const router = useRouter();
 
     // State baru untuk status akses yang lebih detail
@@ -83,13 +90,16 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
 
     useEffect(() => {
         const checkCamera = async () => {
-            // Jika mediaDevices tidak tersedia = bukan HTTPS atau browser sangat lama
+            if (companies.length === 0) return;
+            const company = companies[0];
+            if (company.requireChecklistPhoto === false) {
+                setCameraStatus("allowed");
+                return;
+            }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 setCameraStatus("no-camera");
                 return;
             }
-
-            // Helper: Coba buka stream kamera, kembalikan true jika berhasil
             const tryStream = async (constraints: MediaStreamConstraints): Promise<boolean> => {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -99,61 +109,106 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                     return false;
                 }
             };
-
             try {
-                // Tahap 1: Coba dengan facingMode "environment" (kamera belakang)
-                // Chrome Android mendukung ini dengan baik
                 const stage1 = await tryStream({ video: { facingMode: "environment" } });
                 if (stage1) {
                     setCameraStatus("allowed");
                     return;
                 }
-
-                // Tahap 2: Fallback ke { video: true } untuk Firefox mobile
-                // Firefox tidak mendukung facingMode constraint secara langsung
                 const stage2 = await tryStream({ video: true });
                 if (stage2) {
                     setCameraStatus("allowed");
                     return;
                 }
-
-                // Kedua tahap gagal, cek alasannya
                 throw new Error("camera_unavailable");
-
             } catch (err: any) {
                 const errorName = err?.name || "";
                 if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
-                    // Kamera ada tapi izin ditolak user
                     setCameraStatus("denied");
                 } else if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
-                    // Tidak ada kamera fisik sama sekali
                     setCameraStatus("no-camera");
                 } else {
-                    // Kamera gagal karena sebab lain (sedang terpakai, dsb.)
-                    // Jangan blokir operator, anggap tersedia
                     setCameraStatus("allowed");
                 }
             }
         };
         checkCamera();
-    }, []);
+    }, [companies]);
+
+    useEffect(() => {
+        const checkShift = () => {
+            const now = new Date();
+            const active = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
+
+            if (active) {
+                const diffMs = new Date(active.endTime).getTime() - now.getTime();
+                const diffSec = diffMs / 1000;
+
+                if (diffSec <= 0) {
+                    setIsShiftExpired(true);
+                    // Set default new end time (e.g. 1 hour from now)
+                    if (!newEndTime) {
+                        const nextHour = new Date(now.getTime() + 60 * 60 * 1000);
+                        setNewEndTime(nextHour.toTimeString().slice(0, 5));
+                    }
+                } else {
+                    setIsShiftExpired(false);
+                }
+            } else {
+                setIsShiftExpired(false);
+            }
+        };
+
+        checkShift();
+        const timer = setInterval(checkShift, 60000);
+        return () => clearInterval(timer);
+    }, [operatorShifts, user?.uid, newEndTime]);
+
+    const handleExtendShift = async () => {
+        const active = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
+        if (!active || !newEndTime) return;
+
+        setIsUpdatingShift(true);
+        try {
+            const [hours, minutes] = newEndTime.split(":").map(Number);
+            const endDate = new Date();
+            endDate.setHours(hours, minutes, 0, 0);
+
+            if (endDate <= new Date()) {
+                alert("Jam baru harus lebih dari waktu sekarang.");
+                return;
+            }
+
+            await updateShift(active.id, { endTime: endDate.toISOString() });
+            setIsShiftExpired(false);
+            setNewEndTime("");
+            addLog({
+                type: "AUTH",
+                toValue: "Perpanjang Shift",
+                operatorName: user?.name || "Operator",
+                companyId: user?.companyId || "",
+                notes: `Shift diperpanjang hingga: ${newEndTime}`
+            });
+        } catch (err) {
+            console.error("Gagal perpanjang shift:", err);
+            alert("Gagal memperbarui shift.");
+        } finally {
+            setIsUpdatingShift(false);
+        }
+    };
 
     const handleLogout = async () => {
+        // Guard: Jika shift masih aktif tapi handleLogout terpanggil (e.g. bypass), jangan izinkan.
+        // User maunya "sadar" mengakhiri shift dulu.
         const activeShift = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
-        if (activeShift) {
-            try {
-                await endShift(activeShift.id);
-            } catch (err) {
-                console.error("Gagal mengakhiri shift saat logout:", err);
-            }
-        }
+        if (activeShift) return;
 
         addLog({
             type: "AUTH",
             toValue: "Logout",
             operatorName: user?.name || user?.email || "Unknown",
             companyId: user?.companyId || "",
-            notes: "Role: OPERATOR (Shift Berakhir Otomatis)"
+            notes: "Role: OPERATOR"
         });
         logout();
         router.push("/login");
@@ -188,7 +243,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                                     <span className="text-3xl">🍎</span>
                                     <div className="text-center">
                                         <p className="text-xs font-black text-blue-800 uppercase">iPhone / iPad</p>
-                                        <p className="text-sm font-black text-blue-600">Safari</p>
+                                        <p className="text-sm font-black text-green-600">Safari</p>
                                     </div>
                                 </div>
                             </div>
@@ -268,7 +323,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                             </div>
                             <h1 className="text-lg font-black tracking-tight text-white uppercase">Emulator Terdeteksi!</h1>
                             <p className="text-sm text-rose-100 mt-2 leading-relaxed font-medium">
-                                Anda terdeteksi menggunakan <span className="text-white font-bold">Simulator Browser</span>. 
+                                Anda terdeteksi menggunakan <span className="text-white font-bold">Simulator Browser</span>.
                             </p>
                         </div>
                         <div className="px-6 py-6 space-y-4">
@@ -417,6 +472,8 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
 
                 {/* Mobile Header / Topbar */}
                 <header className="fixed top-0 inset-x-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 h-16 flex items-center justify-between px-4 shadow-sm">
+
+
                     <button
                         onClick={() => setIsPasswordModalOpen(true)}
                         className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded-xl transition-colors text-left"
@@ -435,7 +492,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                     </button>
 
                     <button
-                        onClick={handleLogout}
+                        onClick={() => setIsLogoutModalOpen(true)}
                         className="flex items-center justify-center w-10 h-10 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-100 transition-colors"
                         title="Keluar"
                     >
@@ -447,6 +504,202 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                 <main className="flex-1 px-4 pt-20 pb-8 w-full max-w-md mx-auto relative">
                     {children}
                 </main>
+
+                {/* --- Premium Logout Confirmation Modal --- */}
+                <AnimatePresence>
+                    {isLogoutModalOpen && (() => {
+                        const activeShift = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
+
+                        return (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                                {/* Backdrop */}
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setIsLogoutModalOpen(false)}
+                                    className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+                                />
+
+                                {/* Modal Card */}
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    className="relative w-full max-w-xs bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100"
+                                >
+                                    <div className="p-8 text-center">
+                                        {activeShift ? (
+                                            <>
+                                                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500">
+                                                    <Lock className="w-8 h-8" />
+                                                </div>
+                                                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">Shift Masih Aktif</h3>
+                                                <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                                    Anda belum mengakhiri shift tugas hari ini. Silakan <span className="font-bold text-amber-600">Akhiri Shift</span> di dashboard utama terlebih dahulu sebelum keluar demi akurasi laporan.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
+                                                    <AlertTriangle className="w-8 h-8" />
+                                                </div>
+                                                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">Konfirmasi Keluar</h3>
+                                                <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                                    Apakah Anda yakin ingin mengakhiri sesi dan keluar dari aplikasi?
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-col gap-2 p-6 bg-gray-50/50 pt-0">
+                                        {activeShift ? (
+                                            <button
+                                                onClick={() => {
+                                                    setIsLogoutModalOpen(false);
+                                                    router.push("/operator");
+                                                }}
+                                                className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-200 transition-all active:scale-[0.98]"
+                                            >
+                                                Kembali ke Dashboard
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-rose-200 transition-all active:scale-[0.98]"
+                                            >
+                                                Ya, Keluar Sekarang
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setIsLogoutModalOpen(false)}
+                                            className="w-full py-4 bg-white border border-gray-200 text-gray-500 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-gray-50 transition-all active:scale-[0.98]"
+                                        >
+                                            {activeShift ? "Tutup" : "Batal"}
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        );
+                    })()}
+                </AnimatePresence>
+
+                {/* --- Shift Expired Blocking Overlay --- */}
+                <AnimatePresence>
+                    {isShiftExpired && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-10">
+                            {/* Backdrop - More intense blur for blocking */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-gray-950/80 backdrop-blur-md"
+                            />
+
+                            {/* Blocking Card */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                                className="relative w-full max-w-sm bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/20"
+                            >
+                                <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-8 text-center text-white">
+                                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                        <Bell className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h2 className="text-xl font-black uppercase tracking-tight">Shift Berakhir!</h2>
+                                    <p className="text-sm opacity-90 font-medium leading-relaxed mt-1">
+                                        Waktu tugas Anda telah habis. Selesaikan shift atau perbarui waktu untuk melanjutkan akses.
+                                    </p>
+
+                                    {/* Pelanggaran SOP Banner */}
+                                    {(() => {
+                                        const active = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
+                                        if (active) {
+                                            const diffMs = new Date().getTime() - new Date(active.endTime).getTime();
+                                            if (diffMs > 1000 * 60) {
+                                                const hours = (diffMs / (1000 * 60 * 60)).toFixed(1);
+                                                return (
+                                                    <div className="mt-4 bg-black/20 backdrop-blur-sm rounded-xl py-2 px-3 border border-white/10">
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-200 leading-none mb-1">Audit Pelanggaran</p>
+                                                        <p className="text-xs font-bold text-white leading-tight">Terdeteksi Terlambat: {hours} Jam</p>
+                                                        <p className="text-[9px] text-white/60 mt-1 italic font-medium">Ini akan tercatat sebagai pelanggaran SOP</p>
+                                                    </div>
+                                                );
+                                            }
+                                        }
+                                        return null;
+                                    })()}
+                                </div>
+
+                                <div className="p-8 space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Update Jam Selesai:</label>
+                                            <div className="relative group/input">
+                                                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/input:text-amber-500 transition-colors" />
+                                                <input
+                                                    type="time"
+                                                    value={newEndTime}
+                                                    onChange={(e) => setNewEndTime(e.target.value)}
+                                                    className="w-full pl-12 pr-6 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-base font-black focus:bg-white focus:border-amber-200 focus:outline-none transition-all"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleExtendShift}
+                                            disabled={isUpdatingShift}
+                                            className="w-full flex items-center justify-center gap-2 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-[1.5rem] text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-100 transition-all active:scale-[0.98]"
+                                        >
+                                            {isUpdatingShift ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                            Simpan & Lanjutkan
+                                        </button>
+                                    </div>
+
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <div className="w-full border-t border-gray-100"></div>
+                                        </div>
+                                        <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-gray-300 bg-white px-4">Atau</div>
+                                    </div>
+
+                                    <button
+                                        onClick={async () => {
+                                            const active = operatorShifts.find(s => s.operatorId === user?.uid && s.status === "ACTIVE");
+                                            if (active) {
+                                                const now = new Date();
+                                                const endTime = new Date(active.endTime);
+                                                const diffMs = now.getTime() - endTime.getTime();
+
+                                                if (confirm("Benar ingin mengakhiri shift sekarang? Pengecekan aset akan terhenti.")) {
+                                                    // Jika terlambat signifikan (misal > 1 menit), kirim log audit pelanggaran
+                                                    if (diffMs > 1000 * 60) {
+                                                        const diffHours = (diffMs / (1000 * 60 * 60)).toFixed(1);
+                                                        await addLog({
+                                                            type: "AUTH",
+                                                            toValue: "SOP Violation",
+                                                            operatorName: user?.name || "Operator",
+                                                            companyId: user?.companyId || "",
+                                                            notes: `SOP VIOLATION: Terlambat mengakhiri shift ${diffHours} jam. (Penyebab: Keluar browser tanpa akhiri shift secara resmi)`
+                                                        });
+                                                    }
+
+                                                    await endShift(active.id);
+                                                    setIsShiftExpired(false);
+                                                }
+                                            }
+                                        }}
+                                        className="w-full py-4 bg-gray-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all active:scale-[0.98]"
+                                    >
+                                        Akhiri Shift & Istirahat
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
         </ProtectedRoute>
     );
