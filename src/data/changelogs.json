@@ -1,0 +1,423 @@
+[
+  {
+    "date": "2026-03-20T19:00:00",
+    "type": "FEAT",
+    "message": "IMPROVE: System access and numeric input experience",
+    "details": [
+      "Implement email suggestion for system access provisioning",
+      "Optimize numeric input behavior with auto-selection and zero-value handling",
+      "Synchronize authorization metadata across access control modules"
+    ]
+  },
+  {
+    "date": "2026-03-18T18:03:00",
+    "type": "FEAT",
+    "message": "ui: compact operator interface and battery optimization"
+  },
+  {
+    "date": "2026-03-18T16:28:00",
+    "type": "FIX",
+    "message": "fix: enhance system archival data redundancy and maintenance logic"
+  },
+  {
+    "date": "2026-03-18T10:44:00",
+    "type": "FEAT",
+    "message": "feat(admin): layout expansion, auto-expand cells, and per-admin audit trail"
+  },
+  {
+    "date": "2026-03-17T19:46:00",
+    "type": "REFACTOR",
+    "message": "refactor: strictly enforce mobile device and browser compatibility for operators"
+  },
+  {
+    "date": "2026-03-17T19:22:00",
+    "type": "REFACTOR",
+    "message": "refactor: optimize device-level authentication and camera detection logic"
+  },
+  {
+    "date": "2026-03-17T18:45:00",
+    "type": "REFACTOR",
+    "message": "refactor: improve hardware-level detection for mobile devices"
+  },
+  {
+    "date": "2026-03-17T15:32:00",
+    "type": "IMPROVE",
+    "message": "enhanced log"
+  },
+  {
+    "date": "2026-03-17T14:02:00",
+    "type": "FEAT",
+    "message": "ui: optimize monitoring system and dashboard tools"
+  },
+  {
+    "date": "2026-03-17T10:52:00",
+    "type": "FEAT",
+    "message": "FEAT: update auto reset logic"
+  },
+  {
+    "date": "2026-03-16T14:26:00",
+    "type": "FEAT",
+    "message": "feat: update internal resources and enhance layout"
+  },
+  {
+    "date": "2026-03-15T23:27:00",
+    "type": "FIX",
+    "message": "fix: refine data cleanup logic and unify activity indicators",
+    "details": [
+      "Isolate media asset deletion to specific data types only.",
+      "Consolidate multiple system log views into a unified monitoring entry.",
+      "Enhance data integrity during bulk maintenance operations."
+    ]
+  },
+  {
+    "date": "2026-03-15T03:17:00",
+    "type": "FEAT",
+    "message": "feat: implement mandatory hardware verification for access control",
+    "details": [
+      "Integrated automatic device filtering to ensure access is only granted from authorized portable hardware",
+      "Implemented real-time hardware permission validation for enhanced security compliance",
+      "Added logic to prevent access if the required hardware is not active or permission is denied",
+      "Introduced a dedicated block screen for unauthorized devices with usage instructions",
+      "Added interactive troubleshooting screens for hardware permission issues",
+      "Implemented state-based feedback for users during security verification"
+    ]
+  },
+  {
+    "date": "2026-03-14T18:11:00",
+    "type": "REFACTOR",
+    "message": "refactor: white-labeling implementation and asset catalog optimization"
+  },
+  {
+    "date": "2026-03-14T16:59:00",
+    "type": "FEAT",
+    "message": "feat: CORE SYSTEM UPDATE - Essential Improvements for Asset Integrity",
+    "details": [
+      "Integrated side-by-side photo comparison for Initial vs Last Audit states",
+      "Implemented core stability fixes for admin modals and navigation logic",
+      "Added high-priority image preview system with full-screen zoom interaction",
+      "Refactored primary asset catalog table for direct visual audit access",
+      "Enhanced category data structure with auto-alignment and usage validation",
+      "Restored mission-critical History and Data Removal confirmation modules",
+      "Reinforced security protocols: image protection and isolated data processing",
+      "Fine-tuned interface: added smooth transitions and high-precision timestamps"
+    ]
+  },
+  {
+    "date": "2026-03-14T15:33:00",
+    "type": "FEAT",
+    "message": "Core: Update image storage system for main config and audit logs"
+  },
+  {
+    "date": "2026-03-13T16:24:00",
+    "type": "FEAT",
+    "message": "feat: implement mandatory password change for new users upon first login"
+  },
+  {
+    "date": "2026-03-13T15:43:00",
+    "type": "FEAT",
+    "message": "feat: enhance asset browsing experience and update internal system components"
+  },
+  {
+    "date": "2026-03-13T12:20:00",
+    "type": "REFACTOR",
+    "message": "refactor: update master system controls layout and restore data settings"
+  },
+  {
+    "date": "2026-03-13T10:40:00",
+    "type": "FEAT",
+    "message": "Update checklist logic and internal management interface profile"
+  },
+  {
+    "date": "2026-03-12T16:22:00",
+    "type": "FIX",
+    "message": "fix: refine company document listener to ensure device settings alignment"
+  },
+  {
+    "date": "2026-03-12T15:34:00",
+    "type": "FEAT",
+    "message": "Update: Implementation of auto-expandable report details and refined changelog filtering logic"
+  },
+  {
+    "date": "2026-03-12T14:11:00",
+    "type": "FEAT",
+    "message": "Update: Auto Expand Detail Laporan, Perampingan Font Bold, dan Fitur Toggle Wajib Foto Kamera Per Klien"
+  },
+  {
+    "date": "2026-03-12T10:40:00",
+    "type": "DOCS",
+    "message": "docs: tambahkan aturan kerja agen"
+  },
+  {
+    "date": "2026-03-12T02:29:00",
+    "type": "FEAT",
+    "message": "UI: simplify history toggle button to icon-only mode"
+  },
+  {
+    "date": "2026-03-12T02:15:00",
+    "type": "FEAT",
+    "message": "Minor UI update and rules consolidation"
+  },
+  {
+    "date": "2026-03-12T02:00:00",
+    "type": "FEAT",
+    "message": "Update redesign tombol Riwayat Hapus dan sistem toggle mode"
+  },
+  {
+    "date": "2026-03-11T19:18:00",
+    "type": "FEAT",
+    "message": "UI/UX: Optimized mobile notification layout (full-card background), refined typography, and added rules.md"
+  },
+  {
+    "date": "2026-03-11T16:49:00",
+    "type": "FEAT",
+    "message": "UI/UX: Refine Admin Logs and Master Asset filters with Ultra Compact & Premium Glassmorphism design"
+  },
+  {
+    "date": "2026-03-11T11:21:00",
+    "type": "FEAT",
+    "message": "Enhance visual indicator for New Reports on Admin Dashboard with pulsing dots and shimmer effects"
+  },
+  {
+    "date": "2026-03-11T10:39:00",
+    "type": "FEAT",
+    "message": "UI: Enhance background contrast and saturation on login page"
+  },
+  {
+    "date": "2026-03-10T17:06:00",
+    "type": "FEAT",
+    "message": "UI Fix: Restore and enhance Category Management visibility on mobile"
+  },
+  {
+    "date": "2026-03-10T16:51:00",
+    "type": "FEAT",
+    "message": "Optimize Mobile UI: Sticky search header and expandable asset rows with compact layout"
+  },
+  {
+    "date": "2026-03-10T14:17:00",
+    "type": "FEAT",
+    "message": "Enhance UI: Login page aesthetics, sticky table header for Asset Catalog, and mobile-friendly filter menu"
+  },
+  {
+    "date": "2026-03-10T13:39:00",
+    "type": "FEAT",
+    "message": "Update Dashboard Overview profile menu and previous UI enhancements"
+  },
+  {
+    "date": "2026-03-10T11:06:00",
+    "type": "FEAT",
+    "message": "Improve Admin Sidebar: add collapsible feature, sticky positioning, and consolidated Profile sub-menu"
+  },
+  {
+    "date": "2026-03-10T02:59:00",
+    "type": "FEAT",
+    "message": "Implement dynamic login page customization and fix Firestore rules"
+  },
+  {
+    "date": "2026-03-09T19:12:00",
+    "type": "FEAT",
+    "message": "feat: fix asset deletion for CLIENT_ADMIN and enhance login UI with glassmorphism"
+  },
+  {
+    "date": "2026-03-09T14:40:00",
+    "type": "FEAT",
+    "message": "Login Page: Implemented 2-column layout with ultra-glassmorphism effects and hover highlights"
+  },
+  {
+    "date": "2026-03-09T14:11:00",
+    "type": "FEAT",
+    "message": "Login Page: Updated text to 'Masuk' and enhanced glassmorphism background aesthetic"
+  },
+  {
+    "date": "2026-03-09T13:38:00",
+    "type": "FEAT",
+    "message": "Admin Dashboard: Tight packing layout + location repositioning",
+    "details": [
+      "Restructured grid into 4 columns for compact masonry-style stacking",
+      "Repositioned 'Daftar Cabang' below 'Standby'",
+      "Ensured 'Aset Studio' and 'Aset Client' are side-by-side",
+      "Applied Glassmorphism effect to login page"
+    ]
+  },
+  {
+    "date": "2026-03-09T11:55:00",
+    "type": "FEAT",
+    "message": "feat: Comprehensive Client Asset Isolation Ecosystem implementation",
+    "details": [
+      "Full integration of CLIENT_ADMIN and CLIENT_OPERATOR roles with dedicated workflows",
+      "Streamlined Operator Client experience (bypass shift and clock-in requirements)",
+      "Updated Admin Dashboard with separate Studio Assets and Client Assets metrics",
+      "Shared visibility in Master Asset catalog with role-based action locking (locks on unauthorized items)",
+      "Role-restricted Room Asset allocation logic (restricted to appropriate asset categories)",
+      "Hardened Firebase Security Rules for multi-role isolation and backend data integrity",
+      "Optimized asset fetching with memory-side filtering to resolve query stability issues"
+    ]
+  },
+  {
+    "date": "2026-03-06T16:34:00",
+    "type": "FEAT",
+    "message": "feat: fix redundant trial mode button and update login page UI with glassmorphism design"
+  },
+  {
+    "date": "2026-03-06T12:44:00",
+    "type": "FEAT",
+    "message": "UI Optimasi: Katalog Aset & Log Aktivitas (Minimalist List Style)",
+    "details": [
+      "Transformasi tabel ke 'Minimalist List Style' (tanpa box, tanpa shadow, rapi).",
+      "Standarisasi tampilan satu baris (no-wrap) dengan auto-truncate.",
+      "Implementasi sistem 'Floating Menu' pada tombol Aksi untuk menghemat ruang.",
+      "Fitur Click-to-Expand pada kolom Catatan & Log untuk melihat detail tanpa merusak layout.",
+      "Sinkronisasi visual: font 9px-10px, spacing rapat, dan hover effect orange (orange-100/70).",
+      "Optimasi lebar kolom: Umur Aset dipres, Catatan dibuat fleksibel mengikuti sisa layar."
+    ]
+  },
+  {
+    "date": "2026-03-05T10:32:00",
+    "type": "FIX",
+    "message": "fix: resolve session mismatch multi-device bug and clear local session on login/logout"
+  },
+  {
+    "date": "2026-03-04T18:56:00",
+    "type": "FIX",
+    "message": "fix: refine session monitor to support seamless multi-device kick-out and prevent self-kick on login"
+  },
+  {
+    "date": "2026-03-04T18:43:00",
+    "type": "FIX",
+    "message": "fix: resolve session mismatch race condition and improve auth stability"
+  },
+  {
+    "date": "2026-03-04T18:02:00",
+    "type": "FIX",
+    "message": "Fix: show Di Gudang badge in asset catalog when asset has no room mapping (returned to warehouse)"
+  },
+  {
+    "date": "2026-03-04T16:25:00",
+    "type": "FIX",
+    "message": "fix: tambah aturan koleksi roomAssets ke Firestore Security Rules agar admin bisa alokasikan aset ke ruangan"
+  },
+  {
+    "date": "2026-03-04T15:24:00",
+    "type": "FIX",
+    "message": "fix: resolve firestore indexing issue by sorting logs client-side and ensure log stability on refresh"
+  },
+  {
+    "date": "2026-03-04T15:18:00",
+    "type": "FIX",
+    "message": "fix: ensure all operator and admin activities are correctly logged with companyId"
+  },
+  {
+    "date": "2026-03-04T14:59:00",
+    "type": "FEAT",
+    "message": "feat: add user edit functionality and fix missing icons"
+  },
+  {
+    "date": "2026-03-04T13:40:00",
+    "type": "FIX",
+    "message": "fix: stabilize single session login and resolve user role data corruption issues"
+  },
+  {
+    "date": "2026-03-04T12:35:00",
+    "type": "FEAT",
+    "message": "feat: enhance session security, fix admin log visibility, and prevent double operator shifts"
+  },
+  {
+    "date": "2026-03-04T12:29:00",
+    "type": "FEAT",
+    "message": "feat: implement single session login, end shift functionality, and unique operator display"
+  },
+  {
+    "date": "2026-03-04T12:14:00",
+    "type": "FEAT",
+    "message": "feat: add operator shift management, phone number field, and live operator dashboard"
+  },
+  {
+    "date": "2026-03-03T19:21:00",
+    "type": "STYLE",
+    "message": "style: remove version numbers from changelog, display only date and time"
+  },
+  {
+    "date": "2026-03-03T19:04:00",
+    "type": "FEAT",
+    "message": "feat: allow manual asset code entry in master assets, fallback to auto-generation if empty"
+  },
+  {
+    "date": "2026-02-27T17:46:00",
+    "type": "UPDATE",
+    "message": "update: refine log display, automate changelog, and implement audit logs"
+  },
+  {
+    "date": "2026-02-27T17:16:00",
+    "type": "FEAT",
+    "message": "feat: enhance changelog with detailed logs, improved filtering, and unified login notifications"
+  },
+  {
+    "date": "2026-02-27T17:07:00",
+    "type": "FEAT",
+    "message": "feat: implement unified login notification system with blinking red icon and centered design"
+  },
+  {
+    "date": "2026-02-27T11:58:00",
+    "type": "FEAT",
+    "message": "feat: room status, asset count, changelog system, and dashboard improvements"
+  },
+  {
+    "date": "2026-02-25T21:52:00",
+    "type": "UPDATE",
+    "message": "Update User Guide link to newest version"
+  },
+  {
+    "date": "2026-02-25T21:40:00",
+    "type": "UPDATE",
+    "message": "Add Download User Guide link to login page"
+  },
+  {
+    "date": "2026-02-25T21:32:00",
+    "type": "FIX",
+    "message": "Fix Trial Mode: update logic to setDoc and add detailed error logging"
+  },
+  {
+    "date": "2026-02-25T21:23:00",
+    "type": "UPDATE",
+    "message": "Update User Management, Trial Mode, and Documentation"
+  },
+  {
+    "date": "2026-02-25T11:01:00",
+    "type": "FIX",
+    "message": "Fix: Explicitly type asset logs and fix variable error in LocalDbContext"
+  },
+  {
+    "date": "2026-02-25T10:58:00",
+    "type": "UPDATE",
+    "message": "Update: Separate demo/login storage and fix mobile navigation"
+  },
+  {
+    "date": "2026-02-25T03:11:00",
+    "type": "FIX",
+    "message": "Fix: Robust asset movement and update sequential processing"
+  },
+  {
+    "date": "2026-02-25T02:56:00",
+    "type": "FIX",
+    "message": "Fix: Add robust room asset allocation and detailed error reporting"
+  },
+  {
+    "date": "2026-02-25T02:41:00",
+    "type": "FIX",
+    "message": "Fix: Ensure real-time updates for Admin Dashboard UI"
+  },
+  {
+    "date": "2026-02-25T02:17:00",
+    "type": "FIX",
+    "message": "Fix: Final stabilization and real logout implementation"
+  },
+  {
+    "date": "2026-02-25T01:49:00",
+    "type": "BUILD",
+    "message": "Build: Stabilization for Production with manual deletion workflow"
+  },
+  {
+    "date": "2026-02-24T23:18:00",
+    "type": "FIX",
+    "message": "Fix: Make Firebase initialization safe for build without API keys"
+  }
+]

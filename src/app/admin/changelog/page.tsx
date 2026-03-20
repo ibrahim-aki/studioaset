@@ -1,62 +1,72 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { History as HistoryIcon, Loader2 } from "lucide-react";
 
 import clsx from "clsx";
 
-interface GithubCommit {
-    sha: string;
-    commit: {
-        message: string;
-        author: {
-            name: string;
-            date: string;
-        };
-    };
-    html_url: string;
+import changelogsData from "@/data/changelogs.json";
+
+interface ChangelogEntry {
+    date: string;
+    type: string;
+    message: string;
+    details?: string[];
 }
 
 export default function ChangelogPage() {
-    const [commits, setCommits] = useState<GithubCommit[]>([]);
+    const [commits, setCommits] = useState<ChangelogEntry[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
 
     useEffect(() => {
-        const fetchCommits = async () => {
-            try {
-                // Fetch commit history from central repository
-                const response = await fetch("https://api.github.com/repos/ibrahim-aki/studioaset/commits?per_page=100");
-                if (!response.ok) throw new Error("Failed to load system history");
+        // Helper to process and set logs
+        const processLogs = (firestoreLogs: (ChangelogEntry & { id: string })[]) => {
+            const rawLogs = [...firestoreLogs, ...changelogsData];
 
-                const data: GithubCommit[] = await response.json();
+            // Filter based on Rule 7 (Hide Super Admin, Github, Vercel, Cloudinary info)
+            const filteredLogs = rawLogs.filter(log => {
+                const forbiddenKeywords = ["super admin", "github", "vercel", "cloudinary"];
+                const content = (log.message + (log.details?.join(" ") || "")).toLowerCase();
+                if (log.type === "CORE") return false;
+                if (forbiddenKeywords.some(key => content.includes(key))) return false;
+                return true;
+            });
 
-                // Advanced Filtration: Strictly exclude Super Admin, GitHub, and Vercel related updates
-                const filteredCommits = data.filter(item => {
-                    const message = item.commit.message.toLowerCase();
-                    const isExcluded =
-                        message.includes("super admin") ||
-                        message.includes("super-admin") ||
-                        message.includes("superadmin") ||
-                        message.includes("sa-update") ||
-                        message.includes("fix sa") ||
-                        message.includes("merge branch") ||
-                        message.includes("github") ||
-                        message.includes("vercel") ||
-                        message.includes("sync");
-                    return !isExcluded;
-                });
+            // Sort by Date, newest first. Handle invalid dates safely.
+            const sortedLogs = filteredLogs.sort((a, b) => {
+                const dateB = new Date(b.date).getTime() || 0;
+                const dateA = new Date(a.date).getTime() || 0;
+                return dateB - dateA;
+            });
 
-                setCommits(filteredCommits);
-            } catch (err: any) {
-                console.error("Fetch Error:", err);
-                setError("Failed to retrieve system updates.");
-            } finally {
-                setLoading(false);
-            }
+            setCommits(sortedLogs);
+            setLoading(false);
         };
 
-        fetchCommits();
+        // Try Firestore first, fallback to local JSON on error
+        try {
+            const q = query(collection(db, "central_changelogs"), orderBy("date", "desc"));
+            const unsubscribe = onSnapshot(
+                q,
+                (snapshot) => {
+                    const firestoreLogs = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as (ChangelogEntry & { id: string })[];
+                    processLogs(firestoreLogs);
+                },
+                (_error) => {
+                    // Firestore failed - fallback to local JSON only
+                    processLogs([]);
+                }
+            );
+            return () => unsubscribe();
+        } catch (_e) {
+            // Firestore not reachable at all - show local data
+            processLogs([]);
+        }
     }, []);
 
 
@@ -79,28 +89,22 @@ export default function ChangelogPage() {
             </div>
 
             <div className="p-4 sm:p-6 lg:p-0 pt-8 max-w-3xl mx-auto font-mono text-[11px] text-[#333] leading-normal uppercase">
-                {error && (
-                    <div className="mb-4 text-rose-600">
-                        ERR: {error}
-                    </div>
-                )}
-
                 <div className="space-y-4 border-l border-gray-200 ml-1 pl-6 relative">
                     {commits.map((item, index) => {
-                    const commitDate = new Date(item.commit.author.date);
+                    const commitDate = new Date(item.date);
                     const day = commitDate.getDay();
                     const hour = commitDate.getHours();
 
                     // Working Hours: Mon-Fri (1-5), 09:00-18:00
                     const isOutsideWorkHours = day === 0 || day === 6 || hour < 9 || hour >= 18;
 
-                    // rule 11: Hari Tanggal Jam tulis dalah bahasa Indonesia
+                    // rule 8: Hari Tanggal Jam tulis dalah bahasa Indonesia
                     const dayStr = commitDate.toLocaleDateString('id-ID', { weekday: 'long' });
                     const dateStr = `${commitDate.getDate()}/${commitDate.getMonth() + 1}/${commitDate.getFullYear()}`;
                     const timeStr = commitDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
 
                     return (
-                        <div key={item.sha} className="relative">
+                        <div key={index} className="relative">
                             {/* Dot on timeline */}
                             <div className={clsx(
                                 "absolute -left-[27px] top-1.5 w-2 h-2 rounded-full border-2 border-white transition-all",
@@ -116,21 +120,18 @@ export default function ChangelogPage() {
 
                             <div className="space-y-1">
                                 <div className="flex gap-3">
-                                    <span className="shrink-0 text-gray-300">-</span>
-                                    {/* rule 11: deskripsi Cangelog tulis dalam bahasa inggris */}
+                                    <span className="shrink-0 text-gray-900 font-black">-</span>
+                                    {/* rule 8: deskripsi Cangelog tulis dalam bahasa inggris */}
                                     <p className="flex-1">
-                                        {item.commit.message.split('\n')[0]
-                                            .replace(/^(.*?)\d{1,2}[:.]\d{2}\s*-\s*/, '') // Remove timestamp prefixes like "Selasa, 17 Maret 2026 10:48 - "
-                                            .replace(/^FITUR:/i, 'FEAT:') // Standardize FITUR to FEAT
-                                            .trim()}
+                                        {item.message}
                                     </p>
                                 </div>
 
-                                {item.commit.message.split('\n').length > 1 && (
+                                {item.details && item.details.length > 0 && (
                                     <div className="space-y-1 opacity-80">
-                                        {item.commit.message.split('\n').slice(1).filter(line => line.trim() !== '').map((line, idx) => (
+                                        {item.details.map((line, idx) => (
                                             <div key={idx} className="flex gap-3">
-                                                <span className="shrink-0 text-gray-300">-</span>
+                                                <span className="shrink-0 text-gray-900 font-black">-</span>
                                                 <p className="flex-1">{line.trim()}</p>
                                             </div>
                                         ))}
@@ -155,3 +156,4 @@ export default function ChangelogPage() {
         </div>
     );
 }
+

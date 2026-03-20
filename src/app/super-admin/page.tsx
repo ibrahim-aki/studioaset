@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera, RefreshCcw, Play, Pause } from "lucide-react";
+import { Shield, Users, Trash2, ShieldAlert, Loader2, Mail, User, CheckCircle2, ClipboardCheck, UserPlus, X, Lock, Eye, EyeOff, History, Clock, Tag, MapPin, KeyRound, Building2, Plus, ArrowLeft, MoreVertical, LayoutGrid, ListChecks, Settings2, LayoutDashboard, Box, Search, Pencil, Cloud, Activity, Gauge, Zap, Info, AlertTriangle, Database, Upload, Image as ImageIcon, Check, MousePointer2, Camera, RefreshCcw, Play, Pause, FileCode2, Save, FileText, Zap as ZapIcon, Edit2 } from "lucide-react";
 import { useLocalDb } from "@/context/LocalDbContext";
-import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc, addDoc, Timestamp, serverTimestamp } from "firebase/firestore";
+import { onSnapshot, collection, doc, deleteDoc, updateDoc, setDoc, addDoc, Timestamp, serverTimestamp, query, orderBy, getDoc, getDocs, where } from "firebase/firestore";
 import clsx from "clsx";
 import { initializeApp, getApps, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, inMemoryPersistence } from "firebase/auth";
@@ -1064,6 +1064,71 @@ export default function UserManagementPage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
+    const [logType, setLogType] = useState("FEAT");
+    const [logMessage, setLogMessage] = useState("");
+    const [logDetails, setLogDetails] = useState("");
+    const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+    const [logTime, setLogTime] = useState(new Date().toTimeString().slice(0, 5));
+    const [editingLogId, setEditingLogId] = useState<string | null>(null);
+    const [manualLogs, setManualLogs] = useState<any[]>([]);
+
+    useEffect(() => {
+        const q = query(collection(db, "central_changelogs"), orderBy("date", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setManualLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleSaveSystemLog = async () => {
+        if (!logMessage.trim()) return alert("Pesan utama wajib diisi!");
+        
+        setSavingSettings(true);
+        try {
+            const combinedDateTime = new Date(`${logDate}T${logTime}:00`).toISOString();
+
+            const logData = {
+                type: logType,
+                message: logMessage.trim(),
+                details: logDetails.split('\n').filter(line => line.trim() !== ""),
+                date: combinedDateTime
+            };
+
+            if (editingLogId) {
+                await updateDoc(doc(db, "central_changelogs", editingLogId), logData);
+                setEditingLogId(null);
+            } else {
+                await addDoc(collection(db, "central_changelogs"), logData);
+            }
+            
+            setLogMessage("");
+            setLogDetails("");
+            setLogDate(new Date().toISOString().split('T')[0]);
+            setLogTime(new Date().toTimeString().slice(0, 5));
+            alert(editingLogId ? "Log Berhasil Diperbarui!" : "Update Log berhasil disimpan!");
+        } catch (error: any) {
+            alert("Gagal menyimpan log: " + error.message);
+        } finally {
+            setSavingSettings(false);
+        }
+    };
+
+    const handleEditLog = (log: any) => {
+        setEditingLogId(log.id);
+        setLogType(log.type);
+        setLogMessage(log.message);
+        setLogDetails(log.details.join('\n'));
+        
+        const d = new Date(log.date);
+        setLogDate(d.toISOString().split('T')[0]);
+        setLogTime(d.toTimeString().slice(0, 5));
+    };
+
+    const handleDeleteLog = async (id: string) => {
+        if (confirm("Hapus log ini secara permanen?")) {
+            await deleteDoc(doc(db, "central_changelogs", id));
+        }
+    };
     const [cloudStats, setCloudStats] = useState({ users: 0, companies: 0, assets: 0, logs: 0 });
     const [statsLoading, setStatsLoading] = useState(false);
     const [usageMetrics, setUsageMetrics] = useState({ dailyWrites: 0, monthlyActiveUsers: 0, dailyReadsEstimate: 0 });
@@ -1375,7 +1440,7 @@ export default function UserManagementPage() {
         );
 
         return (
-            <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-8">
+            <div className="p-4 sm:p-8 space-y-8">
                 <AddCompanyModal
                     isOpen={isAddCompanyOpen}
                     onClose={() => setIsAddCompanyOpen(false)}
@@ -1588,7 +1653,7 @@ export default function UserManagementPage() {
 
     // --- VIEW: MANAGEMENT PERUSAHAAN (DRILL-DOWN) ---
     return (
-        <div className="p-4 sm:p-8 max-w-6xl mx-auto">
+        <div className="p-4 sm:p-8">
             <AddUserModal
                 isOpen={isAddUserOpen}
                 onClose={() => setIsAddUserOpen(false)}
@@ -2283,143 +2348,279 @@ export default function UserManagementPage() {
                 )}
 
                 {activeTab === "settings" && (
-                    <div id="super-admin-settings-content" className="space-y-8 animate-in fade-in duration-500">
-                        <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+                    <div id="super-admin-settings-content" className="space-y-8 animate-in fade-in duration-500 w-full px-4 lg:px-8">
+                        <div className="flex flex-col gap-6 w-full">
                             {/* Global Configuration */}
                             {!selectedCompany && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
-                                            <Shield className="w-4 h-4 text-brand-purple" />
-                                            Konfigurasi Sistem Global
-                                        </h3>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
-                                            Seluruh data sistem dikelola sepenuhnya melalui Firebase Firestore secara real-time. Tidak ada mode penyimpanan lokal yang aktif.
-                                        </p>
-                                    </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                                    
+                                    {/* 1. IDENTITY & LOGIN CUSTOMIZATION */}
+                                    <div className="space-y-6 flex flex-col">
+                                        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm flex-1 flex flex-col">
+                                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
+                                                <Shield className="w-4 h-4 text-brand-purple" />
+                                                Identity & Login
+                                            </h3>
+                                            
+                                            <div className="space-y-6 flex-1">
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Welcome Title</label>
+                                                    <input
+                                                        value={loginTitle}
+                                                        onChange={(e) => setLoginTitle(e.target.value)}
+                                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs outline-none focus:border-brand-purple font-bold"
+                                                        placeholder="Welcome Back!"
+                                                    />
+                                                </div>
 
-                                    {/* Login Page Customization */}
-                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
-                                            <LayoutDashboard className="w-4 h-4 text-brand-purple" />
-                                            Login Page Customization
-                                        </h3>
-
-                                        <div className="space-y-6">
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Welcome Title</label>
-                                                <input
-                                                    value={loginTitle}
-                                                    onChange={(e) => setLoginTitle(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple font-bold"
-                                                    placeholder="Welcome Back!"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Welcome Description</label>
-                                                <textarea
-                                                    value={loginDesc}
-                                                    onChange={(e) => setLoginDesc(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple min-h-[100px] leading-relaxed"
-                                                    placeholder="Deskripsi di bawah title..."
-                                                />
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Description</label>
+                                                    <textarea
+                                                        value={loginDesc}
+                                                        onChange={(e) => setLoginDesc(e.target.value)}
+                                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] outline-none focus:border-brand-purple min-h-[120px] leading-normal"
+                                                        placeholder="Deskripsi di bawah title..."
+                                                    />
+                                                </div>
                                             </div>
 
                                             <button
                                                 onClick={handleSaveLoginConfig}
                                                 disabled={savingSettings}
-                                                className="w-full py-3 bg-gray-900 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.1em] rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                                className="mt-6 w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.15em] rounded-xl transition-all flex items-center justify-center gap-2"
                                             >
-                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Teks Login"}
+                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Identity"}
                                             </button>
                                         </div>
                                     </div>
 
-                                    {/* Login Notification Image Settings */}
-                                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm md:col-span-2">
-                                        <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-brand-orange/10 rounded-lg flex items-center justify-center text-brand-orange">
-                                                    <ImageIcon className="w-4 h-4" />
-                                                </div>
-                                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                                    Notification Image
+                                    {/* 2. MEDIA & NOTIFICATION ASSETS */}
+                                    <div className="space-y-6 flex flex-col">
+                                        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm flex-1 flex flex-col">
+                                            <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                                                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                                    <ImageIcon className="w-4 h-4 text-brand-orange" />
+                                                    Notification Asset
                                                 </h3>
-                                            </div>
-                                            <div
-                                                onClick={() => setShowNotificationImage(!showNotificationImage)}
-                                                className={clsx(
-                                                    "w-12 h-6 rounded-full p-1 cursor-pointer transition-all duration-300",
-                                                    showNotificationImage ? "bg-brand-purple" : "bg-gray-200"
-                                                )}
-                                            >
-                                                <div className={clsx(
-                                                    "w-4 h-4 bg-white rounded-full transition-all duration-300 transform",
-                                                    showNotificationImage ? "translate-x-6" : "translate-x-0"
-                                                )} />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                                            <div className="relative group/upload">
-                                                <div className={clsx(
-                                                    "border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center transition-all min-h-[200px] relative overflow-hidden",
-                                                    notificationImageUrl ? "border-brand-purple/20 bg-brand-purple/[0.02]" : "border-gray-100 bg-gray-50/50 hover:border-brand-purple/40"
-                                                )}>
-                                                    {notificationImageUrl ? (
-                                                        <>
-                                                            <img
-                                                                src={notificationImageUrl}
-                                                                className="absolute inset-0 w-full h-full object-cover opacity-20"
-                                                                alt="Preview"
-                                                            />
-                                                            <div className="relative z-10 flex flex-col items-center">
-                                                                <div className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4 text-emerald-500">
-                                                                    <Check className="w-7 h-7" />
-                                                                </div>
-                                                                <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Foto Tersimpan di Cloudinary ✓</p>
-                                                                <button
-                                                                    onClick={handleRemoveImage}
-                                                                    className="mt-4 text-[9px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-700 transition-colors"
-                                                                >Hapus Foto</button>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-4 text-gray-300 group-hover/upload:text-brand-purple transition-colors">
-                                                                {uploadingImage ? <Loader2 className="w-7 h-7 animate-spin" /> : <Upload className="w-7 h-7" />}
-                                                            </div>
-                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">UPLOAD KE CLOUDINARY</p>
-                                                            <p className="text-[9px] text-gray-400 font-medium text-center px-4">CDN Global • Full Quality • Tanpa Limit DB</p>
-                                                            <input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
-                                                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                                                disabled={uploadingImage}
-                                                            />
-                                                        </>
+                                                <div
+                                                    onClick={() => setShowNotificationImage(!showNotificationImage)}
+                                                    className={clsx(
+                                                        "w-10 h-5 rounded-full p-1 cursor-pointer transition-all duration-300",
+                                                        showNotificationImage ? "bg-brand-purple" : "bg-gray-200"
                                                     )}
+                                                >
+                                                    <div className={clsx(
+                                                        "w-3 h-3 bg-white rounded-full transition-all duration-300 transform",
+                                                        showNotificationImage ? "translate-x-5" : "translate-x-0"
+                                                    )} />
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-6">
-                                                <div className="bg-brand-orange/5 border border-brand-orange/10 rounded-2xl p-4 flex items-start gap-3">
+                                            <div className="flex-1 flex flex-col">
+                                                <div className="relative group/upload flex-1 min-h-[180px]">
+                                                    <div className={clsx(
+                                                        "absolute inset-0 border-2 border-dashed rounded-[1.5rem] flex flex-col items-center justify-center transition-all",
+                                                        notificationImageUrl ? "border-brand-purple/20 bg-brand-purple/[0.02]" : "border-gray-100 bg-gray-50/50 hover:border-brand-purple/40"
+                                                    )}>
+                                                        {notificationImageUrl ? (
+                                                            <>
+                                                                <img
+                                                                    src={notificationImageUrl}
+                                                                    className="absolute inset-0 w-full h-full object-cover opacity-10"
+                                                                    alt="Preview"
+                                                                />
+                                                                <div className="relative z-10 flex flex-col items-center">
+                                                                    <div className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-3 text-emerald-500">
+                                                                        <Check className="w-6 h-6" />
+                                                                    </div>
+                                                                    <p className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Linked to Cloudinary</p>
+                                                                    <button
+                                                                        onClick={handleRemoveImage}
+                                                                        className="mt-3 text-[8px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                                                                    >Remove Asset</button>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-3 text-gray-300 group-hover/upload:text-brand-purple">
+                                                                    {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                                                                </div>
+                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Drop Image Asset</p>
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                    disabled={uploadingImage}
+                                                                />
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-6 flex items-start gap-3 bg-gray-50 rounded-2xl p-4">
                                                     <Info className="w-3.5 h-3.5 text-brand-orange shrink-0 mt-0.5" />
-                                                    <p className="text-[9px] text-brand-orange font-bold uppercase tracking-tight leading-relaxed">
-                                                        Foto ini akan muncul menggantikan teks Welcome Back secara otomatis jika ada pesan notifikasi muncul di halaman login.
+                                                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tight leading-relaxed">
+                                                        Visual asset for notification displays. Automates UI fallback.
                                                     </p>
                                                 </div>
-
-                                                <button
-                                                    onClick={handleSaveLoginConfig}
-                                                    disabled={savingSettings || uploadingImage}
-                                                    className="w-full py-3 bg-brand-purple hover:bg-brand-purple text-white font-black text-[10px] uppercase tracking-[0.1em] rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                                >
-                                                    {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Cloud className="w-3.5 h-3.5" /> Update Konfigurasi Foto</>}
-                                                </button>
                                             </div>
+
+                                            <button
+                                                onClick={handleSaveLoginConfig}
+                                                disabled={savingSettings || uploadingImage}
+                                                className="mt-6 w-full py-3.5 bg-brand-purple hover:bg-brand-purple text-white font-black text-[10px] uppercase tracking-[0.15em] rounded-xl transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Cloud className="w-3 h-3" /> Update Media</>}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* 3. SYSTEM EVOLUTION LOG */}
+                                    <div className="space-y-6 flex flex-col">
+                                        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm flex-1 flex flex-col">
+                                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
+                                                <FileCode2 className="w-4 h-4 text-emerald-500" />
+                                                System Evolution
+                                            </h3>
+
+                                            <div className="space-y-4 flex-1">
+                                                <div className="grid grid-cols-4 gap-1.5">
+                                                    {["CORE", "FEAT", "FIX", "IMPROVE", "REFACTOR", "STYLE", "DOCS", "PERF"].map(type => (
+                                                        <button
+                                                            key={type}
+                                                            onClick={() => setLogType(type)}
+                                                            className={clsx(
+                                                                "py-2 rounded-lg text-[8px] font-black transition-all",
+                                                                logType === type 
+                                                                    ? (type === "CORE" ? "bg-brand-orange text-white" : "bg-gray-900 text-white") 
+                                                                    : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                                                            )}
+                                                        >
+                                                            {type}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-1 ml-1">Target Date</label>
+                                                        <input
+                                                            type="date"
+                                                            value={logDate}
+                                                            onChange={(e) => setLogDate(e.target.value)}
+                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] outline-none focus:border-brand-purple font-bold"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-1 ml-1">Target Time</label>
+                                                        <input
+                                                            type="time"
+                                                            value={logTime}
+                                                            onChange={(e) => setLogTime(e.target.value)}
+                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] outline-none focus:border-brand-purple font-bold"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <input
+                                                    value={logMessage}
+                                                    onChange={(e) => setLogMessage(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[11px] outline-none focus:border-emerald-500 font-black uppercase"
+                                                    placeholder="Evolution Title"
+                                                />
+                                                
+                                                <textarea
+                                                    value={logDetails}
+                                                    onChange={(e) => setLogDetails(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] outline-none focus:border-emerald-500 min-h-[80px] leading-relaxed font-medium"
+                                                    placeholder="Detail points (internal log only)..."
+                                                />
+
+                                                {/* Preview */}
+                                                {(logMessage || logDetails) && (
+                                                    <div className="p-3 bg-gray-900 rounded-2xl border border-emerald-500/10">
+                                                        <div className="font-mono text-[8px] uppercase tracking-tighter">
+                                                            <div className={clsx(
+                                                                "mb-1",
+                                                                (() => {
+                                                                    const previewDate = new Date(`${logDate}T${logTime}:00`);
+                                                                    const day = previewDate.getDay();
+                                                                    const hour = previewDate.getHours();
+                                                                    return (day === 0 || day === 6 || hour < 9 || hour >= 18) ? "text-rose-500" : "text-emerald-500/50"
+                                                                })()
+                                                            )}>
+                                                                {new Date(`${logDate}T${logTime}:00`).toLocaleDateString('id-ID', { weekday: 'long' })}, {logTime}
+                                                            </div>
+                                                            <div className="text-white opacity-80 mb-1">{logMessage}</div>
+                                                            {logDetails.split('\n').filter(l => l.trim() !== "").map((line, i) => (
+                                                                <div key={i} className="text-white/40 truncate">- {line}</div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                onClick={handleSaveSystemLog}
+                                                disabled={savingSettings}
+                                                className={clsx(
+                                                    "mt-6 w-full py-3.5 text-white font-black text-[10px] uppercase tracking-[0.15em] rounded-xl transition-all flex items-center justify-center gap-2",
+                                                    editingLogId ? "bg-brand-purple hover:bg-brand-purple/80" : "bg-emerald-500 hover:bg-emerald-600"
+                                                )}
+                                            >
+                                                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : editingLogId ? <><RefreshCcw className="w-4 h-4" /> Save Changes</> : <><Save className="w-4 h-4" /> Publish Log</>}
+                                            </button>
+
+                                            {editingLogId && (
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingLogId(null);
+                                                        setLogMessage("");
+                                                        setLogDetails("");
+                                                    }}
+                                                    className="w-full mt-2 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-rose-500 transition-colors"
+                                                >
+                                                    Cancel Editing
+                                                </button>
+                                            )}
+
+                                            {/* Manage Existing Logs List */}
+                                            {manualLogs.length > 0 && (
+                                                <div className="mt-8 pt-6 border-t border-gray-100 flex-1 overflow-hidden flex flex-col">
+                                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                        <History className="w-3.5 h-3.5" /> Recent History
+                                                    </h4>
+                                                    <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[300px]">
+                                                        {manualLogs.map(log => (
+                                                            <div key={log.id} className="p-3 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-between group-hover:border-emerald-500/20">
+                                                                <div className="flex flex-col gap-0.5 min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={clsx(
+                                                                            "text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter",
+                                                                            log.type === "CORE" ? "bg-brand-orange text-white" : "bg-gray-200 text-gray-500"
+                                                                        )}>{log.type}</span>
+                                                                        <span className="text-[8px] font-bold text-gray-300 truncate tracking-tight">
+                                                                            {new Date(log.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-[9px] font-black text-gray-900 truncate uppercase tracking-tight">{log.message}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-1 shrink-0 ml-2">
+                                                                    <button
+                                                                        onClick={() => handleEditLog(log)}
+                                                                        className="p-1.5 bg-white border border-gray-100 rounded-lg text-gray-400 hover:text-brand-purple hover:border-brand-purple/20 transition-all shadow-sm"
+                                                                    ><Edit2 className="w-3 h-3" /></button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteLog(log.id)}
+                                                                        className="p-1.5 bg-white border border-gray-100 rounded-lg text-gray-400 hover:text-rose-500 hover:border-rose-100 transition-all shadow-sm"
+                                                                    ><Trash2 className="w-3 h-3" /></button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
