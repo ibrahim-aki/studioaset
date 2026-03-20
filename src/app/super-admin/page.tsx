@@ -464,24 +464,27 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, allSy
                         <div className="grid grid-cols-3 gap-2">
                             <div className="space-y-1">
                                 <input
-                                    type="number" min="0" value={defDays}
-                                    onChange={(e) => setDefDays(Number(e.target.value))}
+                                    type="number" min="0" value={defDays || ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setDefDays(e.target.value === "" ? 0 : Number(e.target.value))}
                                     className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-semibold transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase">Days</span>
                             </div>
                             <div className="space-y-1">
                                 <input
-                                    type="number" min="0" max="23" value={defHours}
-                                    onChange={(e) => setDefHours(Number(e.target.value))}
+                                    type="number" min="0" max="23" value={defHours || ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setDefHours(e.target.value === "" ? 0 : Number(e.target.value))}
                                     className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-semibold transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase">Hours</span>
                             </div>
                             <div className="space-y-1">
                                 <input
-                                    type="number" min="0" max="59" value={defMinutes}
-                                    onChange={(e) => setDefMinutes(Number(e.target.value))}
+                                    type="number" min="0" max="59" value={defMinutes || ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setDefMinutes(e.target.value === "" ? 0 : Number(e.target.value))}
                                     className="w-full px-2 py-2 bg-white border border-brand-purple/20 focus:border-brand-purple rounded-lg text-xs font-semibold transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase">Mins</span>
@@ -496,8 +499,9 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, allSy
                                 <input
                                     type="number"
                                     min="0"
-                                    value={days}
-                                    onChange={(e) => setDays(Number(e.target.value))}
+                                    value={days || ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setDays(e.target.value === "" ? 0 : Number(e.target.value))}
                                     className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase tracking-tighter">Days</span>
@@ -507,8 +511,9 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, allSy
                                     type="number"
                                     min="0"
                                     max="23"
-                                    value={hours}
-                                    onChange={(e) => setHours(Number(e.target.value))}
+                                    value={hours || ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setHours(e.target.value === "" ? 0 : Number(e.target.value))}
                                     className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase tracking-tighter">Hours</span>
@@ -518,8 +523,9 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, allSy
                                     type="number"
                                     min="0"
                                     max="59"
-                                    value={minutes}
-                                    onChange={(e) => setMinutes(Number(e.target.value))}
+                                    value={minutes || ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setMinutes(e.target.value === "" ? 0 : Number(e.target.value))}
                                     className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-brand-purple focus:bg-white rounded-xl text-xs font-medium transition-all outline-none text-center"
                                 />
                                 <span className="block text-[7px] text-gray-400 text-center uppercase tracking-tighter">Mins</span>
@@ -543,7 +549,7 @@ function AddQuotaModal({ isOpen, onClose, onAdd, onUpdate, existingQuotas, allSy
 }
 
 // Komponen Modal Tambah User
-function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; companyId?: string; companyName?: string }) {
+function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allSystemEmails = [] }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; companyId?: string; companyName?: string; allSystemEmails?: string[] }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
@@ -674,12 +680,18 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName }: { 
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Alamat Email</label>
                             <input
                                 type="email"
+                                list="all-system-emails-user"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
                                 placeholder="email@perusahaan.id"
                             />
+                            <datalist id="all-system-emails-user">
+                                {allSystemEmails.map(email => (
+                                    <option key={email} value={email} />
+                                ))}
+                            </datalist>
                         </div>
 
                         <div>
@@ -1379,6 +1391,10 @@ export default function UserManagementPage() {
                     onAdd={handleAddQuota}
                     onUpdate={handleUpdateQuota}
                     existingQuotas={agentQuotas}
+                    allSystemEmails={Array.from(new Set([
+                        ...users.map(u => u.email),
+                        ...agentQuotas.map(q => q.email)
+                    ])).filter(email => email && email.trim() !== "").sort()}
                     initialData={selectedQuota}
                 />
 
@@ -1579,6 +1595,10 @@ export default function UserManagementPage() {
                 onRefresh={() => { }}
                 companyId={selectedCompany?.id}
                 companyName={selectedCompany?.name}
+                allSystemEmails={Array.from(new Set([
+                    ...users.map(u => u.email),
+                    ...agentQuotas.map(q => q.email)
+                ])).filter(email => email && email.trim() !== "").sort()}
             />
 
             <AddQuotaModal 
