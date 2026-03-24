@@ -25,13 +25,22 @@ const starStyles = `
 `;
 
 const BackgroundStars = memo(() => {
-    const starData = useMemo(() => [...Array(40)].map((_, i) => ({
-        top: Math.random() * 80,
-        left: Math.random() * 100,
-        size: Math.random() * 2 + 1,
-        duration: 4 + Math.random() * 6 + "s",
-        delay: Math.random() * 5 + "s",
-    })), []);
+    const [starData, setStarData] = useState<{ top: number; left: number; size: number; duration: string; delay: string }[]>([]);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const data = [...Array(40)].map(() => ({
+            top: Math.random() * 80,
+            left: Math.random() * 100,
+            size: Math.random() * 2 + 1,
+            duration: 4 + Math.random() * 6 + "s",
+            delay: Math.random() * 5 + "s",
+        }));
+        setStarData(data);
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
 
     return (
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
