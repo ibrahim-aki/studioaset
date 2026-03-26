@@ -12,7 +12,8 @@ import {
     Plus, Edit2, Trash2, Video, X, Loader2, Tag, Download,
     Upload, Clock, MapPin, Calendar, User, Search, Filter,
     History, CheckCircle2, AlertTriangle, AlertOctagon, XCircle, MoreVertical,
-    ChevronDown, ChevronUp, Box, Settings, Lock, Camera, Image as ImageIcon
+    ChevronDown, ChevronUp, Box, Settings, Lock, Camera, Image as ImageIcon,
+    Copy, Printer
 } from "lucide-react";
 
 // Helper function to calculate asset age precisely
@@ -98,6 +99,106 @@ function AssetsContent() {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
     const [expandedNameId, setExpandedNameId] = useState<string | null>(null);
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
+    const [activeCodeMenu, setActiveCodeMenu] = useState<string | null>(null);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    const copyToClipboard = async (text: string, id: string) => {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback for non-secure HTTP networks (e.g. mobile testing on local IP)
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
+                document.body.removeChild(textArea);
+            }
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 2000);
+        } catch (err) {
+            console.error("Failed to copy:", err);
+            // Tetap set state agar ada feedback walau gagal di level sistem
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 2000);
+        }
+    };
+
+    const handlePrintCode = (asset: Asset) => {
+        // Menggunakan iframe tersembunyi untuk bypass popup blocker di mobile
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        const doc = iframe.contentWindow?.document || iframe.contentDocument;
+        if (doc) {
+            doc.write(`
+                <html>
+                    <head>
+                        <title>Cetak Barcode Aset</title>
+                        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+                        <style>
+                            @page { margin: 0; size: auto; }
+                            body { font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: white; color: black; }
+                            .print-container { padding: 2rem; border: 3px dashed #000; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 90%; }
+                            .name { font-size: 1.5rem; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+                            .barcode-container { background: white; padding: 10px; border-radius: 8px; }
+                            .code-text { font-size: 1.25rem; font-weight: bold; text-align: center; margin-top: -10px; padding: 0.5rem 1rem; background: #f3f4f6; border-radius: 8px; }
+                            .category { font-size: 1rem; font-weight: bold; border: 2px solid #000; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="print-container">
+                            <div class="category">${asset.category || 'ASET'}</div>
+                            <div class="name">${asset.name}</div>
+                            <div class="barcode-container">
+                                <svg id="barcode"></svg>
+                            </div>
+                            <div class="code-text">${asset.assetCode || 'NO CODE'}</div>
+                        </div>
+                        <script>
+                            window.onload = function() {
+                                setTimeout(function() {
+                                    try {
+                                        if (window.JsBarcode && "${asset.assetCode}") {
+                                            JsBarcode("#barcode", "${asset.assetCode || '00000000'}", {
+                                                format: "CODE128",
+                                                lineColor: "#000",
+                                                width: 2.5,
+                                                height: 80,
+                                                displayValue: false,
+                                                margin: 0
+                                            });
+                                        }
+                                    } catch(e) { console.error('Barcode error', e); }
+                                    
+                                    setTimeout(function() {
+                                        window.print();
+                                    }, 500);
+                                }, 300); // Wait for JsBarcode script to evaluate
+                            };
+                        </script>
+                    </body>
+                </html>
+            `);
+            doc.close();
+            
+            // Hapus iframe setelah beberapa saat untuk pembersihan memori
+            setTimeout(() => {
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+            }, 10000);
+        }
+    };
     const [importProgress, setImportProgress] = useState<{ current: number; total: number; isImporting: boolean }>({ current: 0, total: 0, isImporting: false });
 
     const {
@@ -1076,8 +1177,45 @@ function AssetsContent() {
                                                         <td className="py-1 px-2 text-[10px] text-gray-400 text-center">
                                                             {index + 1}
                                                         </td>
-                                                        <td className="py-1 px-2 text-[10px] font-mono font-bold text-brand-purple whitespace-nowrap truncate">
-                                                            {asset.assetCode || "-"}
+                                                        <td className="py-1 px-1.5">
+                                                            <div 
+                                                                onClick={(e) => { e.stopPropagation(); setActiveCodeMenu(activeCodeMenu === asset.id ? null : asset.id); }}
+                                                                className={clsx(
+                                                                    "flex items-center w-full min-h-[26px] rounded-lg transition-all cursor-pointer p-1 relative",
+                                                                    activeCodeMenu === asset.id ? "bg-brand-purple/10 ring-1 ring-brand-purple/30 z-[40]" : "hover:bg-brand-purple/5"
+                                                                )}
+                                                            >
+                                                                {/* Code Text */}
+                                                                <span 
+                                                                    className="text-[10px] font-mono font-bold text-brand-purple truncate flex-1 min-w-0"
+                                                                    title={copiedId === asset.id ? "Tersalin!" : (asset.assetCode || "-")}
+                                                                >
+                                                                    {copiedId === asset.id ? "TERSALIN!" : (asset.assetCode || "-")}
+                                                                </span>
+
+                                                                {/* Action Menu (Inline expand) */}
+                                                                <div 
+                                                                    className={clsx(
+                                                                        "flex items-center gap-1 transition-all duration-300 origin-right ease-out overflow-hidden",
+                                                                        activeCodeMenu === asset.id ? "w-[64px] opacity-100 ml-1.5" : "w-0 opacity-0 ml-0 pointer-events-none"
+                                                                    )}
+                                                                >
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); copyToClipboard(asset.assetCode || "", asset.id); setActiveCodeMenu(null); }}
+                                                                        className="p-1.5 bg-brand-purple text-white hover:bg-indigo-700 rounded-md shadow-sm shrink-0 active:scale-95 transition-transform"
+                                                                        title="Salin"
+                                                                    >
+                                                                        <Copy className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handlePrintCode(asset); setActiveCodeMenu(null); }}
+                                                                        className="p-1.5 bg-brand-purple text-white hover:bg-indigo-700 rounded-md shadow-sm shrink-0 active:scale-95 transition-transform"
+                                                                        title="Cetak"
+                                                                    >
+                                                                        <Printer className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                         <td 
                                                             className="py-1 px-2 cursor-pointer"
@@ -1195,9 +1333,9 @@ function AssetsContent() {
                                     </table>
                                 </div>
 
-                                {/* Click-outside overlay for action and comparison menus */}
-                                {(activeActionMenu || compareAsset) && (
-                                    <div className="fixed inset-0 z-30" onClick={() => { setActiveActionMenu(null); setCompareAsset(null); }} />
+                                {/* Click-outside overlay for action, comparison, and code menus */}
+                                {(activeActionMenu || compareAsset || activeCodeMenu) && (
+                                    <div className="fixed inset-0 z-30" onClick={() => { setActiveActionMenu(null); setCompareAsset(null); setActiveCodeMenu(null); }} />
                                 )}
 
                                 {/* Mobile Grid View */}
@@ -1223,13 +1361,52 @@ function AssetsContent() {
                                                 >
                                                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                                                         {/* Row 1: Category & Code */}
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center justify-between gap-4 w-full">
                                                             <span className="text-[10px] text-gray-400 font-bold truncate uppercase tracking-tight">
                                                                 {asset.category}
                                                             </span>
-                                                            <span className="text-[9px] font-mono font-bold text-brand-purple bg-brand-purple/5 px-1.5 py-0.5 rounded uppercase shrink-0">
-                                                                {asset.assetCode || "NO CODE"}
-                                                            </span>
+                                                            
+                                                            <div 
+                                                                onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    setActiveCodeMenu(activeCodeMenu === asset.id ? null : asset.id); 
+                                                                }}
+                                                                className={clsx(
+                                                                    "flex items-center flex-1 min-w-0 justify-end transition-all cursor-pointer p-0.5 rounded-lg relative",
+                                                                    activeCodeMenu === asset.id ? "bg-brand-purple/5 ring-1 ring-brand-purple/20 z-[40]" : ""
+                                                                )}
+                                                            >
+                                                                {copiedId === asset.id ? (
+                                                                    <span className="text-[9px] font-mono font-bold text-white bg-green-500 px-2 py-0.5 rounded-md uppercase shrink-0 shadow-sm animate-in fade-in">
+                                                                        Tersalin!
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[9px] font-mono font-bold text-brand-purple bg-brand-purple/10 px-1.5 py-0.5 rounded-md uppercase truncate">
+                                                                        {asset.assetCode || "NO CODE"}
+                                                                    </span>
+                                                                )}
+
+                                                                {/* Inline Mobile Menu */}
+                                                                <div 
+                                                                    className={clsx(
+                                                                        "flex items-center gap-1 transition-all duration-300 origin-right ease-out overflow-hidden flex-nowrap",
+                                                                        activeCodeMenu === asset.id ? "w-[64px] opacity-100 ml-1.5" : "w-0 opacity-0 ml-0 pointer-events-none"
+                                                                    )}
+                                                                >
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); copyToClipboard(asset.assetCode || "", asset.id); setActiveCodeMenu(null); }}
+                                                                        className="p-1.5 bg-brand-purple text-white rounded-md shrink-0 active:scale-95"
+                                                                    >
+                                                                        <Copy className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handlePrintCode(asset); setActiveCodeMenu(null); }}
+                                                                        className="p-1.5 bg-brand-purple text-white rounded-md shrink-0 active:scale-95"
+                                                                    >
+                                                                        <Printer className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         </div>
 
                                                         {/* Row 2: Name & Location */}
