@@ -147,22 +147,32 @@ function AssetsContent() {
                         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
                         <style>
                             @page { margin: 0; size: auto; }
+                            * { box-sizing: border-box; }
                             body { font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: white; color: black; }
-                            .print-container { padding: 2rem; border: 3px dashed #000; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 90%; }
-                            .name { font-size: 1.5rem; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
-                            .barcode-container { background: white; padding: 10px; border-radius: 8px; }
-                            .code-text { font-size: 1.25rem; font-weight: bold; text-align: center; margin-top: -10px; padding: 0.5rem 1rem; background: #f3f4f6; border-radius: 8px; }
-                            .category { font-size: 1rem; font-weight: bold; border: 2px solid #000; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; }
+                            /* Layout Stiker: Bentuk horisontal memanjang, padding rapat, lengkung ujung sedikit */
+                            .print-container { padding: 12px 18px; border: 2px dashed #000; border-radius: 10px; display: inline-flex; flex-direction: column; align-items: center; gap: 6px; background: white; margin: auto; }
+                            .name-container { display: flex; justify-content: center; width: 100%; margin-bottom: 2px; }
+                            /* Font diperkecil ekstrim agar muat sejajar, tidak akan menumpuk 1 kolom vertikal */
+                            .name { font-size: 11px; font-weight: 900; text-align: center; text-transform: uppercase; word-wrap: break-word; line-height: 1.2; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+                            .barcode-container { padding: 4px 0; display: flex; justify-content: center; width: 100%; }
+                            /* Footer diletakkan persis sejajar di bawah */
+                            .footer-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 2px; gap: 12px; }
+                            .code-text { font-size: 12px; font-weight: 900; font-family: 'Courier New', Courier, monospace; text-align: left; letter-spacing: 1px; white-space: nowrap; -webkit-text-stroke: 0.5px black; color: black; stroke: black; stroke-width: 0.5px; }
+                            .category { font-size: 10px; font-weight: 900; border: 1.5px solid #000; padding: 2px 8px; border-radius: 50px; text-transform: uppercase; text-align: right; white-space: nowrap; font-family: Arial, sans-serif; }
                         </style>
                     </head>
                     <body>
-                        <div class="print-container">
-                            <div class="category">${asset.category || 'ASET'}</div>
-                            <div class="name">${asset.name}</div>
+                        <div class="print-container" id="print-card">
+                            <div class="name-container">
+                                <div class="name" id="asset-name">${asset.name}</div>
+                            </div>
                             <div class="barcode-container">
                                 <svg id="barcode"></svg>
                             </div>
-                            <div class="code-text">${asset.assetCode || 'NO CODE'}</div>
+                            <div class="footer-row">
+                                <div class="code-text">${asset.assetCode || 'NO CODE'}</div>
+                                <div class="category">${asset.category || 'ASET'}</div>
+                            </div>
                         </div>
                         <script>
                             window.onload = function() {
@@ -172,11 +182,21 @@ function AssetsContent() {
                                             JsBarcode("#barcode", "${asset.assetCode || '00000000'}", {
                                                 format: "CODE128",
                                                 lineColor: "#000",
-                                                width: 2.5,
-                                                height: 80,
+                                                width: 1.8,
+                                                height: 45,
                                                 displayValue: false,
                                                 margin: 0
                                             });
+                                            
+                                            // Menangkal bug 0px murni dengan mengambil pembacaan panjang barcode asli JsBarcode
+                                            const svgElement = document.getElementById("barcode");
+                                            const nameElement = document.getElementById("asset-name");
+                                            if (svgElement && nameElement) {
+                                                const svgWidth = parseFloat(svgElement.getAttribute("width")) || svgElement.getBoundingClientRect().width;
+                                                // Berikan batas minimum aman agar tulisan mutlak MUSTAHIL menyusut jadi kolom vertikal
+                                                const finalWidth = Math.max(svgWidth, 200); 
+                                                nameElement.style.maxWidth = finalWidth + "px";
+                                            }
                                         }
                                     } catch(e) { console.error('Barcode error', e); }
                                     
