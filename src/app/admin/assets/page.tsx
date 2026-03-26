@@ -1187,32 +1187,37 @@ function AssetsContent() {
                                                             >
                                                                 {/* Code Text */}
                                                                 <span 
-                                                                    className="text-[10px] font-mono font-bold text-brand-purple truncate flex-1 min-w-0"
+                                                                    className={clsx(
+                                                                        "text-[10px] font-mono font-bold text-brand-purple truncate transition-all duration-300 w-full",
+                                                                        activeCodeMenu === asset.id ? "opacity-0 absolute pointer-events-none scale-95" : "opacity-100 relative scale-100"
+                                                                    )}
                                                                     title={copiedId === asset.id ? "Tersalin!" : (asset.assetCode || "-")}
                                                                 >
                                                                     {copiedId === asset.id ? "TERSALIN!" : (asset.assetCode || "-")}
                                                                 </span>
 
-                                                                {/* Action Menu (Inline expand) */}
+                                                                {/* Action Menu (Replaces entire code area) */}
                                                                 <div 
                                                                     className={clsx(
-                                                                        "flex items-center gap-1 transition-all duration-300 origin-right ease-out overflow-hidden",
-                                                                        activeCodeMenu === asset.id ? "w-[64px] opacity-100 ml-1.5" : "w-0 opacity-0 ml-0 pointer-events-none"
+                                                                        "flex items-center justify-center gap-1.5 transition-all duration-300 w-full",
+                                                                        activeCodeMenu === asset.id ? "opacity-100 relative scale-100" : "opacity-0 absolute pointer-events-none scale-95"
                                                                     )}
                                                                 >
                                                                     <button 
                                                                         onClick={(e) => { e.stopPropagation(); copyToClipboard(asset.assetCode || "", asset.id); setActiveCodeMenu(null); }}
-                                                                        className="p-1.5 bg-brand-purple text-white hover:bg-indigo-700 rounded-md shadow-sm shrink-0 active:scale-95 transition-transform"
+                                                                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-brand-purple text-white hover:bg-indigo-600 rounded-md shadow-sm active:scale-95 transition-all outline-none"
                                                                         title="Salin"
                                                                     >
-                                                                        <Copy className="w-3.5 h-3.5" />
+                                                                        <Copy className="w-3 h-3" />
+                                                                        <span className="text-[9px] font-bold tracking-wider uppercase">Copy</span>
                                                                     </button>
                                                                     <button 
                                                                         onClick={(e) => { e.stopPropagation(); handlePrintCode(asset); setActiveCodeMenu(null); }}
-                                                                        className="p-1.5 bg-brand-purple text-white hover:bg-indigo-700 rounded-md shadow-sm shrink-0 active:scale-95 transition-transform"
+                                                                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-brand-purple text-white hover:bg-indigo-600 rounded-md shadow-sm active:scale-95 transition-all outline-none"
                                                                         title="Cetak"
                                                                     >
-                                                                        <Printer className="w-3.5 h-3.5" />
+                                                                        <Printer className="w-3 h-3" />
+                                                                        <span className="text-[9px] font-bold tracking-wider uppercase">Print</span>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -1376,34 +1381,37 @@ function AssetsContent() {
                                                                     activeCodeMenu === asset.id ? "bg-brand-purple/5 ring-1 ring-brand-purple/20 z-[40]" : ""
                                                                 )}
                                                             >
-                                                                {copiedId === asset.id ? (
-                                                                    <span className="text-[9px] font-mono font-bold text-white bg-green-500 px-2 py-0.5 rounded-md uppercase shrink-0 shadow-sm animate-in fade-in">
-                                                                        Tersalin!
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="text-[9px] font-mono font-bold text-brand-purple bg-brand-purple/10 px-1.5 py-0.5 rounded-md uppercase truncate">
-                                                                        {asset.assetCode || "NO CODE"}
-                                                                    </span>
-                                                                )}
+                                                                {/* Text Mode */}
+                                                                <span 
+                                                                    className={clsx(
+                                                                        "text-[9px] font-mono font-bold uppercase transition-all duration-300 w-full text-right truncate",
+                                                                        activeCodeMenu === asset.id ? "opacity-0 absolute pointer-events-none scale-95" : "opacity-100 relative scale-100 px-2 py-1 bg-brand-purple/10 text-brand-purple rounded-md",
+                                                                        copiedId === asset.id ? "!text-white !bg-green-500 shadow-sm" : ""
+                                                                    )}
+                                                                >
+                                                                    {copiedId === asset.id ? "Tersalin!" : (asset.assetCode || "NO CODE")}
+                                                                </span>
 
-                                                                {/* Inline Mobile Menu */}
+                                                                {/* Action Menu Mode (Replaces the text entirely) */}
                                                                 <div 
                                                                     className={clsx(
-                                                                        "flex items-center gap-1 transition-all duration-300 origin-right ease-out overflow-hidden flex-nowrap",
-                                                                        activeCodeMenu === asset.id ? "w-[64px] opacity-100 ml-1.5" : "w-0 opacity-0 ml-0 pointer-events-none"
+                                                                        "flex items-center justify-end gap-2 transition-all duration-300 w-full",
+                                                                        activeCodeMenu === asset.id ? "opacity-100 relative scale-100" : "opacity-0 absolute pointer-events-none scale-95"
                                                                     )}
                                                                 >
                                                                     <button 
                                                                         onClick={(e) => { e.stopPropagation(); copyToClipboard(asset.assetCode || "", asset.id); setActiveCodeMenu(null); }}
-                                                                        className="p-1.5 bg-brand-purple text-white rounded-md shrink-0 active:scale-95"
+                                                                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand-purple text-white rounded-md shadow-sm active:scale-95 transition-transform"
                                                                     >
                                                                         <Copy className="w-3.5 h-3.5" />
+                                                                        <span className="text-[10px] font-bold tracking-widest uppercase">Copy</span>
                                                                     </button>
                                                                     <button 
                                                                         onClick={(e) => { e.stopPropagation(); handlePrintCode(asset); setActiveCodeMenu(null); }}
-                                                                        className="p-1.5 bg-brand-purple text-white rounded-md shrink-0 active:scale-95"
+                                                                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand-purple text-white rounded-md shadow-sm active:scale-95 transition-transform"
                                                                     >
                                                                         <Printer className="w-3.5 h-3.5" />
+                                                                        <span className="text-[10px] font-bold tracking-widest uppercase">Print</span>
                                                                     </button>
                                                                 </div>
                                                             </div>
