@@ -59,9 +59,10 @@ export interface MasterAsset {
     conditionNotes: string;
     description: string;
     position?: string;
-    entryDate?: string;
+    entryDate: string;
     lastModifiedBy?: string;
-    updatedAt?: string;
+    updatedAt: string;
+    createdAt: string;
     initialPhotoUrl?: string; // Foto pertama kali aset didaftarkan
 }
 
@@ -504,12 +505,21 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const id = uuidv4();
             const companyId = finalCompanyId;
             if (!isSuperAdmin && !companyId) throw new Error("ID Perusahaan tidak ditemukan.");
-            await setDoc(doc(db, "assets", id), { ...a, id, companyId });
+            await setDoc(doc(db, "assets", id), { 
+                ...a, 
+                id, 
+                companyId,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
             await api.addLog({ assetId: id, assetName: a.name, type: "SYSTEM", toValue: `Aset Baru`, notes: `Asset: ${a.name}`, companyId });
         }),
         updateAsset: async (id, data) => withLoading(async () => {
             const assetBefore = assets.find(a => a.id === id);
-            await updateDoc(doc(db, "assets", id), data as any);
+            await updateDoc(doc(db, "assets", id), {
+                ...data,
+                updatedAt: new Date().toISOString()
+            } as any);
             if (assetBefore) {
                 await api.addLog({ 
                     assetId: id, 
@@ -566,9 +576,16 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
         }),
         bulkAddAssets: async (newAssets) => withLoading(async () => {
             const companyId = finalCompanyId;
+            const now = new Date().toISOString();
             for (const a of newAssets) {
                 const id = uuidv4();
-                await setDoc(doc(db, "assets", id), { ...a, id, companyId });
+                await setDoc(doc(db, "assets", id), { 
+                    ...a, 
+                    id, 
+                    companyId,
+                    createdAt: now,
+                    updatedAt: now
+                });
             }
         }),
 

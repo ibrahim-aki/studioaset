@@ -372,10 +372,11 @@ function AssetsContent() {
         }
 
         assetsData.sort((a, b) => {
-            if (a.category === b.category) {
-                return a.name.localeCompare(b.name);
-            }
-            return a.category.localeCompare(b.category);
+            const timeA = new Date(a.createdAt || a.entryDate || 0).getTime();
+            const timeB = new Date(b.createdAt || b.entryDate || 0).getTime();
+            
+            if (timeB !== timeA) return timeB - timeA;
+            return b.id.localeCompare(a.id); // Final tie-breaker
         });
 
         setAssets(assetsData);
@@ -573,7 +574,7 @@ function AssetsContent() {
                 }
             }
 
-            const assetData = {
+            const commonData = {
                 locationId: formData.locationId,
                 assetCode: assetCode,
                 name: finalName,
@@ -589,10 +590,17 @@ function AssetsContent() {
             };
 
             if (!formData.id) {
-                await addAsset(assetData);
+                await addAsset({
+                    ...commonData,
+                    createdAt: (formData as any).createdAt || new Date().toISOString()
+                });
                 setLastUsed({ locationId: formData.locationId, category: category });
             } else {
-                await updateAsset(formData.id, assetData);
+                const updateData: any = { ...commonData };
+                if ((formData as any).createdAt) {
+                    updateData.createdAt = (formData as any).createdAt;
+                }
+                await updateAsset(formData.id, updateData);
             }
 
             closeModal();
@@ -904,6 +912,7 @@ function AssetsContent() {
                             entryDate: finalEntryDate,
                             position: String(position),
                             lastModifiedBy: adminName,
+                            createdAt: new Date().toISOString(),
                             updatedAt: new Date().toISOString()
                         };
 
