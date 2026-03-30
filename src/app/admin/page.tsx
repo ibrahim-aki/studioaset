@@ -8,10 +8,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function AdminPage() {
     const { user } = useAuth();
     const { rooms, assets, locations, checklists, operatorShifts } = useLocalDb();
+    const [validUserIds, setValidUserIds] = useState<string[] | null>(null);
     const [expandedBoards, setExpandedBoards] = useState<Record<string, boolean>>({
         liveNow: false,
         ready: false,
@@ -34,6 +37,19 @@ export default function AdminPage() {
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // Listen to master users to filter out ghost/deleted operators ONCE on mount (Save Quota)
+    useEffect(() => {
+        let isMounted = true;
+        import("firebase/firestore").then(({ collection, getDocs }) => {
+            getDocs(collection(db, "users")).then((snap) => {
+                if (isMounted) {
+                    setValidUserIds(snap.docs.map(doc => doc.id));
+                }
+            }).catch(e => console.error("Error fetching valid users:", e));
+        });
+        return () => { isMounted = false; };
     }, []);
 
     const handleLogout = () => {
@@ -532,7 +548,7 @@ export default function AdminPage() {
                                 Operator Aktif
                             </h3>
                             {(() => {
-                                const activeShifts = operatorShifts.filter(s => s.status === "ACTIVE");
+                                const activeShifts = operatorShifts.filter(s => s.status === "ACTIVE" && (validUserIds === null || validUserIds.includes(s.operatorId)));
                                 const uniqueShiftsMap: Record<string, typeof activeShifts[0]> = {};
                                 activeShifts.forEach(s => {
                                     if (!uniqueShiftsMap[s.operatorId] || new Date(s.createdAt) > new Date(uniqueShiftsMap[s.operatorId].createdAt)) {
@@ -549,7 +565,7 @@ export default function AdminPage() {
                         </div>
                         <div className="p-1 space-y-0.5">
                             {(() => {
-                                const activeShifts = operatorShifts.filter(s => s.status === "ACTIVE");
+                                const activeShifts = operatorShifts.filter(s => s.status === "ACTIVE" && (validUserIds === null || validUserIds.includes(s.operatorId)));
                                 if (activeShifts.length === 0) {
                                     return (
                                         <div className="p-6 text-center">
