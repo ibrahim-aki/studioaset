@@ -1,5 +1,18 @@
 [
   {
+    "date": "2026-03-30T10:30:00",
+    "type": "FEAT",
+    "message": "MULTI-ROLE & MULTI-LOCATION SYSTEM UPGRADE",
+    "details": [
+      "Enhanced Multi-Location Access, supporting management of assets across multiple branches concurrently.",
+      "Introduced Multi-Role support, enabling users to hold multiple designations simultaneously (e.g., Studio Admin & Client Admin).",
+      "Improved data filtering in Dashboard, Asset Catalog, and Room Management based on authorized locations.",
+      "Refined system security and role normalization for enhanced application stability.",
+      "Updated user interface to display multiple role badges across authorized views.",
+      "Resolved data display inconsistencies where branch assets were not correctly filtered by specific user permissions."
+    ]
+  },
+  {
     "date": "2026-03-20T19:00:00",
     "type": "FEAT",
     "message": "IMPROVE: System access and numeric input experience",

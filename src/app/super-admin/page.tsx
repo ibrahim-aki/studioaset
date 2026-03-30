@@ -553,8 +553,8 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allS
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
-    const [role, setRole] = useState<"SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_ADMIN" | "CLIENT_OPERATOR">("OPERATOR");
-    const [locationId, setLocationId] = useState("HQ");
+    const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(["OPERATOR"]);
+    const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
     const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -564,12 +564,27 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allS
 
     if (!isOpen) return null;
 
+    const toggleLocation = (id: string) => {
+        if (selectedLocationIds.includes(id)) {
+            setSelectedLocationIds(selectedLocationIds.filter(lid => lid !== id));
+        } else {
+            setSelectedLocationIds([...selectedLocationIds, id]);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError("");
 
         try {
+            const isGlobalAdmin = selectedRoles.includes("SUPER_ADMIN") || selectedRoles.includes("HQ_ADMIN");
+            if (!isGlobalAdmin && selectedLocationIds.length === 0) {
+                setError("Pilih setidaknya satu lokasi akses!");
+                setLoading(false);
+                return;
+            }
+
             const firebaseConfig = {
                 apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
                 authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -579,7 +594,6 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allS
                 appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
             };
 
-            // Pastikan koneksi bersih
             const existingApp = getApps().find(app => app.name === "Secondary");
             if (existingApp) await deleteApp(existingApp);
 
@@ -590,23 +604,28 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allS
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const newUser = userCredential.user;
 
-            const selectedLocation = locations.find(l => l.id === locationId);
+            const primaryLocationId = selectedLocationIds.length > 0 ? selectedLocationIds[0] : "HQ";
+            const selectedLocation = locations.find(l => l.id === primaryLocationId);
 
-            // Validasi Kritis: Pastikan Perusahaan Terpilih
-            if (role !== "SUPER_ADMIN" && !companyId) {
-                setError("Pilih perusahaan terlebih dahulu melalui menu Kelola Perusahaan sebelum menambah Admin/Operator.");
+            const isSuperAdmin = selectedRoles.includes("SUPER_ADMIN");
+            if (!isSuperAdmin && !companyId) {
+                setError("Pilih perusahaan terlebih dahulu melalui menu Kelola Perusahaan!");
                 setLoading(false);
                 return;
             }
 
+            const primaryRole = selectedRoles[0] || "OPERATOR";
+
             await setDoc(doc(db, "users", newUser.uid), {
                 name,
                 email,
-                role,
+                role: primaryRole,
+                roles: selectedRoles,
                 companyId: companyId || "",
                 companyName: companyName || "",
-                locationId,
-                locationName: selectedLocation ? selectedLocation.name : (locationId === "HQ" ? "Kantor Pusat (HQ)" : "-"),
+                locationId: primaryLocationId,
+                locationIds: selectedLocationIds,
+                locationName: selectedLocation ? selectedLocation.name : (primaryLocationId === "HQ" ? "Kantor Pusat (HQ)" : "-"),
                 phone,
                 uid: newUser.uid,
                 needsPasswordChange: true,
@@ -620,7 +639,7 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allS
             setPassword("");
             setName("");
             setPhone("");
-            setLocationId("HQ");
+            setSelectedLocationIds([]);
 
             alert("User berhasil didaftarkan!");
             onClose();
@@ -728,54 +747,104 @@ function AddUserModal({ isOpen, onClose, onRefresh, companyId, companyName, allS
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Pilih Peran (Role)</label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Pilih Role (Bisa Rangkap)</label>
+                            <div className="grid grid-cols-2 gap-2">
                                 {[
-                                    { id: "ADMIN", label: "ADMIN", color: "indigo" },
+                                    { id: "ADMIN", label: "ADMIN STUDIO", color: "indigo" },
+                                    { id: "HQ_ADMIN", label: "ADMIN PUSAT (HQ)", color: "rose" },
                                     { id: "OPERATOR", label: "OPERATOR", color: "emerald" },
                                     { id: "CLIENT_ADMIN", label: "CLIENT ADMIN", color: "amber" },
-                                    { id: "CLIENT_OPERATOR", label: "CLIENT OP", color: "rose" }
-                                ].map((r) => (
-                                    <button
-                                        key={r.id}
-                                        type="button"
-                                        onClick={() => setRole(r.id as any)}
-                                        className={clsx(
-                                            "py-3 rounded-2xl text-[10px] font-bold tracking-widest border transition-all",
-                                            role === r.id
-                                                ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : 'rose-500'} border-transparent text-white shadow-lg`
-                                                : "bg-gray-50 border-gray-100 text-gray-400"
-                                        )}
-                                    >
-                                        {r.label}
-                                    </button>
-                                ))}
+                                    { id: "CLIENT_OPERATOR", label: "CLIENT OP", color: "orange" }
+                                ].map((r) => {
+                                    const isActive = selectedRoles.includes(r.id as UserRole);
+                                    return (
+                                        <button
+                                            key={r.id}
+                                            type="button"
+                                            onClick={() => {
+                                                const id = r.id as UserRole;
+                                                if (id === "HQ_ADMIN" || id === "SUPER_ADMIN") {
+                                                    setSelectedRoles([id]);
+                                                } else if (isActive) {
+                                                    setSelectedRoles(selectedRoles.filter(sr => sr !== id));
+                                                } else {
+                                                    const filtered = selectedRoles.filter(sr => sr !== "HQ_ADMIN" && sr !== "SUPER_ADMIN");
+                                                    setSelectedRoles([...filtered, id]);
+                                                }
+                                            }}
+                                            className={clsx(
+                                                "py-2.5 px-3 rounded-2xl text-[9px] font-bold tracking-widest border transition-all flex items-center gap-2",
+                                                isActive
+                                                    ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : r.color === 'orange' ? 'orange-500' : 'rose-500'} border-transparent text-white shadow-md`
+                                                    : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                            )}
+                                        >
+                                            <div className={clsx("w-1.5 h-1.5 rounded-full flex-shrink-0", isActive ? "bg-white" : "bg-gray-300")} />
+                                            <span className="truncate">{r.label}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Penempatan Cabang</label>
-                            <select
-                                required
-                                value={locationId}
-                                onChange={(e) => setLocationId(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple"
-                            >
-                                <option value="HQ">Kantor Pusat (HQ)</option>
-                                {locations.map(loc => (
-                                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {!selectedRoles.includes("SUPER_ADMIN") && !selectedRoles.includes("HQ_ADMIN") && (
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 flex justify-between items-center">
+                                    <span>Penempatan Cabang (Akses)</span>
+                                    <span className="text-[9px] text-brand-purple font-black italic normal-case">{selectedLocationIds.length} terpilih</span>
+                                </label>
+                                <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto p-1 custom-scrollbar">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleLocation("HQ")}
+                                        className={clsx(
+                                            "px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2",
+                                            selectedLocationIds.includes("HQ")
+                                                ? "bg-gray-900 border-transparent text-white shadow-md"
+                                                : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                        )}
+                                    >
+                                        <div className={clsx("w-1.5 h-1.5 rounded-full", selectedLocationIds.includes("HQ") ? "bg-brand-orange" : "bg-gray-300")} />
+                                        Pusat (HQ)
+                                    </button>
+                                    {locations.map(loc => (
+                                        <button
+                                            key={loc.id}
+                                            type="button"
+                                            onClick={() => toggleLocation(loc.id)}
+                                            className={clsx(
+                                                "px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2",
+                                                selectedLocationIds.includes(loc.id)
+                                                    ? "bg-brand-purple border-transparent text-white shadow-md shadow-brand-purple/20"
+                                                    : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                            )}
+                                        >
+                                            <div className={clsx("w-1.5 h-1.5 rounded-full", selectedLocationIds.includes(loc.id) ? "bg-white" : "bg-gray-300")} />
+                                            {loc.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {(selectedRoles.includes("SUPER_ADMIN") || selectedRoles.includes("HQ_ADMIN")) && (
+                            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center gap-3">
+                                <Shield className="w-5 h-5 text-indigo-600 shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-black text-indigo-900 uppercase tracking-widest">Akses Global Direstui</p>
+                                    <p className="text-[9px] text-indigo-500 font-bold">Role ini memiliki akses penuh ke seluruh cabang secara otomatis.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-4">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                            className="w-full py-4 bg-brand-orange hover:bg-brand-orange text-white font-black text-xs uppercase tracking-widest rounded-3xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-brand-orange/10"
                         >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Daftarkan Pengguna"}
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "DAFTARKAN PENGGUNA"}
                         </button>
                     </div>
                 </form>
@@ -788,12 +857,14 @@ interface UserData {
     id: string;
     uid: string;
     email: string;
-    role: "ADMIN" | "OPERATOR" | "SUPER_ADMIN" | "CLIENT_ADMIN" | "CLIENT_OPERATOR";
+    role: UserRole;
+    roles?: UserRole[];
     name: string;
     companyId?: string;
     companyName?: string;
+    locationId: string;
+    locationIds?: string[];
     locationName?: string;
-    locationId?: string;
     phone?: string;
 }
 
@@ -801,8 +872,8 @@ interface UserData {
 function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; onClose: () => void; onRefresh: () => void; user: UserData | null }) {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
-    const [role, setRole] = useState<UserRole>("OPERATOR");
-    const [locationId, setLocationId] = useState("HQ");
+    const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
+    const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const { locations } = useLocalDb();
@@ -811,12 +882,20 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
         if (user) {
             setName(user.name || "");
             setPhone(user.phone || "");
-            setRole(user.role as UserRole);
-            setLocationId(user.locationId || "HQ");
+            setSelectedRoles(user.roles || (user.role ? [user.role] : []));
+            setSelectedLocationIds(user.locationIds || (user.locationId ? [user.locationId] : []));
         }
     }, [user]);
 
     if (!isOpen || !user) return null;
+
+    const toggleLocation = (id: string) => {
+        if (selectedLocationIds.includes(id)) {
+            setSelectedLocationIds(selectedLocationIds.filter(lid => lid !== id));
+        } else {
+            setSelectedLocationIds([...selectedLocationIds, id]);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -824,14 +903,27 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
         setError("");
 
         try {
-            const selectedLoc = locations.find(l => l.id === locationId);
-            const locationName = selectedLoc ? selectedLoc.name : (locationId === "HQ" ? "Kantor Pusat (HQ)" : "-");
+            // Jika role SUPER atau HQ_ADMIN, biasanya aksesnya otomatis global. 
+            // Tapi untuk ADMIN/OPERATOR/CLIENT_ADMIN, harus minimal 1 lokasi kecuali HQ_ADMIN.
+            const isGlobalAdmin = selectedRoles.includes("SUPER_ADMIN") || selectedRoles.includes("HQ_ADMIN");
+            if (!isGlobalAdmin && selectedLocationIds.length === 0) {
+                throw new Error("Pilih setidaknya satu lokasi akses!");
+            }
+
+            // Simpan locationId pertama sebagai primary (untuk kompatibilitas fallback)
+            const primaryLocationId = selectedLocationIds.length > 0 ? selectedLocationIds[0] : "HQ";
+            const selectedLoc = locations.find(l => l.id === primaryLocationId);
+            const locationName = selectedLoc ? selectedLoc.name : (primaryLocationId === "HQ" ? "Kantor Pusat (HQ)" : "-");
+
+            const primaryRole = selectedRoles[0] || "OPERATOR";
 
             await updateDoc(doc(db, "users", user.id), {
                 name,
                 phone,
-                role,
-                locationId,
+                role: primaryRole,
+                roles: selectedRoles,
+                locationId: primaryLocationId,
+                locationIds: selectedLocationIds,
                 locationName,
                 updatedAt: new Date().toISOString()
             });
@@ -889,45 +981,95 @@ function EditUserModal({ isOpen, onClose, onRefresh, user }: { isOpen: boolean; 
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Hak Akses (Role)</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Hak Akses (Role - Bisa Rangkap)</label>
                         <div className="grid grid-cols-2 gap-2">
                             {[
-                                { id: "ADMIN", label: "ADMIN", color: "indigo" },
+                                { id: "ADMIN", label: "ADMIN STUDIO", color: "indigo" },
+                                { id: "HQ_ADMIN", label: "ADMIN PUSAT (HQ)", color: "rose" },
                                 { id: "OPERATOR", label: "OPERATOR", color: "emerald" },
                                 { id: "CLIENT_ADMIN", label: "CLIENT ADMIN", color: "amber" },
-                                { id: "CLIENT_OPERATOR", label: "CLIENT OP", color: "rose" }
-                            ].map((r) => (
-                                <button
-                                    key={r.id}
-                                    type="button"
-                                    onClick={() => setRole(r.id as any)}
-                                    className={clsx(
-                                        "py-2.5 rounded-xl text-[9px] font-black tracking-widest border transition-all",
-                                        role === r.id
-                                            ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : 'rose-500'} border-transparent text-white shadow-lg`
-                                            : "bg-gray-50 border-gray-100 text-gray-400"
-                                    )}
-                                >
-                                    {r.label}
-                                </button>
-                            ))}
+                                { id: "CLIENT_OPERATOR", label: "CLIENT OP", color: "orange" }
+                            ].map((r) => {
+                                const isActive = selectedRoles.includes(r.id as UserRole);
+                                return (
+                                    <button
+                                        key={r.id}
+                                        type="button"
+                                        onClick={() => {
+                                            const id = r.id as UserRole;
+                                            if (id === "HQ_ADMIN" || id === "SUPER_ADMIN") {
+                                                setSelectedRoles([id]);
+                                            } else if (isActive) {
+                                                setSelectedRoles(selectedRoles.filter(sr => sr !== id));
+                                            } else {
+                                                const filtered = selectedRoles.filter(sr => sr !== "HQ_ADMIN" && sr !== "SUPER_ADMIN");
+                                                setSelectedRoles([...filtered, id]);
+                                            }
+                                        }}
+                                        className={clsx(
+                                            "py-2.5 px-3 rounded-xl text-[9px] font-bold tracking-widest border transition-all flex items-center gap-2",
+                                            isActive
+                                                ? `bg-${r.color === 'indigo' ? 'brand-purple' : r.color === 'emerald' ? 'brand-teal' : r.color === 'amber' ? 'brand-orange' : r.color === 'orange' ? 'orange-500' : 'rose-500'} border-transparent text-white shadow-md`
+                                                : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                        )}
+                                    >
+                                        <div className={clsx("w-1.5 h-1.5 rounded-full flex-shrink-0", isActive ? "bg-white" : "bg-gray-300")} />
+                                        <span className="truncate">{r.label}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Penempatan Cabang</label>
-                        <select
-                            required
-                            value={locationId}
-                            onChange={(e) => setLocationId(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:border-brand-purple appearance-none font-bold"
-                        >
-                            <option value="HQ">Kantor Pusat (HQ)</option>
-                            {locations.map(loc => (
-                                <option key={loc.id} value={loc.id}>{loc.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {!selectedRoles.includes("SUPER_ADMIN") && !selectedRoles.includes("HQ_ADMIN") && (
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 flex justify-between items-center">
+                                <span>Manajemen Akses (Cabang)</span>
+                                <span className="text-[9px] text-brand-purple font-bold italic normal-case">{selectedLocationIds.length} terpilih</span>
+                            </label>
+                            <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto p-1 custom-scrollbar">
+                                <button
+                                    type="button"
+                                    onClick={() => toggleLocation("HQ")}
+                                    className={clsx(
+                                        "px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2",
+                                        selectedLocationIds.includes("HQ")
+                                            ? "bg-gray-900 border-transparent text-white shadow-md"
+                                            : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                    )}
+                                >
+                                    <div className={clsx("w-1.5 h-1.5 rounded-full", selectedLocationIds.includes("HQ") ? "bg-brand-orange" : "bg-gray-300")} />
+                                    Kantor Pusat
+                                </button>
+                                {locations.map(loc => (
+                                    <button
+                                        key={loc.id}
+                                        type="button"
+                                        onClick={() => toggleLocation(loc.id)}
+                                        className={clsx(
+                                            "px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2",
+                                            selectedLocationIds.includes(loc.id)
+                                                ? "bg-brand-purple border-transparent text-white shadow-md shadow-brand-purple/20"
+                                                : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                        )}
+                                    >
+                                        <div className={clsx("w-1.5 h-1.5 rounded-full", selectedLocationIds.includes(loc.id) ? "bg-white" : "bg-gray-300")} />
+                                        {loc.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {(selectedRoles.includes("SUPER_ADMIN") || selectedRoles.includes("HQ_ADMIN")) && (
+                        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center gap-3">
+                            <Shield className="w-5 h-5 text-indigo-600 shrink-0" />
+                            <div>
+                                <p className="text-[10px] font-black text-indigo-900 uppercase tracking-widest">Akses Global Direstui</p>
+                                <p className="text-[9px] text-indigo-500 font-bold">Role ini memiliki akses penuh ke seluruh cabang secara otomatis.</p>
+                            </div>
+                        </div>
+                    )}
 
                     <button
                         type="submit"
@@ -1152,8 +1294,12 @@ export default function UserManagementPage() {
                 list = list.filter(u => u.companyId === selectedCompany.id);
             }
 
-            const roleOrder = { "SUPER_ADMIN": 1, "ADMIN": 2, "OPERATOR": 3, "CLIENT_ADMIN": 4, "CLIENT_OPERATOR": 5 };
-            const sortedList = list.sort((a, b) => (roleOrder[a.role] || 4) - (roleOrder[b.role] || 4));
+            const roleOrder: Record<string, number> = { "SUPER_ADMIN": 1, "ADMIN": 2, "HQ_ADMIN": 3, "OPERATOR": 4, "CLIENT_ADMIN": 5, "CLIENT_OPERATOR": 6 };
+            const sortedList = list.sort((a, b) => {
+                const orderA = a.role ? (roleOrder[a.role] || 10) : 10;
+                const orderB = b.role ? (roleOrder[b.role] || 10) : 10;
+                return orderA - orderB;
+            });
             setUsers(sortedList);
             setLoading(false);
         }, (err) => {
@@ -1238,9 +1384,12 @@ export default function UserManagementPage() {
         }
     }, [selectedCompany?.id]);
 
-    const handleRoleChange = async (userId: string, newRole: string) => {
+    const handleRoleChange = async (userId: string, newRole: UserRole) => {
         try {
-            await updateDoc(doc(db, "users", userId), { role: newRole });
+            await updateDoc(doc(db, "users", userId), { 
+                role: newRole,
+                roles: [newRole] 
+            });
         } catch (error) {
             alert("Gagal mengubah role");
         }
@@ -1877,33 +2026,59 @@ export default function UserManagementPage() {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={clsx(
-                                                            "px-3 py-1 rounded-lg text-[10px] font-black uppercase border tracking-tighter",
-                                                            u.role === "SUPER_ADMIN" ? "bg-purple-50 text-brand-purple border-purple-100" :
-                                                                u.role === "ADMIN" ? "bg-brand-purple/10 text-brand-purple border-brand-purple/20" : "bg-emerald-50 text-brand-teal border-emerald-100"
-                                                        )}>
-                                                            {u.role}
-                                                        </span>
+                                                        <div className="flex flex-wrap gap-1.5 min-w-[120px]">
+                                                            {(u.roles || (u.role ? [u.role] : [])).map((role, idx) => {
+                                                                const isGlobal = role === "SUPER_ADMIN" || role === "HQ_ADMIN";
+                                                                const isStudioAdmin = role === "ADMIN";
+                                                                const isClientAdmin = role === "CLIENT_ADMIN";
+                                                                const isOp = role === "OPERATOR";
+                                                                const isClientOp = role === "CLIENT_OPERATOR";
+
+                                                                return (
+                                                                    <span key={idx} className={clsx(
+                                                                        "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border tracking-tighter whitespace-nowrap",
+                                                                        isGlobal ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
+                                                                        isStudioAdmin ? "bg-brand-purple/10 text-brand-purple border-brand-purple/20" :
+                                                                        isClientAdmin ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                                        isOp ? "bg-emerald-50 text-brand-teal border-emerald-100" :
+                                                                        isClientOp ? "bg-rose-50 text-rose-500 border-rose-100" :
+                                                                        "bg-gray-50 text-gray-500 border-gray-100"
+                                                                    )}>
+                                                                        {role?.replace(/_/g, " ") || "UNKNOWN"}
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        {u.role === "SUPER_ADMIN" ? (
-                                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest opacity-50">Pusat</span>
-                                                        ) : (
-                                                            <select
-                                                                value={u.locationId || ""}
-                                                                onChange={(e) => handleLocationChange(u.id, e.target.value)}
-                                                                className="bg-transparent text-[10px] font-bold text-gray-600 outline-none focus:text-brand-purple cursor-pointer border-b border-dashed border-gray-200 pb-0.5"
-                                                            >
-                                                                <option value="">Belum Set</option>
-                                                                <option value="HQ">Kantor Pusat (HQ)</option>
-                                                                {locations.map(loc => (
-                                                                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        )}
+                                                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                            {(u.roles?.includes("SUPER_ADMIN") || u.roles?.includes("HQ_ADMIN") || u.role === "SUPER_ADMIN" || u.role === "HQ_ADMIN") ? (
+                                                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded uppercase border border-indigo-100 flex items-center gap-1">
+                                                                    <Shield className="w-2 h-2" /> Global Access
+                                                                </span>
+                                                            ) : (
+                                                                <>
+                                                                    {u.locationIds && u.locationIds.length > 0 ? (
+                                                                        u.locationIds.map(locId => {
+                                                                            const loc = locations.find(l => l.id === locId);
+                                                                            const name = loc ? loc.name : (locId === "HQ" ? "Pusat" : "Unknown");
+                                                                            return (
+                                                                                <span key={locId} className="px-2 py-0.5 bg-gray-50 text-gray-500 text-[8px] font-bold rounded border border-gray-100 flex items-center gap-1">
+                                                                                    <MapPin className="w-2 h-2" /> {name}
+                                                                                </span>
+                                                                            );
+                                                                        })
+                                                                    ) : (
+                                                                        <span className="px-2 py-0.5 bg-rose-50 text-rose-500 text-[8px] font-bold rounded border border-rose-100">
+                                                                            No Access Set
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        {u.role !== "SUPER_ADMIN" && (
+                                                        {(!u.roles?.includes("SUPER_ADMIN") && u.role !== "SUPER_ADMIN") && (
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
                                                                     onClick={() => {

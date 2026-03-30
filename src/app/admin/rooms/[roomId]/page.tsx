@@ -25,21 +25,28 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
 
     useEffect(() => {
         const r = rawRooms.find(r => r.id === roomId);
-        if (r) {
+        const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+        const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+        const hasAccess = isHqOrSuper || (r && accessibleIds.includes(r.locationId));
+
+        if (r && hasAccess) {
             setRoom(r);
             // Filter aset berdasarkan status BAIK/RUSAK
             let filtered = rawMasterAssets
                 .filter(a => a.status === "BAIK" || a.status === "RUSAK");
 
-            // ADMIN STUDIO: filter berdasarkan lokasi cabang mereka
-            if (user?.role === "ADMIN" && user?.locationId && user.locationId !== "ALL") {
-                filtered = filtered.filter(a => a.locationId === user.locationId);
+            // ADMIN STUDIO: filter berdasarkan lokasi cabang mereka (MULTI-LOKASI)
+            if (!isHqOrSuper) {
+                // If it's a Studio Admin role (like ADMIN), filter by locations
+                if (user?.role === "ADMIN" || user?.role === "OPERATOR") {
+                    filtered = filtered.filter(a => accessibleIds.includes(a.locationId));
+                }
             }
 
             // ── FILTER UTAMA: Tampilkan HANYA aset yang bisa dikelola role ini ──
             // ADMIN STUDIO → hanya aset BUKAN Client Aset
             // CLIENT ADMIN → hanya aset Client Aset
-            // SUPER_ADMIN  → semua aset
+            // HQ_ADMIN & SUPER_ADMIN  → semua aset
             if (user?.role === "ADMIN" || user?.role === "CLIENT_ADMIN") {
                 filtered = filtered.filter(a => {
                     const isClientAsset =
@@ -51,6 +58,8 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
 
             filtered.sort((a, b) => a.name.localeCompare(b.name));
             setMasterAssets(filtered);
+        } else {
+            setRoom(null);
         }
 
         setRoomAssets(rawRoomAssets.filter(ra => ra.roomId === roomId));
@@ -58,7 +67,7 @@ export default function RoomAssetsDistribution({ params }: { params: Promise<{ r
     }, [roomId, rawRooms, rawMasterAssets, rawRoomAssets, user]);
 
     const canManageAsset = (assetCategory: string) => {
-        if (user?.role === "SUPER_ADMIN") return true;
+        if (user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN") return true;
         const isClientAsset = assetCategory?.toLowerCase().includes("client asset") ||
             assetCategory?.toLowerCase().includes("client aset");
         if (user?.role === "ADMIN") return !isClientAsset;

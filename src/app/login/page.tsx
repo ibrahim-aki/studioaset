@@ -131,8 +131,8 @@ export default function LoginPage() {
                     if (role === "SUPER_ADMIN") {
                         addLog({ ...logData, toValue: "Login (Super Admin)" });
                         router.push("/super-admin");
-                    } else if (role === "ADMIN" || role === "CLIENT_ADMIN") {
-                        addLog({ ...logData, toValue: `Login (${role === "ADMIN" ? "Admin" : "Client Admin"})` });
+                    } else if (role === "ADMIN" || role === "CLIENT_ADMIN" || role === "HQ_ADMIN") {
+                        addLog({ ...logData, toValue: `Login (${role === "ADMIN" ? "Admin" : role === "HQ_ADMIN" ? "Admin Kantor Pusat" : "Client Admin"})` });
                         router.push("/admin");
                     } else if (role === "OPERATOR" || role === "CLIENT_OPERATOR") {
                         addLog({ ...logData, toValue: `Login (${role === "OPERATOR" ? "Operator" : "Client Operator"})` });

@@ -19,16 +19,24 @@ export default function LocationsPage() {
     const { locations: rawLocations, addLocation, updateLocation, deleteLocation, rooms } = useLocalDb();
 
     const canManageInfrastructure = () => {
-        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN" || user?.role === "HQ_ADMIN";
     };
 
     useEffect(() => {
-        const locationsData = [...rawLocations];
+        const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+        const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+
+        let locationsData = [...rawLocations];
+
+        if (!isHqOrSuper) {
+            locationsData = locationsData.filter(loc => accessibleIds.includes(loc.id));
+        }
+
         // Sort alphabetically
         locationsData.sort((a, b) => a.name.localeCompare(b.name));
         setLocations(locationsData);
         setLoading(false);
-    }, [rawLocations]);
+    }, [rawLocations, user?.locationIds, user?.locationId, user?.role]);
 
     const openModal = (location?: Location) => {
         if (location) {

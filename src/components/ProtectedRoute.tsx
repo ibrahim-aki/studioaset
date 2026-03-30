@@ -29,7 +29,7 @@ export default function ProtectedRoute({
                 // Redirection if doesn't have required role
                 if (user.role === "SUPER_ADMIN") {
                     router.replace("/super-admin");
-                } else if (user.role === "ADMIN") {
+                } else if (user.role === "ADMIN" || user.role === "HQ_ADMIN") {
                     router.replace("/admin");
                 } else if (user.role === "OPERATOR") {
                     router.replace("/operator");

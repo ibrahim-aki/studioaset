@@ -118,21 +118,21 @@ export default function ChangelogPage() {
                                 {dayStr}, {dateStr} {timeStr}
                             </div>
 
-                            <div className="space-y-1">
-                                <div className="flex gap-3">
-                                    <span className="shrink-0 text-gray-900 font-black">-</span>
-                                    {/* rule 8: deskripsi Cangelog tulis dalam bahasa inggris */}
-                                    <p className="flex-1">
-                                        {item.message}
-                                    </p>
+                            <div className="space-y-2">
+                                {/* JUDUL: Baris mandiri, Tanpa Garis, Font Normal */}
+                                <div className="text-gray-900 leading-tight">
+                                    {item.message}
                                 </div>
 
+                                {/* DETAIL: Di bawah judul, tersusun ke bawah, dengan Garis */}
                                 {item.details && item.details.length > 0 && (
-                                    <div className="space-y-1 opacity-80">
+                                    <div className="space-y-1 pl-1 opacity-80">
                                         {item.details.map((line, idx) => (
-                                            <div key={idx} className="flex gap-3">
-                                                <span className="shrink-0 text-gray-900 font-black">-</span>
-                                                <p className="flex-1">{line.trim()}</p>
+                                            <div key={idx} className="flex gap-3 items-start">
+                                                <span className="shrink-0 text-gray-900 font-bold mt-0.5">-</span>
+                                                <p className="flex-1 text-[9px] sm:text-[10px] lowercase leading-relaxed">
+                                                    {line.trim()}
+                                                </p>
                                             </div>
                                         ))}
                                     </div>

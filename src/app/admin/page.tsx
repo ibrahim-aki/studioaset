@@ -63,12 +63,36 @@ export default function AdminPage() {
         router.push("/login");
     };
 
+    // ── MULTI-LOKASI FILTERING ──────────────────────────────────────────
+    const { filteredRooms, filteredAssets, filteredChecklists, accessibleIds, isHqOrSuper } = useMemo(() => {
+        const ids = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+        const global = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+        
+        if (global) {
+            return { 
+                filteredRooms: rooms, 
+                filteredAssets: assets, 
+                filteredChecklists: checklists,
+                accessibleIds: ids,
+                isHqOrSuper: true 
+            };
+        }
+
+        return {
+            filteredRooms: rooms.filter(r => ids.includes(r.locationId)),
+            filteredAssets: assets.filter(a => ids.includes(a.locationId) || a.category?.toLowerCase().includes("client asset") || a.category?.toLowerCase().includes("client aset")),
+            filteredChecklists: checklists.filter(c => ids.includes(c.locationId)),
+            accessibleIds: ids,
+            isHqOrSuper: false
+        };
+    }, [user, rooms, assets, checklists]);
+
     // Calculate room status based on latest checklist for each room
     const roomStats = useMemo(() => {
         const latestChecklists: Record<string, string> = {};
 
         // Sort checklists by timestamp (newest first)
-        const sortedChecklists = [...checklists].sort((a, b) =>
+        const sortedChecklists = [...filteredChecklists].sort((a, b) =>
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
 
@@ -78,19 +102,19 @@ export default function AdminPage() {
             }
         });
 
-        const liveCount = rooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE" || latestChecklists[r.id] === "LIVE_NOW").length;
-        const totalRooms = rooms.length;
+        const liveCount = filteredRooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE" || latestChecklists[r.id] === "LIVE_NOW").length;
+        const totalRooms = filteredRooms.length;
 
         return { liveCount, totalRooms };
-    }, [rooms, checklists]);
+    }, [filteredRooms, filteredChecklists]);
 
     // Calculate asset condition breakdown for Studio and Client
     const assetStats = useMemo(() => {
-        const studioAssets = assets.filter(a =>
+        const studioAssets = filteredAssets.filter(a =>
             !a.category?.toLowerCase().includes("client asset") &&
             !a.category?.toLowerCase().includes("client aset")
         );
-        const clientAssets = assets.filter(a =>
+        const clientAssets = filteredAssets.filter(a =>
             a.category?.toLowerCase().includes("client asset") ||
             a.category?.toLowerCase().includes("client aset")
         );
@@ -107,17 +131,19 @@ export default function AdminPage() {
         return {
             studio: getStats(studioAssets),
             client: getStats(clientAssets),
-            totalAll: assets.length
+            totalAll: filteredAssets.length
         };
-    }, [assets]);
+    }, [filteredAssets]);
 
     // Location-wise overview
     const locationSummaries = useMemo(() => {
-        return locations.map(loc => {
-            const locRooms = rooms.filter(r => r.locationId === loc.id);
+        const relevantLocations = isHqOrSuper ? locations : locations.filter(l => accessibleIds.includes(l.id));
+
+        return relevantLocations.map(loc => {
+            const locRooms = filteredRooms.filter(r => r.locationId === loc.id);
             const latestChecklists: Record<string, string> = {};
 
-            [...checklists]
+            [...filteredChecklists]
                 .filter(c => c.locationId === loc.id)
                 .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                 .forEach(c => {
@@ -135,12 +161,12 @@ export default function AdminPage() {
                 liveRooms
             };
         });
-    }, [locations, rooms, checklists]);
+    }, [locations, filteredRooms, filteredChecklists, accessibleIds, isHqOrSuper]);
 
     // Categorized Room Lists
     const categorizedRooms = useMemo(() => {
         const latestChecklists: Record<string, string> = {};
-        [...checklists]
+        [...filteredChecklists]
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
             .forEach(c => {
                 if (!latestChecklists[c.roomId]) {
@@ -152,12 +178,12 @@ export default function AdminPage() {
         const sortByLoc = (a: any, b: any) => getLocName(a.locationId).localeCompare(getLocName(b.locationId));
 
         return {
-            liveNow: rooms.filter(r => latestChecklists[r.id] === "LIVE_NOW").sort(sortByLoc),
-            ready: rooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE" || latestChecklists[r.id] === "FINISHED_LIVE").sort(sortByLoc),
-            standby: rooms.filter(r => !latestChecklists[r.id] || latestChecklists[r.id] === "ROUTINE_CHECK" || latestChecklists[r.id] === "STANDBY").sort(sortByLoc),
-            trouble: rooms.filter(r => latestChecklists[r.id] === "NOT_READY").sort(sortByLoc)
+            liveNow: filteredRooms.filter(r => latestChecklists[r.id] === "LIVE_NOW").sort(sortByLoc),
+            ready: filteredRooms.filter(r => latestChecklists[r.id] === "READY_FOR_LIVE" || latestChecklists[r.id] === "FINISHED_LIVE").sort(sortByLoc),
+            standby: filteredRooms.filter(r => !latestChecklists[r.id] || latestChecklists[r.id] === "ROUTINE_CHECK" || latestChecklists[r.id] === "STANDBY").sort(sortByLoc),
+            trouble: filteredRooms.filter(r => latestChecklists[r.id] === "NOT_READY").sort(sortByLoc)
         };
-    }, [rooms, checklists, locations]);
+    }, [filteredRooms, filteredChecklists, locations]);
 
     return (
         <div className="animate-in fade-in duration-500 pb-10">

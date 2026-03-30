@@ -23,11 +23,19 @@ export default function RoomsPage() {
     const { rooms: rawRooms, locations: rawLocations, roomAssets, checklists, addRoom, updateRoom, deleteRoom } = useLocalDb();
 
     const canManageInfrastructure = () => {
-        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN" || user?.role === "HQ_ADMIN";
     };
 
     useEffect(() => {
-        const roomsData = [...rawRooms];
+        const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+        const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+
+        let roomsData = [...rawRooms];
+        
+        if (!isHqOrSuper) {
+            roomsData = roomsData.filter(r => accessibleIds.includes(r.locationId));
+        }
+
         // Sort by Location name first, then by Room name
         roomsData.sort((a, b) => {
             const locA = rawLocations.find(l => l.id === a.locationId)?.name || "";
@@ -40,7 +48,13 @@ export default function RoomsPage() {
         });
         setRooms(roomsData);
         setLoading(false);
-    }, [rawRooms, rawLocations]);
+
+        // Update initial formData location if needed
+        if (!formData.locationId && rawLocations.length > 0) {
+            const initialLoc = isHqOrSuper ? (rawLocations.find(l => l.id === "HQ")?.id || rawLocations[0].id) : accessibleIds[0];
+            setFormData(prev => ({ ...prev, locationId: initialLoc || "" }));
+        }
+    }, [rawRooms, rawLocations, user?.locationIds, user?.locationId, user?.role]);
 
     // Close filter dropdown when clicking outside
     useEffect(() => {
@@ -154,19 +168,26 @@ export default function RoomsPage() {
                                     <MapPin className="w-4 h-4 opacity-50" />
                                     Semua Lokasi
                                 </button>
-                                {rawLocations.map(loc => (
-                                    <button
-                                        key={loc.id}
-                                        onClick={() => { setLocationFilter(loc.id); setFilterDropdownOpen(false); }}
-                                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${locationFilter === loc.id
-                                            ? "bg-brand-purple/10 text-indigo-700 font-semibold"
-                                            : "text-gray-700 hover:bg-gray-50"
-                                            }`}
-                                    >
-                                        <MapPin className="w-4 h-4 opacity-50" />
-                                        {loc.name}
-                                    </button>
-                                ))}
+                                {(() => {
+                                    const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+                                    const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+                                    
+                                    return rawLocations
+                                        .filter(loc => isHqOrSuper || accessibleIds.includes(loc.id))
+                                        .map(loc => (
+                                            <button
+                                                key={loc.id}
+                                                onClick={() => { setLocationFilter(loc.id); setFilterDropdownOpen(false); }}
+                                                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${locationFilter === loc.id
+                                                    ? "bg-brand-purple/10 text-indigo-700 font-semibold"
+                                                    : "text-gray-700 hover:bg-gray-50"
+                                                    }`}
+                                            >
+                                                <MapPin className="w-4 h-4 opacity-50" />
+                                                {loc.name}
+                                            </button>
+                                        ));
+                                })()}
                             </div>
                         )}
                     </div>
@@ -356,9 +377,18 @@ export default function RoomsPage() {
                                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple outline-none transition-all text-sm"
                                 >
                                     <option value="" disabled>Pilih Lokasi Cabang</option>
-                                    {rawLocations.map(loc => (
-                                        <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                    ))}
+                                    {(() => {
+                                        const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+                                        const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+                                        
+                                        const list = rawLocations.filter(loc => isHqOrSuper || accessibleIds.includes(loc.id));
+                                        return (
+                                            <>
+                                                {(isHqOrSuper || accessibleIds.includes("HQ")) && <option value="HQ">Kantor Pusat (HQ)</option>}
+                                                {list.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                            </>
+                                        );
+                                    })()}
                                 </select>
                             </div>
                             <div className="space-y-1.5">

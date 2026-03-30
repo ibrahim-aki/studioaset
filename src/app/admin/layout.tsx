@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <ProtectedRoute allowedRoles={["ADMIN", "CLIENT_ADMIN"]}>
+        <ProtectedRoute allowedRoles={["ADMIN", "CLIENT_ADMIN", "HQ_ADMIN"]}>
             <div className="min-h-screen bg-gray-50 flex">
                 <ChangePasswordModal
                     isOpen={isPasswordModalOpen || (user?.role !== 'SUPER_ADMIN' && user?.needsPasswordChange === true)}
@@ -71,21 +71,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {/* Mobile sidebar backdrop */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 z-40 bg-gray-900/80 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+                        className="fixed inset-0 z-[100] bg-gray-900/80 backdrop-blur-sm lg:hidden transition-opacity duration-300"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
 
                 {/* Sidebar */}
                 <aside className={clsx(
-                    "fixed inset-y-0 left-0 z-50 bg-[#1A0D3C] text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:flex lg:flex-col shadow-2xl",
+                    "fixed inset-y-0 left-0 z-[110] bg-[#1A0D3C] text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:flex lg:flex-col shadow-2xl",
                     isCollapsed ? "lg:w-20" : "lg:w-72",
                     sidebarOpen ? "translate-x-0 w-72" : "max-lg:-translate-x-full w-72 lg:translate-x-0"
                 )}>
                     {/* Toggle Button for Desktop */}
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="hidden lg:flex absolute -right-3 top-8 h-6 w-6 bg-brand-purple rounded-full items-center justify-center text-white border-2 border-[#1A0D3C] hover:bg-brand-purple/80 transition-all z-[61] shadow-lg hover:scale-110 active:scale-95"
+                        className="hidden lg:flex absolute -right-3 top-8 h-6 w-6 bg-brand-purple rounded-full items-center justify-center text-white border-2 border-[#1A0D3C] hover:bg-brand-purple/80 transition-all z-[111] shadow-lg hover:scale-110 active:scale-95"
                     >
                         {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
                     </button>

@@ -527,7 +527,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const operatorName = user?.name || user?.email || "Unknown";
 
             // ── VALIDASI ROLE DI SISI APLIKASI (lebih andal dari Firebase Rules) ──
-            if (asset && user?.role !== "SUPER_ADMIN") {
+            if (asset && user?.role !== "SUPER_ADMIN" && user?.role !== "HQ_ADMIN") {
                 const isClientAsset =
                     asset.category?.toLowerCase().includes("client asset") ||
                     asset.category?.toLowerCase().includes("client aset");

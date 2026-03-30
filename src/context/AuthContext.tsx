@@ -5,16 +5,18 @@ import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
-export type UserRole = "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_ADMIN" | "CLIENT_OPERATOR" | null;
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_ADMIN" | "CLIENT_OPERATOR" | "HQ_ADMIN" | null;
 
 interface AppUser {
     uid: string;
     email: string | null;
-    role: UserRole;
+    role: UserRole; // Tetap simpan sebagai primary role (backward compatibility)
+    roles: UserRole[]; // List semua role yang dimiliki
     name?: string;
     companyId?: string;
     companyName?: string;
     locationId?: string;
+    locationIds?: string[];
     locationName?: string;
     phone?: string;
     lastSessionId?: string;
@@ -50,12 +52,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     if (snap.exists()) {
                         const data = snap.data();
 
-                        // Safety check: Don't login if role is missing (corrupted doc)
-                        if (!data.role) {
+                        const rawRole = data.role?.toUpperCase() || "";
+                        const rawRoles: string[] = Array.isArray(data.roles) ? data.roles : (data.role ? [data.role] : []);
+
+                        const normalizeRole = (r: string): UserRole => {
+                            const upper = r.toUpperCase();
+                            if (upper.includes("SUPER") && upper.includes("ADMIN")) return "SUPER_ADMIN";
+                            if (upper === "ADMIN STUDIO" || upper === "ADMIN" || upper === "STUDIO ADMIN") return "ADMIN";
+                            if (upper.includes("CLIENT") && upper.includes("ADMIN")) return "CLIENT_ADMIN";
+                            if (upper.includes("CLIENT") && upper.includes("OPERATOR")) return "CLIENT_OPERATOR";
+                            if (upper === "OPERATOR") return "OPERATOR";
+                            if (upper === "HQ_ADMIN" || upper.includes("KANTOR PUSAT") || upper.includes("HQ ADMIN")) return "HQ_ADMIN";
+                            return upper.replace(/\s+/g, '_') as UserRole;
+                        };
+
+                        const normalizedRoles = Array.from(new Set(rawRoles.map(normalizeRole).filter(Boolean))) as UserRole[];
+                        const primaryRole = normalizedRoles[0] || null;
+
+                        // Safety check: Don't login if no valid roles found
+                        if (normalizedRoles.length === 0) {
                             setUser({
                                 uid: firebaseUser.uid,
                                 email: firebaseUser.email,
                                 role: null,
+                                roles: [],
                             });
                             setLoading(false);
                             return;
@@ -63,25 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                         // AUTO-SYNC COMPANY ID Logic
                         let finalCompanyId = data.companyId || "";
-
-                        // Normalisasi role secara konsisten
-                        const rawRole = data.role?.toUpperCase() || "";
-                        let normalizedRole: UserRole = null;
-
-                        if (rawRole.includes("SUPER") && rawRole.includes("ADMIN")) normalizedRole = "SUPER_ADMIN";
-                        else if (rawRole === "ADMIN STUDIO" || rawRole === "ADMIN" || rawRole === "STUDIO ADMIN") normalizedRole = "ADMIN";
-                        else if (rawRole.includes("CLIENT") && rawRole.includes("ADMIN")) normalizedRole = "CLIENT_ADMIN";
-                        else if (rawRole.includes("CLIENT") && rawRole.includes("OPERATOR")) normalizedRole = "CLIENT_OPERATOR";
-                        else if (rawRole === "OPERATOR") normalizedRole = "OPERATOR";
-                        else normalizedRole = rawRole.replace(/\s+/g, '_') as UserRole;
-
-                        const needsSync = ["ADMIN", "OPERATOR", "CLIENT_ADMIN", "CLIENT_OPERATOR"].includes(normalizedRole || "");
+                        const needsSync = normalizedRoles.some(r => ["ADMIN", "OPERATOR", "CLIENT_ADMIN", "CLIENT_OPERATOR", "HQ_ADMIN"].includes(r || ""));
 
                         if (!finalCompanyId && needsSync) {
                             const cachedId = localStorage.getItem("last_known_company_id");
                             if (cachedId) {
                                 finalCompanyId = cachedId;
-                                // Auto-repair in Firestore if missing
                                 updateDoc(userDocRef, { companyId: cachedId }).catch(e => console.error("Auto-sync failed:", e));
                             }
                         }
@@ -89,11 +96,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         setUser({
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
-                            role: normalizedRole,
+                            role: primaryRole,
+                            roles: normalizedRoles,
                             name: data.name || "",
                             companyId: finalCompanyId,
                             companyName: data.companyName || "",
                             locationId: data.locationId || "",
+                            locationIds: data.locationIds || (data.locationId ? [data.locationId] : []),
                             locationName: data.locationName || "",
                             phone: data.phone || "",
                             lastSessionId: data.lastSessionId || "",
@@ -104,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
                             role: null,
+                            roles: [],
                         });
                     }
                     setLoading(false);

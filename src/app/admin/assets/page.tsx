@@ -55,7 +55,7 @@ function AssetsContent() {
 
     // Helper untuk cek hak akses kelola (Edit/Hapus)
     const canManageAsset = (assetCategory: string) => {
-        if (user?.role === "SUPER_ADMIN") return true;
+        if (user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN") return true;
 
         const isClientAsset = assetCategory?.toLowerCase().includes("client asset") ||
             assetCategory?.toLowerCase().includes("client aset");
@@ -299,7 +299,7 @@ function AssetsContent() {
     const adminName = user?.name || user?.email || "Admin";
 
     const canManageInfrastructure = () => {
-        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+        return user?.role === "SUPER_ADMIN" || user?.role === "ADMIN" || user?.role === "HQ_ADMIN";
     };
 
     const uniqueNames = memoizedUniqueNames;
@@ -309,6 +309,46 @@ function AssetsContent() {
 
     useEffect(() => {
         let assetsData = [...rawAssets];
+
+        // ── FILTER OTOMATIS BERDASARKAN ROLE & MULTI-LOKASI ──────────────────
+        const accessibleLocations = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+        const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+
+        if (!isHqOrSuper) {
+            assetsData = assetsData.filter(asset => {
+                const isClientAsset = 
+                    asset.category?.toLowerCase().includes("client asset") || 
+                    asset.category?.toLowerCase().includes("client aset");
+
+                const hasLocationAccess = accessibleLocations.includes(asset.locationId);
+
+                // ADMIN Studio: Lihat SEMUA Aset Klien (Global) + Aset Studio di cabangnya
+                if (user?.role === "ADMIN") {
+                    if (isClientAsset) return true;
+                    return hasLocationAccess;
+                }
+
+                // CLIENT_ADMIN: Hanya lihat Aset Klien di cabang yang diberikan akses
+                if (user?.role === "CLIENT_ADMIN") {
+                    return isClientAsset && hasLocationAccess;
+                }
+
+                // CLIENT_OPERATOR: Sama seperti CLIENT_ADMIN
+                if (user?.role === "CLIENT_OPERATOR") {
+                    return isClientAsset && hasLocationAccess;
+                }
+
+                // OPERATOR (Studio): Hanya lihat aset studio di cabangnya (biasanya tidak lihat klien)
+                if (user?.role === "OPERATOR") {
+                    if (isClientAsset) return false;
+                    return hasLocationAccess;
+                }
+
+                // Default: Filter by location for safety
+                return hasLocationAccess;
+            });
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         if (locationFilter !== "ALL") {
             assetsData = assetsData.filter(asset => asset.locationId === locationFilter);
@@ -341,7 +381,7 @@ function AssetsContent() {
         setAssets(assetsData);
         setFilteredAssets(assetsData);
         setLoading(false);
-    }, [rawAssets, deletedAssets, locationFilter, categoryFilter, statusFilter, searchTerm]);
+    }, [rawAssets, deletedAssets, locationFilter, categoryFilter, statusFilter, searchTerm, user?.role, user?.locationId]);
 
     const openModal = (asset?: Asset) => {
         setIsAddingCategory(false);
@@ -1580,7 +1620,18 @@ function AssetsContent() {
                                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all text-sm font-medium shadow-sm"
                                         >
                                             <option value="" disabled>Pilih Lokasi Cabang</option>
-                                            {rawLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                            {(() => {
+                                                const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+                                                const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+                                                
+                                                const list = rawLocations.filter(loc => isHqOrSuper || accessibleIds.includes(loc.id));
+                                                return (
+                                                    <>
+                                                        {(isHqOrSuper || accessibleIds.includes("HQ")) && <option value="HQ">Kantor Pusat (HQ)</option>}
+                                                        {list.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                                    </>
+                                                );
+                                            })()}
                                         </select>
                                     </div>
 
@@ -2115,9 +2166,16 @@ function AssetsContent() {
                                             className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold hover:bg-white focus:bg-white focus:border-brand-purple/60 focus:ring-2 focus:ring-brand-purple/10 outline-none transition-all appearance-none cursor-pointer text-gray-700"
                                         >
                                             <option value="ALL">Semua Cabang / Lokasi</option>
-                                            {rawLocations.map(loc => (
-                                                <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                            ))}
+                                            {(() => {
+                                                const accessibleIds = user?.locationIds || (user?.locationId ? [user.locationId] : []);
+                                                const isHqOrSuper = user?.role === "SUPER_ADMIN" || user?.role === "HQ_ADMIN" || (user?.locationId === "ALL");
+                                                
+                                                return rawLocations
+                                                    .filter(loc => isHqOrSuper || accessibleIds.includes(loc.id))
+                                                    .map(loc => (
+                                                        <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                                    ));
+                                            })()}
                                         </select>
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                             <ChevronDown className="w-4 h-4" />

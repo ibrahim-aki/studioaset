@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- 1. HELPER (DASAR KEAMANAN) ---
+    function isAuthenticated() { return request.auth != null; }
+    
+    // Ambil data user secara aman
+    function getUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Pengecekan Super Admin (Global)
+    function isSuperAdmin() { 
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUser().role == 'SUPER_ADMIN';
+    }
+
+    // Pengecekan Admin Kantor Pusat (Higher-level Company Admin)
+    function isHQAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUser().role == 'HQ_ADMIN';
+    }
+
+    // Pengecekan Admin Perusahaan (HQ atau Admin Biasa)
+    function isCompanyManager() {
+      return isSuperAdmin() || isHQAdmin() || getUser().role == 'ADMIN';
+    }
+
+    // --- 2. RULES PERUSAHAAN ---
+    match /companies/{id} {
+      allow read: if isAuthenticated();
+      // Izinkan HQ Admin mengedit profil perusahaan mereka sendiri
+      allow write: if isSuperAdmin() || (isHQAdmin() && id == getUser().companyId);
+    }
+
+    // --- 3. RULES USER & SETTINGS ---
+    match /users/{id} {
+      allow read: if isAuthenticated();
+      // Izinkan HQ Admin mengelola user di perusahaannya sendiri
+      allow write: if isSuperAdmin() || (isHQAdmin() && (resource.data.companyId == getUser().companyId || request.resource.data.companyId == getUser().companyId));
+    }
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || isHQAdmin(); 
+    }
+
+    // --- 4. DATA OPERASIONAL (ISOLASI MULTI-TENANT) ---
+    match /{collection}/{id} {
+      allow read, write: if isAuthenticated() && (
+        isSuperAdmin() || 
+        (resource.data.companyId == getUser().companyId) ||
+        (isHQAdmin() && (resource.data.companyId == getUser().companyId || !('companyId' in resource.data))) ||
+        (request.method == 'create' && request.resource.data.companyId == getUser().companyId)
+      );
+    }
+    
+    // --- 5. CHANGELOG & LOGS ---
+    match /changelogs/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isHQAdmin();
+    }
+
+    match /central_changelogs/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin(); // Hanya Super Admin Global yang boleh tulis log sistem pusat
+    }
+  }
+}
