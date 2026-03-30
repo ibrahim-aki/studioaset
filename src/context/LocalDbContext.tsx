@@ -796,6 +796,65 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
 
             // Hapus data related jika purge active assets
             if (type === 'ACTIVE_ASSETS') {
+                const urlsToDelete: string[] = [];
+
+                // 1. Foto langsung dari data aset (jika ada field photoUrl di dokumen aset)
+                allDocs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.photoUrl && data.photoUrl.includes('res.cloudinary.com')) {
+                        urlsToDelete.push(data.photoUrl);
+                    }
+                });
+
+                // 2. Foto dari assetHistory yang terhubung ke perusahaan ini
+                try {
+                    const historySnap = await getDocs(
+                        query(collection(db, "assetHistory"), where("companyId", "==", companyId))
+                    );
+                    historySnap.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (data.photoUrl && data.photoUrl.includes('res.cloudinary.com')) {
+                            urlsToDelete.push(data.photoUrl);
+                        }
+                    });
+                } catch (err) {
+                    console.error("Gagal mengambil foto dari assetHistory saat purge assets:", err);
+                }
+
+                // 3. Foto dari checklists (nested items[].photoUrl) yang terhubung ke perusahaan ini
+                try {
+                    const checklistSnap = await getDocs(
+                        query(collection(db, "checklists"), where("companyId", "==", companyId))
+                    );
+                    checklistSnap.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (Array.isArray(data.items)) {
+                            data.items.forEach((item: any) => {
+                                if (item.photoUrl && item.photoUrl.includes('res.cloudinary.com')) {
+                                    urlsToDelete.push(item.photoUrl);
+                                }
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.error("Gagal mengambil foto dari checklists saat purge assets:", err);
+                }
+
+                // Hapus duplikat URL lalu kirim ke Cloudinary delete endpoint
+                const uniqueUrls = [...new Set(urlsToDelete)];
+                if (uniqueUrls.length > 0) {
+                    try {
+                        await fetch('/api/cloudinary/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ urls: uniqueUrls })
+                        });
+                    } catch (err) {
+                        console.error("Gagal menghapus foto dari Cloudinary saat purge assets:", err);
+                    }
+                }
+
+                // Hapus roomAssets yang terhubung
                 const raSnap = await getDocs(query(collection(db, "roomAssets"), where("companyId", "==", companyId)));
                 await Promise.all(raSnap.docs.map((d: any) => deleteDoc(d.ref)));
             }
