@@ -2912,19 +2912,23 @@ export default function UserManagementPage() {
                                                 </div>
                                                 <button
                                                     onClick={async () => {
-                                                        if (confirm(`KRITIS: Anda akan menghapus SELURUH MASTER ASSETS ${liveCompany?.name}. Data ini tidak bisa dikembalikan. Lanjutkan?`)) {
+                                                        const confirmation = prompt(`PERINGATAN KRITIS!\n\nAnda akan menghapus SELURUH MASTER ASSETS ${liveCompany?.name}.\nData ini TIDAK DAPAT dikembalikan.\n\nUntuk melanjutkan, ketik: HAPUS SELURUH ASET SEKARANG`);
+                                                        
+                                                        if (confirmation === "HAPUS SELURUH ASET SEKARANG") {
                                                             try {
                                                                 await purgeData(selectedCompany.id, 'ACTIVE_ASSETS');
                                                                 alert(`Master Assets ${liveCompany?.name} berhasil dikosongkan total.`);
                                                             } catch (err: any) {
                                                                 alert(`Error: ${err.message}`);
                                                             }
+                                                        } else if (confirmation !== null) {
+                                                            alert("Konfirmasi gagal. Pastikan kata kunci benar.");
                                                         }
                                                     }}
                                                     className="p-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center bg-white text-rose-400 border border-rose-100 hover:text-rose-600 hover:border-rose-400 hover:bg-rose-50"
                                                     title="Reset Master"
                                                 >
-                                                    <RefreshCcw className="w-4 h-4 group-hover/btn:rotate-180 transition-transform duration-500" />
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
 
@@ -2940,10 +2944,15 @@ export default function UserManagementPage() {
                                                 </div>
                                                 <button
                                                     onClick={() => {
-                                                        if (confirm(`KONFIRMASI AKHIR: Apakah Anda yakin ingin menghapus ${liveCompany?.name}?`)) {
+                                                        const confirmation = prompt(`PERINGATAN KRITIS!\n\nAnda akan menghapus ${liveCompany?.name} secara PERMANEN.\nSeluruh data (Aset, Lokasi, Ruangan, Laporan, Log) akan ikut terhapus.\n\nUntuk konfirmasi akhir, ketik: HAPUS KLIEN PERMANEN`);
+                                                        
+                                                        if (confirmation === "HAPUS KLIEN PERMANEN") {
                                                             deleteCompany(selectedCompany.id);
                                                             setView("companies");
                                                             setSelectedCompany(null);
+                                                            alert(`${liveCompany?.name} telah dihapus permanen.`);
+                                                        } else if (confirmation !== null) {
+                                                            alert("Konfirmasi gagal. Pastikan kata kunci benar.");
                                                         }
                                                     }}
                                                     className="p-2.5 rounded-xl transition-all shadow-lg shadow-rose-100 flex items-center justify-center bg-rose-600 text-white hover:bg-rose-700"

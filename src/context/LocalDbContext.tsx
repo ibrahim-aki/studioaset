@@ -725,7 +725,7 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             const collectionMapping: Record<string, string> = {
                 'LOGS': 'assetLogs',
                 'ASSET_HISTORY': 'assetHistory', // Arahkan ke koleksi history yang mandiri
-                'REPORTS': 'checklist',
+                'REPORTS': 'checklists',
                 'TRASH': 'deleted_assets',
                 'ACTIVE_ASSETS': 'assets'
             };
@@ -745,9 +745,13 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
             if (allDocs.length === 0) return;
 
             // Hapus foto Cloudinary HANYA jika tipenya 'ASSET_HISTORY'
-            // Karena Laporan Harian (REPORTS) share foto yang sama dengan History Aset
+            // Saat ini kita hapus SEMUA foto terkait perusahaan ini:
+            // 1. Dari assetHistory (photoUrl langsung)
+            // 2. Dari checklists (items[].photoUrl - foto audit operator)
             if (type === 'ASSET_HISTORY') {
                 const urlsToDelete: string[] = [];
+
+                // Kumpulkan foto dari assetHistory (field langsung)
                 allDocs.forEach(doc => {
                     const data = doc.data();
                     if (data.photoUrl && data.photoUrl.includes('res.cloudinary.com')) {
@@ -755,12 +759,34 @@ export function LocalDbProvider({ children }: { children: ReactNode }) {
                     }
                 });
 
-                if (urlsToDelete.length > 0) {
+                // Kumpulkan foto dari checklists (nested dalam items[].photoUrl)
+                try {
+                    const checklistSnap = await getDocs(
+                        query(collection(db, "checklists"), where("companyId", "==", companyId))
+                    );
+                    checklistSnap.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (Array.isArray(data.items)) {
+                            data.items.forEach((item: any) => {
+                                if (item.photoUrl && item.photoUrl.includes('res.cloudinary.com')) {
+                                    urlsToDelete.push(item.photoUrl);
+                                }
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.error("Gagal mengambil foto dari checklists saat purge:", err);
+                }
+
+                // Hapus duplikat URL
+                const uniqueUrls = [...new Set(urlsToDelete)];
+
+                if (uniqueUrls.length > 0) {
                     try {
                         await fetch('/api/cloudinary/delete', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ urls: urlsToDelete })
+                            body: JSON.stringify({ urls: uniqueUrls })
                         });
                     } catch (err) {
                         console.error("Gagal menghapus foto dari Cloudinary saat purge:", err);
