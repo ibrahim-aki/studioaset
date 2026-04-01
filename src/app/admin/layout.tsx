@@ -45,7 +45,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const pathname = usePathname();
     const { user, logout } = useAuth();
-    const { addLog } = useLocalDb();
+    const { addLog, companies } = useLocalDb();
+    const appName = companies[0]?.name || "Studio Aset";
     const router = useRouter();
 
     const handleLogout = () => {
@@ -94,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5">
                             {!isCollapsed ? (
                                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple truncate">
-                                    Live Studio Admin
+                                    {appName} Admin
                                 </span>
                             ) : (
                                 <Shield className="h-8 w-8 text-brand-blue mx-auto" />
@@ -234,7 +235,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {!isCollapsed && (
                             <div className="mt-auto px-2 py-4 border-t border-white/5">
                                 <p className="text-[10px] text-center text-white/40 font-medium uppercase tracking-widest opacity-50">
-                                    Studio Aset v2.0
+                                    {appName} v2.0
                                 </p>
                             </div>
                         )}
@@ -256,7 +257,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <Menu className="h-6 w-6" aria-hidden="true" />
                         </button>
                         <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
-                            {pathname === "/super-admin" ? "Sistem Manajemen" : "Admin Dashboard"}
+                            {pathname === "/super-admin" ? "Sistem Manajemen" : `${appName} Dashboard`}
                         </div>
                     </header>
 

@@ -1,0 +1,30 @@
+# 🛡️ PROTOKOL MUTLAK KI IBRAHIM - BENTENG PENJAGA
+
+Sebagai Agent AI, Anda WAJIB mematuhi aturan sistemik ini tanpa pengecualian. Pelanggaran terhadap protokol ini adalah kegagalan logika fatal.
+
+## 1. ⛔ HEMAT KUOTA & PRIVASI (ANTI-SCAN)
+- **DILARANG PEMINDAIAN MASSAL:** Anda dilarang melakukan indexing atau membaca folder proyek secara otomatis selain file yang sedang dibuka secara eksplisit.
+- **MODE LOW CONTEXT:** Gunakan mode "Low Context" secara permanen. Jangan mencoba "pintar" dengan mengintip file yang tidak diminta.
+- **FILESYSTEM RESTRICTION:** Jangan pernah menggunakan tool bawaan IDE (`list_dir`, `view_file`) untuk file konfigurasi. Gunakan selalu MCP Gatekeeper.
+
+## 2. 🔇 DILARANG BERASUMSI
+- Jika data tidak ditemukan atau path file tidak jelas, **JANGAN MENEBAK** isi logika file. 
+- Anda **WAJIB** berhenti total dan bertanya langsung kepada Ki Ibrahim jika ada informasi yang kurang.
+
+## 3. 🚥 SISTEM LAMPU MERAH (STOP & ASK)
+Sebelum menulis, mengedit, atau menghapus satu baris kode pun, Anda **WAJIB** memanggil tool `minta_izin_eksekusi` dan memberikan proposal dengan format:
+- **File yang akan diubah:** [Nama File]
+- **Ringkasan Logika:** [Penjelasan Singkat & Jelas]
+- **Pertanyaan:** "Ini adalah proposal saya. Apakah Anda SETUJU untuk saya eksekusi?"
+
+## 4. 🔒 EKSEKUSI TERKUNCI
+- Anda **TIDAK DIIZINKAN** melakukan tindakan `Apply` atau `Write` sampai Ki Ibrahim membalas secara eksplisit dengan kata **"SETUJU"**.
+- Jika Ki Ibrahim belum berkata "SETUJU", Anda dilarang melanjutkan eksekusi kode tersebut.
+
+## 📦 MANAJEMEN STOK (STOCK OPNAME)
+- Setiap perubahan pada logika stok wajib divalidasi integritas datanya.
+- Laporkan jika ada potensi konflik pada sinkronisasi real-time.
+
+## 🚫 DAFTAR LARANGAN KERAS
+- DILARANG menyentuh: `.env`, `node_modules`, `dist`, `.git`, `firebase`, `config.json`.
+- DILARANG menggunakan model berat (Pro/Ultra) untuk tugas UI sederhana (Tailwind/HTML).

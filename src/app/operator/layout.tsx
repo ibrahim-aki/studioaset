@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
     const { user, logout } = useAuth();
     const { addLog, operatorShifts, endShift, companies, updateShift } = useLocalDb();
+    const appName = companies[0]?.name || "Studio Aset";
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
@@ -482,7 +483,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
                             {user?.name?.charAt(0).toUpperCase() || "O"}
                         </div>
                         <div className="truncate">
-                            <p className="text-sm font-bold text-gray-900 leading-tight">Studio Ops</p>
+                            <p className="text-sm font-bold text-gray-900 leading-tight">{appName} Ops</p>
                             <p className="text-[10px] text-brand-purple font-bold leading-tight truncate max-w-[120px] flex items-center gap-1">
                                 {user?.name || "Operator"}
                                 {user?.locationName && <span className="opacity-70 font-normal">({user.locationName})</span>}
