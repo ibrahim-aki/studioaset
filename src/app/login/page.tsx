@@ -12,59 +12,6 @@ import { useToast } from "@/context/ToastContext";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 
-// CSS for smooth twinkling and floating without taxing the main thread
-const starStyles = `
-  @keyframes float {
-    0%, 100% { transform: translateY(0); opacity: 0.3; }
-    50% { transform: translateY(-15px); opacity: 0.8; }
-  }
-  .star-float {
-    animation: float var(--duration) ease-in-out infinite;
-    animation-delay: var(--delay);
-  }
-`;
-
-const BackgroundStars = memo(() => {
-    const [starData, setStarData] = useState<{ top: number; left: number; size: number; duration: string; delay: string }[]>([]);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        const data = [...Array(40)].map(() => ({
-            top: Math.random() * 80,
-            left: Math.random() * 100,
-            size: Math.random() * 2 + 1,
-            duration: 4 + Math.random() * 6 + "s",
-            delay: Math.random() * 5 + "s",
-        }));
-        setStarData(data);
-        setMounted(true);
-    }, []);
-
-    if (!mounted) return null;
-
-    return (
-        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-            <style>{starStyles}</style>
-            {starData.map((star, i) => (
-                <div
-                    key={i}
-                    className="absolute rounded-full bg-white/50 star-float"
-                    style={{
-                        width: `${star.size}px`,
-                        height: `${star.size}px`,
-                        top: `${star.top}%`,
-                        left: `${star.left}%`,
-                        // @ts-ignore
-                        "--duration": star.duration,
-                        "--delay": star.delay,
-                    }}
-                />
-            ))}
-        </div>
-    );
-});
-
-BackgroundStars.displayName = "BackgroundStars";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -98,7 +45,13 @@ export default function LoginPage() {
         setLoading(true);
         setDisplayMessage(null);
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            // Robustness: Add a timeout to the login process (10 seconds)
+            const loginPromise = signInWithEmailAndPassword(auth, email, password);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("auth/timeout")), 10000)
+            );
+
+            const userCredential = await Promise.race([loginPromise, timeoutPromise]) as any;
             const userDocRef = doc(db, "users", userCredential.user.uid);
             const userDocSnap = await getDoc(userDocRef);
 
@@ -148,7 +101,11 @@ export default function LoginPage() {
             }
         } catch (err: any) {
             console.error(err);
-            setDisplayMessage("Email atau kata sandi yang Anda masukkan salah. Silakan coba lagi atau hubungi admin.");
+            if (err.message === "auth/timeout") {
+                setDisplayMessage("Koneksi sangat lambat. Periksa sinyal internet Anda dan coba lagi.");
+            } else {
+                setDisplayMessage("Email atau kata sandi yang Anda masukkan salah. Silakan coba lagi atau hubungi admin.");
+            }
         } finally {
             setLoading(false);
         }
@@ -164,8 +121,7 @@ export default function LoginPage() {
                 }}
             />
 
-            {/* ── Background Elements (Memoized to prevent jitter during typing) ── */}
-            <BackgroundStars />
+            {/* ── Background Elements (Optimized: Static or Single Graphic) ── */}
 
             {/* ── Moon ── */}
             <div
@@ -187,13 +143,13 @@ export default function LoginPage() {
                 preserveAspectRatio="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <path d="M0,280 L120,160 L240,220 L360,100 L480,180 L600,80 L720,160 L840,90 L960,170 L1080,110 L1200,190 L1320,120 L1440,200 L1440,320 L0,320 Z"
-                    fill="#2E1065" opacity="0.8" />
-                <path d="M0,310 L80,220 L180,270 L280,180 L400,240 L520,150 L640,230 L760,170 L880,240 L1000,180 L1120,250 L1240,190 L1360,260 L1440,220 L1440,320 L0,320 Z"
-                    fill="#1E0B4B" opacity="0.95" />
-                <path d="M0,320 L60,270 L140,300 L220,250 L320,285 L420,240 L520,275 L620,230 L720,265 L820,235 L920,270 L1020,245 L1120,280 L1220,255 L1320,285 L1440,260 L1440,320 Z"
-                    fill="#0F0524" />
-                <rect x="0" y="305" width="1440" height="15" fill="#0A051E" opacity="0.4" />
+                {/* Optimized Mountain Layers - Combined for better drawing performance */}
+                <g opacity="0.9">
+                    <path d="M0,280 L120,160 L240,220 L360,100 L480,180 L600,80 L720,160 L840,90 L960,170 L1080,110 L1200,190 L1320,120 L1440,200 L1440,320 L0,320 Z" fill="#2E1065" />
+                    <path d="M0,310 L80,220 L180,270 L280,180 L400,240 L520,150 L640,230 L760,170 L880,240 L1000,180 L1120,250 L1240,190 L1360,260 L1440,220 L1440,320 L0,320 Z" fill="#1E0B4B" />
+                    <path d="M0,320 L60,270 L140,300 L220,250 L320,285 L420,240 L520,275 L620,230 L720,265 L820,235 L920,270 L1020,245 L1120,280 L1220,255 L1320,285 L1440,260 L1440,320 Z" fill="#0F0524" />
+                </g>
+                <rect x="0" y="305" width="1440" height="15" fill="#0A051E" opacity="0.3" />
             </svg>
 
             {/* ── Glass Card ── */}
